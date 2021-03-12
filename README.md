@@ -4,11 +4,16 @@
 <br />
 
 <p align="center">
-    NestJS API for POPO @ PoApper
+  <a href="http://popo.postech.ac.kr">
+    <img src="https://raw.githubusercontent.com/PoApper/POPO-nest-api/master/assets/popo.svg" alt="Logo" height="150">
+  </a>
+  <p align="center">
+    NestJS API for POPO @ [PoApper](https://github.com/PoApper)
     <br />
     POPO, POstechian's POrtal
     <br />
     👉 <a href="http://popo.postech.ac.kr">POPO</a>
+  </p>
 </p>
 
 ## About
