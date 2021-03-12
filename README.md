@@ -8,7 +8,7 @@
     <img src="https://raw.githubusercontent.com/PoApper/POPO-nest-api/master/assets/popo.svg" alt="Logo" height="150">
   </a>
   <p align="center">
-    NestJS API for POPO @ [PoApper](https://github.com/PoApper)
+    NestJS API for POPO @ <a href="https://github.com/PoApper">PoApper</a>
     <br />
     POPO, POstechian's POrtal
     <br />
