@@ -77,7 +77,7 @@ export class ReservePlaceController {
   @Get("reserveStatus/:status")
   @UseGuards(JwtAuthGuard)
   getAllByStatusWithUserName(@Param("status") reserve_status: ReservationStatus) {
-    return this.reservePlaceService.findAllByStatus(reserve_status);
+    return this.reservePlaceService.find({ reserveStatus: reserve_status });
   }
 
   @Patch(":uuid/status/:status")
@@ -105,12 +105,13 @@ export class ReservePlaceController {
   @UseGuards(JwtAuthGuard)
   async getUserReservation(@Req() req: Request, @Param("uuid") uuid: string) {
     if (uuid) {
-      return await this.reservePlaceService.findAllByUser(uuid);
+      return await this.reservePlaceService.find({ where: { user: uuid }, order: { createdAt: "DESC" } });
     } else {
+      // 내 예약 조회
       const user: any = req.user;
       const existUser = await this.userService.findOne({ id: user.id });
 
-      return await this.reservePlaceService.findAllByUser(existUser.uuid);
+      return await this.reservePlaceService.find({ where: { user: existUser.uuid }, order: { createdAt: "DESC" } });
     }
   }
 

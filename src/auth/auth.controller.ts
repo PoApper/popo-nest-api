@@ -122,14 +122,4 @@ export class AuthController {
 
     return UserInfo
   }
-
-  @Get('myReservation')
-  @UseGuards(JwtAuthGuard)
-  async getMyReservation(@Req() req: Request) {
-    const user: any = req.user;
-    const existUser = await this.userService.findOneById(user.id);
-    const {...UserInfo} = await this.reservePlaceService.findAllByUser(existUser.uuid);
-
-    return existUser
-  }
 }

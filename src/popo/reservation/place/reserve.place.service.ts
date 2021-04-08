@@ -1,18 +1,18 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
-import {InjectRepository} from "@nestjs/typeorm";
-import {ReservePlace} from "./reserve.place.entity";
-import {Repository} from "typeorm";
-import {CreateReservePlaceDto} from "./reserve.place.dto";
-import {UserService} from "../../user/user.service";
-import {PlaceService} from "../../place/place.service";
-import {ReservationStatus} from "../reservation.meta";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { ReservePlace } from "./reserve.place.entity";
+import { Repository } from "typeorm";
+import { CreateReservePlaceDto } from "./reserve.place.dto";
+import { UserService } from "../../user/user.service";
+import { PlaceService } from "../../place/place.service";
+import { ReservationStatus } from "../reservation.meta";
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
   NOT_EXISTING_PLACE: "There's no such place.",
   NOT_EXISTING_RESERVATION: "There's no such reservation.",
   OVERLAP_RESERVATION: "Reservation time overlapped."
-}
+};
 
 @Injectable()
 export class ReservePlaceService {
@@ -24,45 +24,35 @@ export class ReservePlaceService {
   ) {
   }
 
-  async save(createReservePlaceDto: CreateReservePlaceDto) {
-    const existPlace = await this.placeService.findOne(createReservePlaceDto.place);
+  async save(dto: CreateReservePlaceDto) {
+    const existPlace = await this.placeService.findOne(dto.place);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    const existUser = await this.userService.findOne({uuid: createReservePlaceDto.user});
+    const existUser = await this.userService.findOne({ uuid: dto.user });
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     }
 
-    return this.reservePlaceRepo.save({
-      place: createReservePlaceDto.place,
-      user: createReservePlaceDto.user,
-      phone: createReservePlaceDto.phone,
-      title: createReservePlaceDto.title,
-      description: createReservePlaceDto.description,
-      date: createReservePlaceDto.date,
-      startTime: createReservePlaceDto.startTime,
-      endTime: createReservePlaceDto.endTime,
-      reserveStatus: ReservationStatus.in_process,
-    });
+    return this.reservePlaceRepo.save(dto);
   }
 
-  async saveWithNameAndId(createReservePlaceDto: CreateReservePlaceDto) {
-    const existPlace = await this.placeService.findOneByName(createReservePlaceDto.place);
+  async saveWithNameAndId(dto: CreateReservePlaceDto) {
+    const existPlace = await this.placeService.findOneByName(dto.place);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    const existUser = await this.userService.findOneById(createReservePlaceDto.user);
+    const existUser = await this.userService.findOneById(dto.user);
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     }
 
-    const bookedReservations = await this.findAllByPlaceNameAndDate(existPlace.name, createReservePlaceDto.date);
+    const bookedReservations = await this.findAllByPlaceNameAndDate(existPlace.name, dto.date);
 
     for (const reservation of bookedReservations) {
-      if (createReservePlaceDto.endTime <= reservation.startTime || reservation.endTime <= createReservePlaceDto.startTime) {
+      if (dto.endTime <= reservation.startTime || reservation.endTime <= dto.startTime) {
         continue;
       } else {
         throw new BadRequestException(Message.OVERLAP_RESERVATION);
@@ -72,13 +62,13 @@ export class ReservePlaceService {
     return this.reservePlaceRepo.save({
       place: existPlace.uuid,
       user: existUser.uuid,
-      phone: createReservePlaceDto.phone,
-      title: createReservePlaceDto.title,
-      description: createReservePlaceDto.description,
-      date: createReservePlaceDto.date,
-      startTime: createReservePlaceDto.startTime,
-      endTime: createReservePlaceDto.endTime,
-      reserveStatus: ReservationStatus.in_process,
+      phone: dto.phone,
+      title: dto.title,
+      description: dto.description,
+      date: dto.date,
+      startTime: dto.startTime,
+      endTime: dto.endTime,
+      reserveStatus: ReservationStatus.in_process
     });
   }
 
@@ -99,7 +89,7 @@ export class ReservePlaceService {
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
-    return this.reservePlaceRepo.find({place: existPlace.uuid});
+    return this.reservePlaceRepo.find({ place: existPlace.uuid });
   }
 
   async findAllByPlaceNameAndDate(placeName: string, date: number) {
@@ -107,35 +97,27 @@ export class ReservePlaceService {
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
-    return this.reservePlaceRepo.find({place: existPlace.uuid, date: date});
-  }
-
-  findAllByStatus(reserve_status: ReservationStatus) {
-    return this.reservePlaceRepo.find({reserveStatus: reserve_status});
-  }
-
-  findAllByUser(user_uuid: string) {
-    return this.reservePlaceRepo.find({where: {user: user_uuid}, order: {createdAt: "DESC"}});
+    return this.reservePlaceRepo.find({ place: existPlace.uuid, date: date });
   }
 
   async updateStatus(uuid: string, reserveStatus: ReservationStatus) {
     const existReserve = await this.findOne(uuid);
 
     if (!existReserve) {
-      throw new BadRequestException(Message.NOT_EXISTING_RESERVATION)
+      throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
     }
 
-    this.reservePlaceRepo.update({uuid: uuid}, {
+    this.reservePlaceRepo.update({ uuid: uuid }, {
       reserveStatus: reserveStatus
-    })
+    });
 
-    const existUser = await this.userService.findOne({uuid: existReserve.user});
+    const existUser = await this.userService.findOne({ uuid: existReserve.user });
 
     return {
-      'userType': existUser.userType,
-      'email': existUser.email,
-      'title': existReserve.title
-    }
+      "userType": existUser.userType,
+      "email": existUser.email,
+      "title": existReserve.title
+    };
   }
 
   remove(uuid: string) {
