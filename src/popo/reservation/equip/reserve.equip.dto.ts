@@ -1,6 +1,7 @@
 export class CreateReserveEquipDto {
-  readonly equip: string; // uuid
-  readonly user: string; // uuid
+  readonly equips: string[]; // uuids of equips
+  readonly user: string; // id of user
+  readonly owner: string; // info of equip-owner
   readonly phone: string;
   readonly title: string;
   readonly description: string;

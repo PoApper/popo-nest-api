@@ -51,6 +51,10 @@ export class EquipService {
     return this.equipRepo.find(findOptions);
   }
 
+  findByIds(ids: any[], findOptions?: object) {
+    return this.equipRepo.findByIds(ids, findOptions);
+  }
+
   findOne(findOptions: object, maybeOptions?: object) {
     return this.equipRepo.findOne(findOptions, maybeOptions);
   }

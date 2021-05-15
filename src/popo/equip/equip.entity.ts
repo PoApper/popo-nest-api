@@ -12,7 +12,7 @@ export class Equip extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
-  @PrimaryColumn({nullable: false})
+  @Column({nullable: false})
   name: string;
 
   @Column()

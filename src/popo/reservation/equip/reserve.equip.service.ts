@@ -25,53 +25,20 @@ export class ReserveEquipService {
   }
 
   async save(dto: CreateReserveEquipDto) {
-    const existEquip = await this.equipService.findOne({uuid: dto.equip});
-    if (!existEquip) {
+    const existEquips = await this.equipService.findByIds(dto.equips);
+    if (!existEquips) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
 
-    const existUser = await this.userService.findOne({uuid: dto.user});
+    const existUser = await this.userService.findOne({id: dto.user});
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     }
 
     return this.reserveEquipRepo.save({
-      equip: dto.equip,
-      user: dto.user,
-      phone: dto.phone,
-      title: dto.title,
-      description: dto.description,
-      date: dto.date,
-      startTime: dto.startTime,
-      endTime: dto.endTime,
-      reserveStatus: ReservationStatus.in_process,
-    });
-  }
-
-  async saveWithNameAndId(dto: CreateReserveEquipDto) {
-    const existEquip = await this.equipService.findOneByName(dto.equip);
-    if (!existEquip) {
-      throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
-    }
-
-    const existUser = await this.userService.findOneById(dto.user);
-    if (!existUser) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
-    }
-
-    const bookedReservations = await this.findAllByEquipNameAndDate(existEquip.name, dto.date);
-
-    for (const reservation of bookedReservations) {
-      if (dto.endTime <= reservation.startTime || reservation.endTime <= dto.startTime) {
-        continue;
-      } else {
-        throw new BadRequestException(Message.OVERLAP_RESERVATION);
-      }
-    }
-
-    return this.reserveEquipRepo.save({
-      equip: existEquip.uuid,
+      equips: dto.equips,
       user: existUser.uuid,
+      owner: dto.owner,
       phone: dto.phone,
       title: dto.title,
       description: dto.description,
@@ -82,64 +49,36 @@ export class ReserveEquipService {
     });
   }
 
-  findAll() {
-    return this.reserveEquipRepo.find({order: {createdAt: "DESC"}});
+  find(findOptions?: object) {
+    return this.reserveEquipRepo.find(findOptions);
   }
 
-  findOne(uuid: string) {
-    return this.reserveEquipRepo.findOne(uuid);
+  findOne(uuid: string, findOptions?: any) {
+    return this.reserveEquipRepo.findOne({uuid: uuid}, findOptions);
   }
 
-  findAllByEquip(equip_uuid: string) {
-    return this.reserveEquipRepo.find({where: {equip: equip_uuid}, order: {createdAt: "DESC"}});
-  }
-
-  async findAllByEquipName(equipName: string) {
-    const existEquip = await this.equipService.findOneByName(equipName);
-    if (!existEquip) {
-      throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
-    }
-    return this.reserveEquipRepo.find({equip: existEquip.uuid});
-  }
-
-  async findAllByEquipNameAndDate(equipName: string, date: number) {
-    const existEquip = await this.equipService.findOneByName(equipName);
-    if (!existEquip) {
-      throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
-    }
-    return this.reserveEquipRepo.find({equip: existEquip.uuid, date: date});
-  }
-
-
-  findAllByStatus(reserve_status: ReservationStatus) {
-    return this.reserveEquipRepo.find({reserveStatus: reserve_status});
-  }
-
-  findAllByDate(date: number) {
-    return this.reserveEquipRepo.find({date: date});
+  remove(uuid: string) {
+    return this.reserveEquipRepo.delete(uuid);
   }
 
   async updateStatus(uuid: string, reserveStatus: ReservationStatus) {
     const existReserve = await this.findOne(uuid);
 
     if (!existReserve) {
-      throw new BadRequestException(Message.NOT_EXISTING_RESERVATION)
+      throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
     }
 
-    this.reserveEquipRepo.update(uuid, {
+    this.reserveEquipRepo.update({ uuid: uuid }, {
       reserveStatus: reserveStatus
-    })
+    });
 
-    const existUser = await this.userService.findOne({uuid: existReserve.user});
+    const existUser = await this.userService.findOne({ uuid: existReserve.user });
 
     return {
-      'userType': existUser.userType,
-      'email': existUser.email,
-      'title': existReserve.title
-    }
+      "userType": existUser.userType,
+      "email": existUser.email,
+      "title": existReserve.title
+    };
   }
 
-  remove(uuid: string) {
-    return this.reserveEquipRepo.delete(uuid);
-  }
 }

@@ -4,6 +4,10 @@ import * as crypto from "crypto";
 import {UserService} from "../popo/user/user.service";
 import {UserStatus} from "../popo/user/user.meta";
 
+/**
+ * retrieving a user and verifying the password.
+ */
+
 @Injectable()
 export class AuthService {
   constructor(

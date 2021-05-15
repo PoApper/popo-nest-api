@@ -6,6 +6,7 @@ import {PopoModule} from "./popo/popo.module";
 import {AuthModule} from "./auth/auth.module";
 import {ConfigModule} from "@nestjs/config";
 import {StatisticsModule} from "./statistics/statistics.module";
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import {StatisticsModule} from "./statistics/statistics.module";
     ConfigModule.forRoot(),
     PopoModule,
     StatisticsModule,
-    AuthModule],
+    AuthModule,
+    AdminModule],
   controllers: [AppController],
   providers: [AppService],
 })

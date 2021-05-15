@@ -6,11 +6,14 @@ export class ReserveEquip extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
-  @Column({nullable: false})
-  equip: string; // 장비의 uuid
+  @Column('simple-array', {nullable: false})
+  equips: string[]; // 장비의 uuid
 
   @Column({nullable: false})
   user: string; // 예약한 유저의 uuid
+
+  @Column({nullable: false})
+  owner: string; // 장비의 owner
 
   @Column({nullable: false})
   phone: string; // 010-xxxx-xxxx
