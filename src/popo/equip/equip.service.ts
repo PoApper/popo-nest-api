@@ -5,7 +5,7 @@ import {UserService} from "../user/user.service";
 import {Equip} from "./equip.entity";
 import {CreateEquipDto} from './equip.dto';
 import {UserType} from "../user/user.meta";
-import fs from "fs";
+import * as fs from 'fs';
 import {EquipOwner} from "./equip.meta";
 
 const Message = {
@@ -91,8 +91,11 @@ export class EquipService {
     }
 
     // delete previous image
-    if (imageName && existEquip.imageName) {
-      fs.unlinkSync('./uploads/equip/' + existEquip.imageName);
+    if (imageName) {
+      console.log(imageName);
+      if(fs.existsSync(`./uploads/equip/${existEquip.imageName}`)) {
+        fs.unlinkSync(`./uploads/equip/${existEquip.imageName}`);
+      }
     }
 
     return this.equipRepo.update({uuid: uuid}, {

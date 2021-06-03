@@ -1,12 +1,12 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
-import {InjectRepository} from "@nestjs/typeorm";
-import {Repository} from "typeorm";
-import * as fs from 'fs';
-import {Place} from "./place.entity";
-import {CreatePlaceDto} from "./place.dto";
-import {UserService} from "../user/user.service";
-import {UserType} from "../user/user.meta";
-import {PlaceRegion} from "./place.meta";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import * as fs from "fs";
+import { Place } from "./place.entity";
+import { CreatePlaceDto } from "./place.dto";
+import { UserService } from "../user/user.service";
+import { UserType } from "../user/user.meta";
+import { PlaceRegion } from "./place.meta";
 
 const Message = {
   NOT_EXISTING_REGION: "There's no such region.",
@@ -14,19 +14,19 @@ const Message = {
   NOT_EXISTING_PLACE: "There's no such place.",
   INVALID_OWNER: "Only Association can have a place.",
   INVALID_STAFF: "Only Staff and ADMIN can be a manager."
-}
+};
 
 @Injectable()
 export class PlaceService {
   constructor(
     @InjectRepository(Place)
     private readonly placeRepo: Repository<Place>,
-    private readonly userService: UserService,
+    private readonly userService: UserService
   ) {
   }
 
   async save(dto: CreatePlaceDto, fileName: string) {
-    const existOwner = await this.userService.findOne({uuid: dto.placeOwner});
+    const existOwner = await this.userService.findOne({ uuid: dto.placeOwner });
     // Owner가 학생단체여야 함.
     if (!existOwner) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
@@ -37,7 +37,7 @@ export class PlaceService {
 
     let existStaff;
     if (dto.placeStaffUUID) {
-      existStaff = await this.userService.findOne({uuid: dto.placeStaffUUID});
+      existStaff = await this.userService.findOne({ uuid: dto.placeStaffUUID });
       if (!existStaff) {
         throw new BadRequestException(Message.NOT_EXISTING_USER);
       }
@@ -53,12 +53,12 @@ export class PlaceService {
       region: dto.region,
       placeOwner: dto.placeOwner,
       placeStaff: existStaff,
-      imageName: fileName,
-    })
+      imageName: fileName
+    });
   }
 
   async find() {
-    return this.placeRepo.find({relations: ["placeStaff"], order: {updateAt: "DESC"}});
+    return this.placeRepo.find({ relations: ["placeStaff"], order: { updateAt: "DESC" } });
   }
 
   count(findOptions: object) {
@@ -66,13 +66,13 @@ export class PlaceService {
   }
 
   async findOne(uuid: string, findOptions?: any) {
-    const existPlace = await this.placeRepo.findOne({uuid: uuid}, findOptions);
+    const existPlace = await this.placeRepo.findOne({ uuid: uuid }, findOptions);
 
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    const existOwner = await this.userService.findOne({uuid: existPlace.placeOwner});
+    const existOwner = await this.userService.findOne({ uuid: existPlace.placeOwner });
 
     if (!existOwner) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
@@ -81,13 +81,13 @@ export class PlaceService {
   }
 
   async findOneByName(name: string) {
-    const existPlace = await this.placeRepo.findOne({name: name});
+    const existPlace = await this.placeRepo.findOne({ name: name });
 
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    const existOwner = await this.userService.findOne({uuid: existPlace.placeOwner});
+    const existOwner = await this.userService.findOne({ uuid: existPlace.placeOwner });
 
     if (!existOwner) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
@@ -98,26 +98,26 @@ export class PlaceService {
 
   async findAllByRegion(region: PlaceRegion) {
     return this.placeRepo.find({
-      where: {region: region},
-      order: {updateAt: "DESC"}
+      where: { region: region },
+      order: { updateAt: "DESC" }
     });
   }
 
   async findAllByOwner(owner_uuid: string) {
-    const existUser = await this.userService.findOne({uuid: owner_uuid});
+    const existUser = await this.userService.findOne({ uuid: owner_uuid });
 
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     }
 
     return this.placeRepo.find({
-      where: {placeOwner: owner_uuid},
-      order: {updateAt: "DESC"}
+      where: { placeOwner: owner_uuid },
+      order: { updateAt: "DESC" }
     });
   }
 
   async update(uuid: string, dto: CreatePlaceDto, imageName: string) {
-    const existPlace = await this.findOne(uuid, {relations: ['placeStaff']});
+    const existPlace = await this.findOne(uuid, { relations: ["placeStaff"] });
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
@@ -129,20 +129,20 @@ export class PlaceService {
       name: dto.name,
       location: dto.location,
       description: dto.description,
-      region: dto.region,
+      region: dto.region
     };
 
     if (dto.placeOwner) {
-      const existOwner = await this.userService.findOne({uuid: dto.placeOwner});
+      const existOwner = await this.userService.findOne({ uuid: dto.placeOwner });
       if (!existOwner) {
         throw new BadRequestException(Message.NOT_EXISTING_USER);
       }
-      partialEntity['placeOwner'] = dto.placeOwner;
+      partialEntity["placeOwner"] = dto.placeOwner;
     }
-    console.log("3")
+    console.log("3");
 
     if (dto.placeStaffUUID) {
-      const existStaff = await this.userService.findOne({uuid: dto.placeStaffUUID});
+      const existStaff = await this.userService.findOne({ uuid: dto.placeStaffUUID });
 
       if (!existStaff) {
         throw new BadRequestException(Message.NOT_EXISTING_USER);
@@ -150,18 +150,20 @@ export class PlaceService {
       if (existStaff.userType != UserType.staff && existStaff.userType != UserType.admin) {
         throw new BadRequestException(Message.INVALID_STAFF);
       }
-      partialEntity['placeStaff'] = existStaff;
+      partialEntity["placeStaff"] = existStaff;
     } else {
-      partialEntity['placeStaff'] = null;
+      partialEntity["placeStaff"] = null;
     }
 
     // delete previous image
     if (imageName) {
-      fs.unlinkSync('./uploads/place/' + existPlace.imageName);
-      partialEntity['imageName'] = imageName;
+      if (fs.existsSync(`./uploads/place/${existPlace.imageName}`)) {
+        fs.unlinkSync(`./uploads/place/${existPlace.imageName}`);
+      }
+      partialEntity["imageName"] = imageName;
     }
 
-    return this.placeRepo.update({uuid: uuid}, partialEntity);
+    return this.placeRepo.update({ uuid: uuid }, partialEntity);
   }
 
   async remove(uuid: string) {

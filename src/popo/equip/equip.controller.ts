@@ -74,7 +74,7 @@ export class EquipController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: "./uploads/place",
+        destination: "./uploads/equip",
         filename: editFileName
       }), fileFilter: imageFileFilter
     })
