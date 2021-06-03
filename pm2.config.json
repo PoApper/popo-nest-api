@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "popo-api",
+      "script": "npm",
+      "args": "run start:prod"
+    }
+  ]
+}
