@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Req, UseGuards } from "@nestjs/common";
 import { ReservePlaceService } from "./reserve.place.service";
 import { CreateReservePlaceDto } from "./reserve.place.dto";
 import { UserService } from "../../user/user.service";
@@ -41,8 +41,24 @@ export class ReservePlaceController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
-  get() {
-    return this.reservePlaceService.find({ order: { createdAt: "DESC" } });
+  get(@Query("page") page: number) {
+    if (!page) {
+      return this.reservePlaceService.find({ order: { createdAt: "DESC" } });
+    }
+
+    const pageSize = 10;
+    return this.reservePlaceService.find({
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      order: { createdAt: "DESC" }
+    });
+  }
+
+  @Get("count")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
+  count() {
+    return this.reservePlaceService.count();
   }
 
   @Get("place/:place_uuid")

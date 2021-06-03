@@ -76,7 +76,7 @@ export class ReservePlaceService {
     return this.reservePlaceRepo.find(findOptions);
   }
 
-  count(findOptions: object) {
+  count(findOptions?: object) {
     return this.reservePlaceRepo.count(findOptions);
   }
 
