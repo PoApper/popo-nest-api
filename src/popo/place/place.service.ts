@@ -173,6 +173,6 @@ export class PlaceService {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    return this.placeRepo.delete(uuid);
+    return this.placeRepo.delete({uuid: uuid});
   }
 }
