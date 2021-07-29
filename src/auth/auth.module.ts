@@ -9,12 +9,14 @@ import {UserModule} from "../popo/user/user.module";
 import {AuthController} from './auth.controller';
 import {MailModule} from "../mail/mail.module";
 import {ReservePlaceModule} from "../popo/reservation/place/reserve.place.module";
+import { ReserveEquipModule } from "../popo/reservation/equip/reserve.equip.module";
 
 @Module({
   imports: [
     UserModule,
     MailModule,
     ReservePlaceModule,
+    ReserveEquipModule,
     PassportModule,
     JwtModule.register({
       secret: jwtConstants.secret,

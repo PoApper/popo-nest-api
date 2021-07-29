@@ -20,6 +20,7 @@ import {UserService} from "../popo/user/user.service";
 import {CreateUserDto} from "../popo/user/user.dto";
 import {MailService} from "../mail/mail.service";
 import {ReservePlaceService} from "../popo/reservation/place/reserve.place.service";
+import { ReserveEquipService } from "../popo/reservation/equip/reserve.equip.service";
 
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
@@ -32,12 +33,13 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
-    private readonly mailService: MailService,
     private readonly reservePlaceService: ReservePlaceService,
+    private readonly reserveEquipService: ReserveEquipService,
+    private readonly mailService: MailService,
   ) {
   }
 
-  @Get(['verifyToken', 'verifyToken/admin'])
+  @Get(['verifyToken', 'verifyToken/admin', 'me'])
   @UseGuards(JwtAuthGuard)
   async verifyToken(@Req() req: Request) {
     const path = req.path;
@@ -51,8 +53,21 @@ export class AuthController {
     return user;
   }
 
-  // HttpOnly: 자바스크립트의 document.cookie를 이용해서 쿠키에 접속하는 것을 막는 옵션
-  // 즉, 쿠키를 훔쳐가는 행위를 막기 위한 방법이다.
+  @Get('me/reservation')
+  @UseGuards(JwtAuthGuard)
+  async getOwnReservations(@Req() req) {
+    const user = req.user;
+    const existUser = await this.userService.findOne({ id: user.id });
+
+    const existPlaceReserve =  await this.reservePlaceService.find({ where: { user: existUser.uuid }, order: { createdAt: "DESC" } });
+    const existEquipReserve =  await this.reserveEquipService.find({ where: { user: existUser.uuid }, order: { createdAt: "DESC" } });
+
+    return {
+      "place_reservation": existPlaceReserve,
+      "equip_reservation": existEquipReserve
+    }
+  }
+
   @UseGuards(LocalAuthGuard)
   @Post(['login', 'login/admin'])
   async logIn(@Req() req: Request, @Res() res: Response) {
@@ -86,8 +101,8 @@ export class AuthController {
     return res.sendStatus(200);
   }
 
-  @Post('signIn')
-  async create(@Body() createUserDto: CreateUserDto) {
+  @Post(['signIn', 'register'])
+  async register(@Body() createUserDto: CreateUserDto) {
     const saveUser = await this.userService.save(createUserDto);
     console.log("유저 생성 성공!", saveUser.name, saveUser.email);
     try {
