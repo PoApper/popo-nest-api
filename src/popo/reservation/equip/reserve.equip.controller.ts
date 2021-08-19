@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { ReserveEquipService } from "./reserve.equip.service";
 import { CreateReserveEquipDto } from "./reserve.equip.dto";
 import { UserService } from "../../user/user.service";
@@ -8,7 +8,6 @@ import { UserType } from "../../user/user.meta";
 import { JwtAuthGuard } from "../../../auth/guards/jwt-auth.guard";
 import { Roles } from "../../../auth/authroization/roles.decorator";
 import { RolesGuard } from "../../../auth/authroization/roles.guard";
-import { Request } from "express";
 
 @Controller("reservation-equip")
 export class ReserveEquipController {
@@ -51,17 +50,19 @@ export class ReserveEquipController {
    * Additional APIs
    */
 
-
   @Patch(":uuid/status/:status")
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async patchStatus(@Param("uuid") uuid: string, @Param("status") status: string) {
-    let response = await this.reserveEquipService.updateStatus(uuid, ReservationStatus[status]);
+  async patchStatus(@Param("uuid") uuid: string, @Param("status") status: string,
+                    @Query('sendEmail') sendEmail?: boolean) {
+    const response = await this.reserveEquipService.updateStatus(uuid, ReservationStatus[status]);
 
-    // Send e-mail to client.
-    const skipList = [UserType.admin, UserType.association, UserType.club];
-    if (!skipList.includes(response.userType)) {
-      await this.mailService.sendReserveStatusMail(response.email, response.title, ReservationStatus[status]);
+    if (sendEmail) {
+      // Send e-mail to client.
+      const skipList = [UserType.admin, UserType.association, UserType.club];
+      if (!skipList.includes(response.userType)) {
+        await this.mailService.sendReserveStatusMail(response.email, response.title, ReservationStatus[status]);
+      }
     }
   }
 

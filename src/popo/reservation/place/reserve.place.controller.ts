@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import { ReservePlaceService } from "./reserve.place.service";
 import { CreateReservePlaceDto } from "./reserve.place.dto";
 import { UserService } from "../../user/user.service";
@@ -23,8 +23,7 @@ export class ReservePlaceController {
   @UseGuards(JwtAuthGuard)
   async create(@Body() dto: CreateReservePlaceDto) {
     // admin 용 create
-    const saveReserve = this.reservePlaceService.save(dto);
-    return saveReserve;
+    return this.reservePlaceService.save(dto);
   }
 
   @Post()
@@ -99,13 +98,18 @@ export class ReservePlaceController {
   @Patch(":uuid/status/:status")
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async patchStatus(@Param("uuid") uuid: string, @Param("status") status: string) {
-    let response = await this.reservePlaceService.updateStatus(uuid, ReservationStatus[status]);
+  async patchStatus(@Param("uuid") uuid: string, @Param("status") status: string,
+                    @Query('sendEmail') sendEmail?: string) {
+    const response = await this.reservePlaceService.updateStatus(uuid, ReservationStatus[status]);
 
-    // Send e-mail to client.
-    const skipList = [UserType.admin, UserType.association, UserType.club];
-    if (!skipList.includes(response.userType)) {
-      await this.mailService.sendReserveStatusMail(response.email, response.title, ReservationStatus[status]);
+    console.log("chechckc", sendEmail, sendEmail === "true", sendEmail === "false");
+
+    if (sendEmail === "true") {
+      // Send e-mail to client.
+      const skipList = [UserType.admin, UserType.association, UserType.club];
+      if (!skipList.includes(response.userType)) {
+        await this.mailService.sendReserveStatusMail(response.email, response.title, ReservationStatus[status]);
+      }
     }
   }
 
