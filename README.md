@@ -4,6 +4,12 @@
 <br />
 
 <p align="center">
+<img src="https://img.shields.io/badge/node-%3E%3D14.16-brightgreen">
+<img src="https://img.shields.io/badge/npm-%3E%3D7.20-brightgreen">
+</p>
+
+
+<p align="center">
   <a href="http://popo.postech.ac.kr">
     <img src="https://raw.githubusercontent.com/PoApper/POPO-nest-api/master/assets/popo.svg" alt="Logo" height="150">
   </a>
