@@ -4,8 +4,9 @@
 <br />
 
 <p align="center">
-<img src="https://img.shields.io/badge/node-%3E%3D14.16-brightgreen">
-<img src="https://img.shields.io/badge/npm-%3E%3D7.20-brightgreen">
+<img src="https://img.shields.io/badge/node-%3E%3D14.16-brightgreen" />
+<img src="https://img.shields.io/badge/npm-%3E%3D7.20-brightgreen" />
+<img src="https://img.shields.io/badge/nestjs-8.0.6-df234d?logo=nestjs"/>
 </p>
 
 
