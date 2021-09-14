@@ -1,14 +1,13 @@
-import {Controller, Get, Query} from "@nestjs/common";
-import {Between} from "typeorm";
+import { Controller, Get, Query } from '@nestjs/common';
+import { Between } from 'typeorm';
 import * as moment from 'moment';
-import {ReservePlaceService} from "../popo/reservation/place/reserve.place.service";
+import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Statistics')
 @Controller('statistics/reservation')
 export class ReservationStatisticsController {
-  constructor(
-    private readonly reservePlaceService: ReservePlaceService
-  ) {
-  }
+  constructor(private readonly reservePlaceService: ReservePlaceService) {}
 
   // Place Reservation에 대한 통계 기능만 구현함.
   /**
@@ -21,14 +20,13 @@ export class ReservationStatisticsController {
     const data = {};
     while (query_idx.isBefore(query_end)) {
       data[query_idx.format('YYYY-MM')] = await this.reservePlaceService.count({
-        createdAt: Between(query_idx.format(), query_idx.add(1, 'M').format())
-      })
+        createdAt: Between(query_idx.format(), query_idx.add(1, 'M').format()),
+      });
     }
 
     return {
-      "label": "place",
-      "data": data
-    }
+      label: 'place',
+      data: data,
+    };
   }
-
 }

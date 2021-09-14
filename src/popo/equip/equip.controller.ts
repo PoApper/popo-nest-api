@@ -9,23 +9,24 @@ import {
   Res,
   UploadedFile,
   UseGuards,
-  UseInterceptors
+  UseInterceptors,
 } from '@nestjs/common';
-import {EquipService} from "./equip.service";
-import {diskStorage} from 'multer';
-import {Roles} from "../../auth/authroization/roles.decorator";
-import {UserType} from "../user/user.meta";
-import {JwtAuthGuard} from "../../auth/guards/jwt-auth.guard";
-import {RolesGuard} from "../../auth/authroization/roles.guard";
-import {FileInterceptor} from "@nestjs/platform-express";
-import {editFileName, imageFileFilter} from "../../utils/fileUpload";
-import {EquipOwner} from "./equip.meta";
-import {CreateEquipDto} from "./equip.dto";
+import { EquipService } from './equip.service';
+import { diskStorage } from 'multer';
+import { Roles } from '../../auth/authroization/roles.decorator';
+import { UserType } from '../user/user.meta';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/authroization/roles.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { editFileName, imageFileFilter } from '../../utils/fileUpload';
+import { EquipOwner } from './equip.meta';
+import { CreateEquipDto } from './equip.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Equip')
 @Controller('equip')
 export class EquipController {
-  constructor(private readonly equipService: EquipService) {
-  }
+  constructor(private readonly equipService: EquipService) {}
 
   @Post()
   @Roles(UserType.admin, UserType.association)
@@ -33,24 +34,25 @@ export class EquipController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: "./uploads/equip",
-        filename: editFileName
-      }), fileFilter: imageFileFilter
-    })
+        destination: './uploads/equip',
+        filename: editFileName,
+      }),
+      fileFilter: imageFileFilter,
+    }),
   )
   async create(@Body() dto: CreateEquipDto, @UploadedFile() file) {
-    const fileName = (file) ? file.filename : null;
+    const fileName = file ? file.filename : null;
     return this.equipService.save(dto, fileName);
   }
 
   @Get()
   get() {
-    return this.equipService.find({order: {updatedAt: "DESC"}});
+    return this.equipService.find({ order: { updatedAt: 'DESC' } });
   }
 
   @Get('/:uuid')
   async getOne(@Param('uuid') uuid: string) {
-    return this.equipService.findOne({uuid: uuid});
+    return this.equipService.findOne({ uuid: uuid });
   }
 
   @Get('/name/:name')
@@ -60,7 +62,7 @@ export class EquipController {
 
   @Get('/image/:imageName')
   getPlaceImage(@Param('imageName') imageName: string, @Res() res) {
-    res.sendFile(imageName, {root: './uploads/equip'});
+    res.sendFile(imageName, { root: './uploads/equip' });
   }
 
   @Get('/owner/:owner')
@@ -74,13 +76,18 @@ export class EquipController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: "./uploads/equip",
-        filename: editFileName
-      }), fileFilter: imageFileFilter
-    })
+        destination: './uploads/equip',
+        filename: editFileName,
+      }),
+      fileFilter: imageFileFilter,
+    }),
   )
-  async put(@Param('uuid') uuid: string, @Body() dto: CreateEquipDto, @UploadedFile() file) {
-    const fileName = (file) ? file.filename : null;
+  async put(
+    @Param('uuid') uuid: string,
+    @Body() dto: CreateEquipDto,
+    @UploadedFile() file,
+  ) {
+    const fileName = file ? file.filename : null;
     return this.equipService.update(uuid, dto, fileName);
   }
 

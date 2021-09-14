@@ -9,25 +9,27 @@ import {
   Req,
   Res,
   UnauthorizedException,
-  UseGuards
+  UseGuards,
 } from '@nestjs/common';
-import {AuthService} from "./auth.service";
-import {LocalAuthGuard} from "./guards/local-auth.guard";
-import {Request, Response} from "express";
-import {JwtAuthGuard} from './guards/jwt-auth.guard';
-import {UserStatus, UserType} from "../popo/user/user.meta";
-import {UserService} from "../popo/user/user.service";
-import {CreateUserDto} from "../popo/user/user.dto";
-import {MailService} from "../mail/mail.service";
-import {ReservePlaceService} from "../popo/reservation/place/reserve.place.service";
-import { ReserveEquipService } from "../popo/reservation/equip/reserve.equip.service";
+import { AuthService } from './auth.service';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { Request, Response } from 'express';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UserStatus, UserType } from '../popo/user/user.meta';
+import { UserService } from '../popo/user/user.service';
+import { CreateUserDto } from '../popo/user/user.dto';
+import { MailService } from '../mail/mail.service';
+import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
+import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
+import { ApiTags } from '@nestjs/swagger';
 
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
 const Message = {
-  FAIL_VERIFICATION_EMAIL_SEND: "Fail to send verification email.",
-}
+  FAIL_VERIFICATION_EMAIL_SEND: 'Fail to send verification email.',
+};
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -36,8 +38,7 @@ export class AuthController {
     private readonly reservePlaceService: ReservePlaceService,
     private readonly reserveEquipService: ReserveEquipService,
     private readonly mailService: MailService,
-  ) {
-  }
+  ) {}
 
   @Get(['verifyToken', 'verifyToken/admin', 'me'])
   @UseGuards(JwtAuthGuard)
@@ -49,7 +50,7 @@ export class AuthController {
         throw new UnauthorizedException();
       }
     }
-    this.userService.updateLoginById(user.id)
+    this.userService.updateLoginById(user.id);
     return user;
   }
 
@@ -59,13 +60,19 @@ export class AuthController {
     const user = req.user;
     const existUser = await this.userService.findOne({ id: user.id });
 
-    const existPlaceReserve =  await this.reservePlaceService.find({ where: { user: existUser.uuid }, order: { createdAt: "DESC" } });
-    const existEquipReserve =  await this.reserveEquipService.find({ where: { user: existUser.uuid }, order: { createdAt: "DESC" } });
+    const existPlaceReserve = await this.reservePlaceService.find({
+      where: { user: existUser.uuid },
+      order: { createdAt: 'DESC' },
+    });
+    const existEquipReserve = await this.reserveEquipService.find({
+      where: { user: existUser.uuid },
+      order: { createdAt: 'DESC' },
+    });
 
     return {
-      "place_reservation": existPlaceReserve,
-      "equip_reservation": existEquipReserve
-    }
+      place_reservation: existPlaceReserve,
+      equip_reservation: existEquipReserve,
+    };
   }
 
   @UseGuards(LocalAuthGuard)
@@ -76,47 +83,47 @@ export class AuthController {
 
     if (path.includes('admin')) {
       if (!requiredRoles.some((role) => user.userType?.includes(role))) {
-        throw new UnauthorizedException("Not authorized account.");
+        throw new UnauthorizedException('Not authorized account.');
       }
     }
     const token = await this.authService.generateJwtToken(user);
 
-    res.setHeader(
-      'Set-Cookie', `Authentication=${token}; HttpOnly; Path=/;`
-    );
+    res.setHeader('Set-Cookie', `Authentication=${token}; HttpOnly; Path=/;`);
 
     // update Login History
-    this.userService.updateLoginById(user.id)
+    this.userService.updateLoginById(user.id);
 
     return res.send(user);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("logout")
+  @Get('logout')
   async logOut(@Req() req: Request, @Res() res: Response) {
     const user: any = req.user;
-    this.userService.updateLoginById(user.id)
-    res.setHeader('Set-Cookie',
-      `Authentication=; HttpOnly; Path=/; Max-Age=0`);
+    this.userService.updateLoginById(user.id);
+    res.setHeader('Set-Cookie', `Authentication=; HttpOnly; Path=/; Max-Age=0`);
     return res.sendStatus(200);
   }
 
   @Post(['signIn', 'register'])
   async register(@Body() createUserDto: CreateUserDto) {
     const saveUser = await this.userService.save(createUserDto);
-    console.log("유저 생성 성공!", saveUser.name, saveUser.email);
+    console.log('유저 생성 성공!', saveUser.name, saveUser.email);
     try {
-      await this.mailService.sendVerificationMail(createUserDto.email, saveUser.uuid);
+      await this.mailService.sendVerificationMail(
+        createUserDto.email,
+        saveUser.uuid,
+      );
     } catch (error) {
-      console.log("!! 유저 생성 실패 !!")
+      console.log('!! 유저 생성 실패 !!');
       await this.userService.remove(saveUser.uuid);
-      console.log("잘못 생성된 유저 정보를 DB에서 삭제합니다.");
+      console.log('잘못 생성된 유저 정보를 DB에서 삭제합니다.');
       throw new BadRequestException(Message.FAIL_VERIFICATION_EMAIL_SEND);
     }
     return saveUser;
   }
 
-  @Put("activate/:uuid")
+  @Put('activate/:uuid')
   activateUser(@Param('uuid') uuid: string) {
     return this.userService.updateUserStatus(uuid, UserStatus.activated);
   }
@@ -125,7 +132,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async updatePW(@Req() req: Request, @Body() body) {
     const user: any = req.user;
-    const pw = body["password"];
+    const pw = body['password'];
     await this.userService.updatePWByID(user.id, pw);
   }
 
@@ -133,8 +140,12 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getMyInfo(@Req() req: Request) {
     const user: any = req.user;
-    const {password, cryptoSalt, ...UserInfo} = await this.userService.findOneById(user.id);
+    const {
+      password,
+      cryptoSalt,
+      ...UserInfo
+    } = await this.userService.findOneById(user.id);
 
-    return UserInfo
+    return UserInfo;
   }
 }

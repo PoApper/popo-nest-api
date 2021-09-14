@@ -1,22 +1,33 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
-import { ReserveEquipService } from "./reserve.equip.service";
-import { CreateReserveEquipDto } from "./reserve.equip.dto";
-import { UserService } from "../../user/user.service";
-import { MailService } from "../../../mail/mail.service";
-import { ReservationStatus } from "../reservation.meta";
-import { UserType } from "../../user/user.meta";
-import { JwtAuthGuard } from "../../../auth/guards/jwt-auth.guard";
-import { Roles } from "../../../auth/authroization/roles.decorator";
-import { RolesGuard } from "../../../auth/authroization/roles.guard";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ReserveEquipService } from './reserve.equip.service';
+import { CreateReserveEquipDto } from './reserve.equip.dto';
+import { UserService } from '../../user/user.service';
+import { MailService } from '../../../mail/mail.service';
+import { ReservationStatus } from '../reservation.meta';
+import { UserType } from '../../user/user.meta';
+import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
+import { Roles } from '../../../auth/authroization/roles.decorator';
+import { RolesGuard } from '../../../auth/authroization/roles.guard';
+import { ApiTags } from '@nestjs/swagger';
 
-@Controller("reservation-equip")
+@ApiTags('Reservation Equip')
+@Controller('reservation-equip')
 export class ReserveEquipController {
   constructor(
     private readonly reserveEquipService: ReserveEquipService,
     private readonly userService: UserService,
-    private readonly mailService: MailService
-  ) {
-  }
+    private readonly mailService: MailService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -25,24 +36,30 @@ export class ReserveEquipController {
   }
 
   @Get()
-  get(@Query("owner") owner: string, @Query("status") status: string) {
+  get(@Query('owner') owner: string, @Query('status') status: string) {
     if (status) {
-      return this.reserveEquipService.find({ where: { reserveStatus: status }, order: { createdAt: "DESC" } });
+      return this.reserveEquipService.find({
+        where: { reserveStatus: status },
+        order: { createdAt: 'DESC' },
+      });
     } else if (owner) {
-      return this.reserveEquipService.find({ where: { owner: owner }, order: { createdAt: "DESC" } });
+      return this.reserveEquipService.find({
+        where: { owner: owner },
+        order: { createdAt: 'DESC' },
+      });
     } else {
-      return this.reserveEquipService.find({ order: { createdAt: "DESC" } });
+      return this.reserveEquipService.find({ order: { createdAt: 'DESC' } });
     }
   }
 
-  @Get(":uuid")
-  getOne(@Param("uuid") uuid) {
+  @Get(':uuid')
+  getOne(@Param('uuid') uuid) {
     return this.reserveEquipService.findOne(uuid);
   }
 
-  @Delete(":uuid")
+  @Delete(':uuid')
   @UseGuards(JwtAuthGuard)
-  delete(@Param("uuid") uuid: string) {
+  delete(@Param('uuid') uuid: string) {
     return this.reserveEquipService.remove(uuid);
   }
 
@@ -50,20 +67,29 @@ export class ReserveEquipController {
    * Additional APIs
    */
 
-  @Patch(":uuid/status/:status")
+  @Patch(':uuid/status/:status')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async patchStatus(@Param("uuid") uuid: string, @Param("status") status: string,
-                    @Query('sendEmail') sendEmail?: boolean) {
-    const response = await this.reserveEquipService.updateStatus(uuid, ReservationStatus[status]);
+  async patchStatus(
+    @Param('uuid') uuid: string,
+    @Param('status') status: string,
+    @Query('sendEmail') sendEmail?: boolean,
+  ) {
+    const response = await this.reserveEquipService.updateStatus(
+      uuid,
+      ReservationStatus[status],
+    );
 
     if (sendEmail) {
       // Send e-mail to client.
       const skipList = [UserType.admin, UserType.association, UserType.club];
       if (!skipList.includes(response.userType)) {
-        await this.mailService.sendReserveStatusMail(response.email, response.title, ReservationStatus[status]);
+        await this.mailService.sendReserveStatusMail(
+          response.email,
+          response.title,
+          ReservationStatus[status],
+        );
       }
     }
   }
-
 }
