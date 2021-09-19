@@ -1,10 +1,9 @@
-import {Injectable} from '@nestjs/common';
-import {MailerService} from "@nestjs-modules/mailer";
+import { Injectable } from '@nestjs/common';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class MailService {
-  constructor(private readonly mailerService: MailerService) {
-  }
+  constructor(private readonly mailerService: MailerService) {}
 
   async sendVerificationMail(email: string, uuid: string) {
     await this.mailerService.sendMail({
@@ -21,7 +20,7 @@ export class MailService {
         <body>
           <h2>POPO 가입 인증</h2>
           <p>POPO를 통해 POSTECH 총학생회에서 제공하는 여러 서비스를 이용해보실 수 있습니다 😊</p>
-          <p>- <b>POPO, POstechian's Portal</b> 드림 -</p>
+          <p>- <b>POPO, POstechian's POrtal</b> 드림 -</p>
           <br/>
           <div style="padding: 2px; background-color: crimson; color: white; text-align: center;">
             <a href="http://popo.postech.ac.kr/activateAccount/${uuid}" style="text-decoration: inherit;">계정 활성하기</a>
