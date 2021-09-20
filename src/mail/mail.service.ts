@@ -23,7 +23,9 @@ export class MailService {
           <p>- <b>POPO, POstechian's POrtal</b> 드림 -</p>
           <br/>
           <div style="padding: 2px; background-color: crimson; color: white; text-align: center;">
-            <a href="http://popo.postech.ac.kr/activateAccount/${uuid}" style="text-decoration: inherit;">계정 활성하기</a>
+             <a href="https://popo.poapper.com/activateAccount/${uuid}" style="text-decoration: inherit;">
+              계정 활성하기
+             </a>
           </div>
           <p>😱본인이 시도한 회원가입이 아니라면, 즉시 POPO 관리팀에게 연락바랍니다.😱</p>
         </body>
