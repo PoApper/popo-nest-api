@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
@@ -69,6 +70,27 @@ export class ReserveEquipController {
       where: whereOption,
       order: { createdAt: 'DESC' },
     });
+  }
+
+  @Get(['user', 'user/:uuid'])
+  @UseGuards(JwtAuthGuard)
+  async getUserReservation(@Req() req, @Param('uuid') uuid: string) {
+    if (uuid) {
+      return await this.reserveEquipService.find({
+        where: { user: uuid },
+        order: { createdAt: 'DESC' },
+      });
+    } else {
+      // 내 예약 조회
+      const user: any = req.user;
+      const existUser = await this.userService.findOne({ id: user.id });
+
+      const reservs = await this.reserveEquipService.find({
+        where: { user: existUser.uuid },
+        order: { createdAt: 'DESC' },
+      });
+      return this.hideEquipUuid(reservs);
+    }
   }
 
   @Get('/owner/:ownerName')

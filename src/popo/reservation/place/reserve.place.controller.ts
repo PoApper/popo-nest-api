@@ -21,12 +21,14 @@ import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { Request } from 'express';
 import { ApiTags } from '@nestjs/swagger';
+import { PlaceService } from '../../place/place.service';
 
 @ApiTags('Reservation Place')
 @Controller('reservation-place')
 export class ReservePlaceController {
   constructor(
     private readonly reservePlaceService: ReservePlaceService,
+    private readonly placeService: PlaceService,
     private readonly userService: UserService,
     private readonly mailService: MailService,
   ) {}
@@ -75,6 +77,27 @@ export class ReservePlaceController {
     return this.reservePlaceService.count();
   }
 
+  @Get(['user', 'user/:uuid'])
+  @UseGuards(JwtAuthGuard)
+  async getUserReservation(@Req() req: Request, @Param('uuid') uuid: string) {
+    if (uuid) {
+      return await this.reservePlaceService.find({
+        where: { user: uuid },
+        order: { createdAt: 'DESC' },
+      });
+    } else {
+      // 내 예약 조회
+      const user: any = req.user;
+      const existUser = await this.userService.findOne({ id: user.id });
+
+      const reservs = await this.reservePlaceService.find({
+        where: { user: existUser.uuid },
+        order: { createdAt: 'DESC' },
+      });
+      return this.hidePlaceUuid(reservs);
+    }
+  }
+
   @Get('place/:place_uuid')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -98,10 +121,8 @@ export class ReservePlaceController {
     @Param('placeName') placeName: string,
     @Param('date') date: number,
   ) {
-    const existReservations = await this.reservePlaceService.findAllByPlaceNameAndDate(
-      placeName,
-      date,
-    );
+    const existReservations =
+      await this.reservePlaceService.findAllByPlaceNameAndDate(placeName, date);
     return this.hideUserUuid(existReservations);
   }
 
@@ -163,26 +184,6 @@ export class ReservePlaceController {
     return this.reservePlaceService.remove(uuid);
   }
 
-  @Get(['user', 'user/:uuid'])
-  @UseGuards(JwtAuthGuard)
-  async getUserReservation(@Req() req: Request, @Param('uuid') uuid: string) {
-    if (uuid) {
-      return await this.reservePlaceService.find({
-        where: { user: uuid },
-        order: { createdAt: 'DESC' },
-      });
-    } else {
-      // 내 예약 조회
-      const user: any = req.user;
-      const existUser = await this.userService.findOne({ id: user.id });
-
-      return await this.reservePlaceService.find({
-        where: { user: existUser.uuid },
-        order: { createdAt: 'DESC' },
-      });
-    }
-  }
-
   private async hideUserUuid(reservations) {
     const refinedReservations = [];
 
@@ -191,6 +192,19 @@ export class ReservePlaceController {
       if (user) {
         const { name } = user;
         reservation.user = name;
+        refinedReservations.push(reservation);
+      }
+    }
+    return refinedReservations;
+  }
+
+  private async hidePlaceUuid(reservations) {
+    const refinedReservations = [];
+    for (const reservation of reservations) {
+      const place = await this.placeService.findOne(reservation.place);
+      if (place) {
+        const { name } = place;
+        reservation.place = name;
         refinedReservations.push(reservation);
       }
     }
