@@ -2,32 +2,32 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
-  Entity, PrimaryColumn,
+  Entity,
   PrimaryGeneratedColumn,
-  UpdateDateColumn
-} from "typeorm";
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity()
 export class Equip extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
-  @Column({nullable: false})
+  @Column({ nullable: false })
   name: string;
 
-  @Column()
+  @Column('text', { nullable: true })
   description: string;
 
-  @Column({nullable: false})
+  @Column({ nullable: false })
   fee: number;
 
-  @Column({nullable: false})
+  @Column({ nullable: false })
   equipOwner: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   equipStaff: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   imageName: string;
 
   @CreateDateColumn()

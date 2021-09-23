@@ -6,29 +6,29 @@ import {
   PrimaryColumn,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-} from "typeorm";
+} from 'typeorm';
 
 @Entity()
 export class IntroAssociation extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
-  @PrimaryColumn({nullable: false})
+  @PrimaryColumn({ nullable: false })
   name: string;
 
-  @Column({nullable: false})
+  @Column('text', { nullable: true })
   content: string;
 
-  @Column({nullable: false})
+  @Column({ nullable: false })
   location: string; // 위치
 
-  @Column({nullable: false})
+  @Column({ nullable: false })
   representative: string; // 대표자
 
-  @Column({nullable: false})
+  @Column({ nullable: false })
   contact: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   logoName: string;
 
   // 이미지 슬라이드 구현하면 사용할 Column

@@ -27,7 +27,7 @@ export class ReserveEquip extends BaseEntity {
   @Column({ nullable: false })
   title: string;
 
-  @Column({ nullable: false })
+  @Column('text', { nullable: true })
   description: string;
 
   @Column({ nullable: false })
