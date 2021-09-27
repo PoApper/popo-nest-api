@@ -34,7 +34,8 @@ export class MailService {
     console.log(`success to mailing: ${email}`);
   }
 
-  async sendReserveCreateToStaff(email: string, title: string) {
+  // TODO: refactor date and time format
+  async sendReserveCreateToStaff(email: string, place, reservation) {
     await this.mailerService.sendMail({
       to: email,
       from: process.env.GMAIL_USER,
@@ -47,8 +48,9 @@ export class MailService {
             </style>
         </head>
         <body>
-          <h2>[POPO] 예약이 생성되었습니다</h2>
-          <p>예약 "<strong>${title}</strong>"이/가 생성 되었습니다.</p>
+          <h2>[POPO] 장소 예약이 생성되었습니다</h2>
+          <p>장소 ${place.name}에 대한 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.startTime} ~ ${reservation.endTime})이/가 생성 되었습니다.</p>
+          <p>예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
         </body>
       </html>`,
     });

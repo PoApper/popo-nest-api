@@ -10,6 +10,9 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
+
 import { ReservePlaceService } from './reserve.place.service';
 import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
@@ -19,8 +22,6 @@ import { UserType } from '../../user/user.meta';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
-import { Request } from 'express';
-import { ApiTags } from '@nestjs/swagger';
 import { PlaceService } from '../../place/place.service';
 
 @ApiTags('Reservation Place')
@@ -44,11 +45,13 @@ export class ReservePlaceController {
   @UseGuards(JwtAuthGuard)
   async createWithNameAndId(@Body() dto: CreateReservePlaceDto) {
     const saveReserve = await this.reservePlaceService.saveWithNameAndId(dto);
+    const existPlace = await this.placeService.findOne(dto.place);
 
     // Send e-mail to staff.
     this.mailService.sendReserveCreateToStaff(
-      process.env.ADMIN_EMAIL,
-      saveReserve.title,
+      existPlace.staff_email ?? process.env.ADMIN_EMAIL,
+      existPlace,
+      saveReserve,
     );
 
     return saveReserve;

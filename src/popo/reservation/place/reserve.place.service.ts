@@ -1,17 +1,17 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { ReservePlace } from "./reserve.place.entity";
-import { Repository } from "typeorm";
-import { CreateReservePlaceDto } from "./reserve.place.dto";
-import { UserService } from "../../user/user.service";
-import { PlaceService } from "../../place/place.service";
-import { ReservationStatus } from "../reservation.meta";
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ReservePlace } from './reserve.place.entity';
+import { Repository } from 'typeorm';
+import { CreateReservePlaceDto } from './reserve.place.dto';
+import { UserService } from '../../user/user.service';
+import { PlaceService } from '../../place/place.service';
+import { ReservationStatus } from '../reservation.meta';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
   NOT_EXISTING_PLACE: "There's no such place.",
   NOT_EXISTING_RESERVATION: "There's no such reservation.",
-  OVERLAP_RESERVATION: "Reservation time overlapped."
+  OVERLAP_RESERVATION: 'Reservation time overlapped.',
 };
 
 @Injectable()
@@ -20,9 +20,8 @@ export class ReservePlaceService {
     @InjectRepository(ReservePlace)
     private readonly reservePlaceRepo: Repository<ReservePlace>,
     private readonly userService: UserService,
-    private readonly placeService: PlaceService
-  ) {
-  }
+    private readonly placeService: PlaceService,
+  ) {}
 
   async save(dto: CreateReservePlaceDto) {
     const existPlace = await this.placeService.findOne(dto.place);
@@ -39,20 +38,26 @@ export class ReservePlaceService {
   }
 
   async saveWithNameAndId(dto: CreateReservePlaceDto) {
-    const existPlace = await this.placeService.findOneByName(dto.place);
+    const existPlace = await this.placeService.findOne(dto.place);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    const existUser = await this.userService.findOneById(dto.user);
+    const existUser = await this.userService.findOne({ uuid: dto.user });
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     }
 
-    const bookedReservations = await this.findAllByPlaceNameAndDate(existPlace.name, dto.date);
+    const bookedReservations = await this.findAllByPlaceNameAndDate(
+      existPlace.name,
+      dto.date,
+    );
 
     for (const reservation of bookedReservations) {
-      if (dto.endTime <= reservation.startTime || reservation.endTime <= dto.startTime) {
+      if (
+        dto.endTime <= reservation.startTime ||
+        reservation.endTime <= dto.startTime
+      ) {
         continue;
       } else {
         throw new BadRequestException(Message.OVERLAP_RESERVATION);
@@ -68,7 +73,7 @@ export class ReservePlaceService {
       date: dto.date,
       startTime: dto.startTime,
       endTime: dto.endTime,
-      reserveStatus: ReservationStatus.in_process
+      reserveStatus: ReservationStatus.in_process,
     });
   }
 
@@ -107,16 +112,21 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
     }
 
-    this.reservePlaceRepo.update({ uuid: uuid }, {
-      reserveStatus: reserveStatus
+    this.reservePlaceRepo.update(
+      { uuid: uuid },
+      {
+        reserveStatus: reserveStatus,
+      },
+    );
+
+    const existUser = await this.userService.findOne({
+      uuid: existReserve.user,
     });
 
-    const existUser = await this.userService.findOne({ uuid: existReserve.user });
-
     return {
-      "userType": existUser.userType,
-      "email": existUser.email,
-      "title": existReserve.title
+      userType: existUser.userType,
+      email: existUser.email,
+      title: existReserve.title,
     };
   }
 
