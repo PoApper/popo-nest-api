@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { EquipOwner } from './equip.meta';
 
 @Entity()
 export class Equip extends BaseEntity {
@@ -22,10 +23,10 @@ export class Equip extends BaseEntity {
   fee: number;
 
   @Column({ nullable: false })
-  equipOwner: string;
+  equip_owner: EquipOwner;
 
   @Column({ nullable: true })
-  equipStaff: string;
+  staff_email: string;
 
   @Column({ nullable: true })
   imageName: string;

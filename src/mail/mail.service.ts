@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
+import { Equip } from '../popo/equip/equip.entity';
+import { Place } from '../popo/place/place.entity';
 
 @Injectable()
 export class MailService {
@@ -35,11 +37,15 @@ export class MailService {
   }
 
   // TODO: refactor date and time format
-  async sendReserveCreateToStaff(email: string, place, reservation) {
+  async sendPlaceReserveCreateMailToStaff(
+    email: string,
+    place: Place,
+    reservation,
+  ) {
     await this.mailerService.sendMail({
       to: email,
       from: process.env.GMAIL_USER,
-      subject: `[POPO] 예약이 생성되었습니다.`,
+      subject: `[POPO] 장소 예약이 생성되었습니다.`,
       html: `
       <html>
         <head>
@@ -50,11 +56,44 @@ export class MailService {
         <body>
           <h2>[POPO] 장소 예약이 생성되었습니다</h2>
           <p>장소 ${place.name}에 대한 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.startTime} ~ ${reservation.endTime})이/가 생성 되었습니다.</p>
-          <p>예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
+          <p>장소 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
         </body>
       </html>`,
     });
-    console.log(`예약 생성 메일: success to mailing: ${email}`);
+    console.log(`장소 예약 생성 메일: success to mailing: ${email}`);
+  }
+
+  // TODO: refactor date and time format
+  async sendEquipReserveCreateMailToStaff(
+    email: string,
+    equips: Equip[],
+    reservation,
+  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      from: process.env.GMAIL_USER,
+      subject: `[POPO] 장비 예약이 생성되었습니다.`,
+      html: `
+      <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+            </style>
+        </head>
+        <body>
+          <h2>[POPO] 장비 예약이 생성되었습니다</h2>
+          <p>장비 ${equips
+            .map((equip) => equip.name)
+            .join(', ')}에 대한 예약 "<strong>${reservation.title}</strong>"(${
+        reservation.date
+      } - ${reservation.startTime} ~ ${
+        reservation.endTime
+      })이/가 생성 되었습니다.</p>
+          <p>장비 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
+        </body>
+      </html>`,
+    });
+    console.log(`장비 예약 생성 메일: success to mailing: ${email}`);
   }
 
   async sendReserveStatusMail(email: string, title: string, status: string) {

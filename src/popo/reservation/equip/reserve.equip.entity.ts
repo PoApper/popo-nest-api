@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ReservationStatus } from '../reservation.meta';
+import { EquipOwner } from '../../equip/equip.meta';
 
 @Entity()
 export class ReserveEquip extends BaseEntity {
@@ -19,7 +20,7 @@ export class ReserveEquip extends BaseEntity {
   user: string; // 예약한 유저의 uuid
 
   @Column({ nullable: false })
-  owner: string; // 장비의 owner
+  owner: EquipOwner; // 장비의 owner
 
   @Column({ nullable: false })
   phone: string; // 010-xxxx-xxxx

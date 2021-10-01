@@ -1,18 +1,18 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
-import {InjectRepository} from "@nestjs/typeorm";
-import {ReserveEquip} from "./reserve.equip.entity";
-import {Repository} from "typeorm";
-import {CreateReserveEquipDto} from "./reserve.equip.dto";
-import {UserService} from "../../user/user.service";
-import {EquipService} from "../../equip/equip.service";
-import {ReservationStatus} from "../reservation.meta";
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ReserveEquip } from './reserve.equip.entity';
+import { Repository } from 'typeorm';
+import { CreateReserveEquipDto } from './reserve.equip.dto';
+import { UserService } from '../../user/user.service';
+import { EquipService } from '../../equip/equip.service';
+import { ReservationStatus } from '../reservation.meta';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
   NOT_EXISTING_EQUIP: "There's no such equip.",
   NOT_EXISTING_RESERVATION: "There's no such reservation.",
-  OVERLAP_RESERVATION: "Reservation time overlapped."
-}
+  OVERLAP_RESERVATION: 'Reservation time overlapped.',
+};
 
 @Injectable()
 export class ReserveEquipService {
@@ -20,9 +20,8 @@ export class ReserveEquipService {
     @InjectRepository(ReserveEquip)
     private readonly reserveEquipRepo: Repository<ReserveEquip>,
     private readonly userService: UserService,
-    private readonly equipService: EquipService
-  ) {
-  }
+    private readonly equipService: EquipService,
+  ) {}
 
   async save(dto: CreateReserveEquipDto) {
     const existEquips = await this.equipService.findByIds(dto.equips);
@@ -30,7 +29,7 @@ export class ReserveEquipService {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
 
-    const existUser = await this.userService.findOne({id: dto.user});
+    const existUser = await this.userService.findOne({ uuid: dto.user });
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     }
@@ -54,7 +53,7 @@ export class ReserveEquipService {
   }
 
   findOne(uuid: string, findOptions?: any) {
-    return this.reserveEquipRepo.findOne({uuid: uuid}, findOptions);
+    return this.reserveEquipRepo.findOne({ uuid: uuid }, findOptions);
   }
 
   remove(uuid: string) {
@@ -68,17 +67,21 @@ export class ReserveEquipService {
       throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
     }
 
-    this.reserveEquipRepo.update({ uuid: uuid }, {
-      reserveStatus: reserveStatus
+    this.reserveEquipRepo.update(
+      { uuid: uuid },
+      {
+        reserveStatus: reserveStatus,
+      },
+    );
+
+    const existUser = await this.userService.findOne({
+      uuid: existReserve.user,
     });
 
-    const existUser = await this.userService.findOne({ uuid: existReserve.user });
-
     return {
-      "userType": existUser.userType,
-      "email": existUser.email,
-      "title": existReserve.title
+      userType: existUser.userType,
+      email: existUser.email,
+      title: existReserve.title,
     };
   }
-
 }

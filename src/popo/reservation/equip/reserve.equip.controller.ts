@@ -43,7 +43,22 @@ export class ReserveEquipController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async post(@Body() dto: CreateReserveEquipDto) {
-    return this.reserveEquipService.save(dto);
+    const saveReserve = await this.reserveEquipService.save(dto);
+    const existEquips = await this.equipService.findByIds(dto.equips);
+
+    const staff_emails = existEquips.map((equip) => equip.staff_email);
+    const unique_emails = new Set(staff_emails);
+
+    // send e-mail to staff
+    unique_emails.forEach((email) =>
+      this.mailService.sendEquipReserveCreateMailToStaff(
+        email ?? process.env.ADMIN_EMAIL,
+        existEquips,
+        saveReserve,
+      ),
+    );
+
+    return saveReserve;
   }
 
   @Get()

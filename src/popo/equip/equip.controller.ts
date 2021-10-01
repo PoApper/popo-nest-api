@@ -11,17 +11,18 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { EquipService } from './equip.service';
+import { ApiTags } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
+import { FileInterceptor } from '@nestjs/platform-express';
+
+import { EquipService } from './equip.service';
+import { EquipOwner } from './equip.meta';
+import { CreateEquipDto } from './equip.dto';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { UserType } from '../user/user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { editFileName, imageFileFilter } from '../../utils/fileUpload';
-import { EquipOwner } from './equip.meta';
-import { CreateEquipDto } from './equip.dto';
-import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Equip')
 @Controller('equip')

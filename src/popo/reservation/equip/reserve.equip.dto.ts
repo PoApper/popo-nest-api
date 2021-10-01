@@ -1,7 +1,9 @@
+import { EquipOwner } from '../../equip/equip.meta';
+
 export class CreateReserveEquipDto {
   readonly equips: string[]; // uuids of equips
-  readonly user: string; // id of user
-  readonly owner: string; // info of equip-owner
+  readonly user: string; // uuid of user
+  readonly owner: EquipOwner; // equip-owner
   readonly phone: string;
   readonly title: string;
   readonly description: string;

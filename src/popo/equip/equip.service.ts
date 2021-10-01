@@ -1,57 +1,42 @@
-import {BadRequestException, Injectable} from '@nestjs/common';
-import {InjectRepository} from "@nestjs/typeorm";
-import {Repository} from "typeorm";
-import {UserService} from "../user/user.service";
-import {Equip} from "./equip.entity";
-import {CreateEquipDto} from './equip.dto';
-import {UserType} from "../user/user.meta";
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Equip } from './equip.entity';
+import { CreateEquipDto } from './equip.dto';
 import * as fs from 'fs';
-import {EquipOwner} from "./equip.meta";
+import { EquipOwner } from './equip.meta';
 
 const Message = {
   NOT_EXISTING_REGION: "There's no such region.",
   NOT_EXISTING_USER: "There's no such user.",
   NOT_EXISTING_EQUIP: "There's no such equip.",
-  INVALID_OWNER: "Only Association can have a equip.",
-  INVALID_STAFF: "Only Staff and ADMIN can be a manager."
-}
+  INVALID_OWNER: 'Only Association can have a equip.',
+  INVALID_STAFF: 'Only Staff and ADMIN can be a manager.',
+};
 
 @Injectable()
 export class EquipService {
   constructor(
     @InjectRepository(Equip)
     private readonly equipRepo: Repository<Equip>,
-    private readonly userService: UserService,
-  ) {
-  }
-
+  ) {}
 
   async save(dto: CreateEquipDto, fileName: string) {
-    if (dto.equipStaff) {
-      const existStaff = await this.userService.findOne({uuid: dto.equipStaff});
-      if (!existStaff) {
-        throw new BadRequestException(Message.NOT_EXISTING_USER);
-      }
-      if (existStaff.userType != UserType.staff && existStaff.userType != UserType.admin) {
-        throw new BadRequestException(Message.INVALID_STAFF);
-      }
-    }
-
     return this.equipRepo.save({
       name: dto.name,
       description: dto.description,
       fee: dto.fee,
-      equipOwner: dto.equipOwner,
-      equipStaff: dto.equipStaff,
+      equip_owner: dto.equip_owner,
+      staff_email: dto.staff_email,
       imageName: fileName,
-    })
+    });
   }
 
   find(findOptions?: object) {
     return this.equipRepo.find(findOptions);
   }
 
-  findByIds(ids: any[], findOptions?: object) {
+  findByIds(ids: string[], findOptions?: object) {
     return this.equipRepo.findByIds(ids, findOptions);
   }
 
@@ -60,7 +45,7 @@ export class EquipService {
   }
 
   async findOneByName(name: string) {
-    const existEquip = await this.equipRepo.findOne({name: name});
+    const existEquip = await this.equipRepo.findOne({ name: name });
 
     if (!existEquip) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
@@ -71,45 +56,41 @@ export class EquipService {
 
   async findAllByOwner(owner: EquipOwner) {
     return this.equipRepo.find({
-      where: {equipOwner: owner},
-      order: {updatedAt: "DESC"}
+      where: { equip_owner: owner },
+      order: { updatedAt: 'DESC' },
     });
   }
 
   async update(uuid: string, dto: CreateEquipDto, imageName: string) {
-    const existEquip = await this.findOne({uuid: uuid});
+    const existEquip = await this.findOne({ uuid: uuid });
 
     if (!existEquip) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
 
-    if (existEquip.equipStaff != dto.equipStaff) {
-      const existStaff = await this.userService.findOne({uuid: dto.equipStaff});
-      if (!existStaff) {
-        throw new BadRequestException(Message.NOT_EXISTING_USER);
-      }
-    }
-
     // delete previous image
     if (imageName) {
       console.log(imageName);
-      if(fs.existsSync(`./uploads/equip/${existEquip.imageName}`)) {
+      if (fs.existsSync(`./uploads/equip/${existEquip.imageName}`)) {
         fs.unlinkSync(`./uploads/equip/${existEquip.imageName}`);
       }
     }
 
-    return this.equipRepo.update({uuid: uuid}, {
-      name: dto.name,
-      description: dto.description,
-      fee: dto.fee,
-      equipOwner: dto.equipOwner,
-      equipStaff: dto.equipStaff,
-      imageName: (imageName) ? imageName : existEquip.imageName,
-    })
+    return this.equipRepo.update(
+      { uuid: uuid },
+      {
+        name: dto.name,
+        description: dto.description,
+        fee: dto.fee,
+        equip_owner: dto.equip_owner,
+        staff_email: dto.staff_email,
+        imageName: imageName ? imageName : existEquip.imageName,
+      },
+    );
   }
 
   async delete(uuid: string) {
-    const existEquip = await this.findOne({uuid: uuid});
+    const existEquip = await this.findOne({ uuid: uuid });
 
     if (!existEquip) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
