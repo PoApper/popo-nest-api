@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import * as fs from 'fs';
 import { Place } from './place.entity';
 import { CreatePlaceDto } from './place.dto';
-import { UserService } from '../user/user.service';
 import { PlaceRegion } from './place.meta';
 
 const Message = {
@@ -20,21 +19,9 @@ export class PlaceService {
   constructor(
     @InjectRepository(Place)
     private readonly placeRepo: Repository<Place>,
-    private readonly userService: UserService,
   ) {}
 
-  async save(dto: CreatePlaceDto, fileName: string) {
-    // let existStaff;
-    // if (dto.placeStaffUUID) {
-    //   existStaff = await this.userService.findOne({ uuid: dto.placeStaffUUID });
-    //   if (!existStaff) {
-    //     throw new BadRequestException(Message.NOT_EXISTING_USER);
-    //   }
-    //   if (existStaff.userType != UserType.staff && existStaff.userType != UserType.admin) {
-    //     throw new BadRequestException(Message.INVALID_STAFF);
-    //   }
-    // }
-
+  save(dto: CreatePlaceDto, fileName: string) {
     return this.placeRepo.save({
       name: dto.name,
       location: dto.location,
@@ -64,19 +51,6 @@ export class PlaceService {
   async findAllByRegion(region: PlaceRegion) {
     return this.placeRepo.find({
       where: { region: region },
-      order: { updateAt: 'DESC' },
-    });
-  }
-
-  async findAllByOwner(owner_uuid: string) {
-    const existUser = await this.userService.findOne({ uuid: owner_uuid });
-
-    if (!existUser) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
-    }
-
-    return this.placeRepo.find({
-      where: { placeOwner: owner_uuid },
       order: { updateAt: 'DESC' },
     });
   }

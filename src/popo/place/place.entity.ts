@@ -8,7 +8,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { PlaceRegion } from './place.meta';
-// import {User} from "../user/user.entity";
 
 @Entity()
 export class Place extends BaseEntity {
@@ -27,8 +26,6 @@ export class Place extends BaseEntity {
   @Column({ nullable: false })
   region: PlaceRegion; // 학생회관 / 지곡 / OTHERS
 
-  // @ManyToOne(() => User, user => user.places)
-  // placeStaff: User;
   @Column({ nullable: true })
   staff_email: string;
 

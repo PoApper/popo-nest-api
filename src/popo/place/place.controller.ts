@@ -50,7 +50,7 @@ export class PlaceController {
     return this.placeService.find();
   }
 
-  @Get('/:uuid')
+  @Get(':uuid')
   async getOne(@Param('uuid') uuid: string) {
     return this.placeService.findOne(uuid);
   }
@@ -68,11 +68,6 @@ export class PlaceController {
   @Get('/region/:region')
   async getAllByRegion(@Param('region') region: PlaceRegion) {
     return this.placeService.findAllByRegion(region);
-  }
-
-  @Get('/owner/:owner_uuid')
-  async getAllByOwner(@Param('owner_uuid') owner_uuid: string) {
-    return this.placeService.findAllByOwner(owner_uuid);
   }
 
   @Put(':uuid')
