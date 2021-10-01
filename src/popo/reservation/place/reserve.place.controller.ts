@@ -48,7 +48,7 @@ export class ReservePlaceController {
     const existPlace = await this.placeService.findOne(dto.place);
 
     // Send e-mail to staff.
-    this.mailService.sendReserveCreateToStaff(
+    this.mailService.sendPlaceReserveCreateMailToStaff(
       existPlace.staff_email ?? process.env.ADMIN_EMAIL,
       existPlace,
       saveReserve,
