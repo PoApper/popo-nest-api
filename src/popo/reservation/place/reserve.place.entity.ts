@@ -28,7 +28,7 @@ export class ReservePlace extends BaseEntity {
   description: string;
 
   @Column({ nullable: false })
-  date: number; // yyyy-MM-dd
+  date: string; // YYYYMMDD
 
   @Column({ nullable: false })
   startTime: number; // hh:mm

@@ -97,7 +97,7 @@ export class ReservePlaceService {
     return this.reservePlaceRepo.find({ place: existPlace.uuid });
   }
 
-  async findAllByPlaceNameAndDate(placeName: string, date: number) {
+  async findAllByPlaceNameAndDate(placeName: string, date: string) {
     const existPlace = await this.placeService.findOneByName(placeName);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);

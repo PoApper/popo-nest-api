@@ -32,8 +32,7 @@ export class ReserveEquip extends BaseEntity {
   description: string;
 
   @Column({ nullable: false })
-  // TODO: migration into YYYY.MM.DD
-  date: number; // yyyyMMdd
+  date: string; // YYYYMMDD
 
   @Column({ nullable: false })
   // TODO: migration into HH:MM
