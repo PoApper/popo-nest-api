@@ -48,6 +48,10 @@ export class ReserveEquipService {
     });
   }
 
+  count() {
+    return this.reserveEquipRepo.count();
+  }
+
   find(findOptions?: object) {
     return this.reserveEquipRepo.find(findOptions);
   }
@@ -75,7 +79,7 @@ export class ReserveEquipService {
     );
 
     const existUser = await this.userService.findOne({
-      uuid: existReserve.user,
+      uuid: existReserve.booker_id,
     });
 
     return {

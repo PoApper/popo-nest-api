@@ -61,30 +61,47 @@ export class ReserveEquipController {
     return saveReserve;
   }
 
+  @Get('count')
+  countAll() {
+    return this.reserveEquipService.count();
+  }
+
   @Get()
   @ApiQuery({ name: 'owner', required: false })
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'date', required: false })
-  get(
+  @ApiQuery({ name: 'skip', required: false })
+  @ApiQuery({ name: 'take', required: false })
+  async findAll(
     @Query('owner') owner: string,
     @Query('status') status: string,
     @Query('date') date: string,
+    @Query('skip') skip: number,
+    @Query('take') take: number,
   ) {
     const whereOption = {};
-    if (status) {
-      whereOption['reserveStatus'] = status;
-    }
     if (owner) {
       whereOption['owner'] = owner;
+    }
+    if (status) {
+      whereOption['reserveStatus'] = status;
     }
     if (date) {
       whereOption['date'] = date;
     }
 
-    return this.reserveEquipService.find({
-      where: whereOption,
-      order: { createdAt: 'DESC' },
-    });
+    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
+    if (skip) {
+      findOption['skip'] = skip;
+    }
+    if (take) {
+      findOption['take'] = take;
+    }
+
+    const reservs = await this.reserveEquipService.find(findOption);
+
+    const refined1 = await this.joinBooker(reservs);
+    return this.joinEquips(refined1);
   }
 
   @Get(['user', 'user/:uuid'])
@@ -101,36 +118,11 @@ export class ReserveEquipController {
       const existUser = await this.userService.findOne({ id: user.id });
 
       const reservs = await this.reserveEquipService.find({
-        where: { user: existUser.uuid },
+        where: { booker_id: existUser.uuid },
         order: { createdAt: 'DESC' },
       });
-      return this.hideEquipUuid(reservs);
+      return this.joinEquips(reservs);
     }
-  }
-
-  @Get('/owner/:ownerName')
-  @ApiQuery({ name: 'status', required: false })
-  @ApiQuery({ name: 'date', required: false })
-  async getByOwnerAndHideUserUuid(
-    @Param('ownerName') owner: string,
-    @Query('status') status: string,
-    @Query('date') date: string,
-  ) {
-    const whereOption = { owner: owner };
-    if (status) {
-      whereOption['reserveStatus'] = status;
-    }
-    if (date) {
-      whereOption['date'] = date;
-    }
-
-    const reservs = await this.reserveEquipService.find({
-      where: whereOption,
-      order: { createdAt: 'DESC' },
-    });
-
-    const refined1 = await this.hideUserUuid(reservs);
-    return this.hideEquipUuid(refined1);
   }
 
   @Get(':uuid')
@@ -174,29 +166,30 @@ export class ReserveEquipController {
     }
   }
 
-  private async hideUserUuid(reservations) {
+  private async joinBooker(reservations) {
     const refinedReservations = [];
 
     for (const reservation of reservations) {
-      const user = await this.userService.findOne(reservation.user);
-      if (user) {
-        const { name } = user;
-        reservation.user = name;
+      const booker = await this.userService.findOne({
+        uuid: reservation.booker_id,
+      });
+      if (booker) {
+        const { password, cryptoSalt, ...booker_info } = booker;
+        reservation.booker = booker_info;
         refinedReservations.push(reservation);
       }
     }
     return refinedReservations;
   }
 
-  private async hideEquipUuid(reservations) {
+  private async joinEquips(reservations) {
     const refinedReservations = [];
     for (const reservation of reservations) {
       const new_equips = [];
       for (const equip_uuid of reservation.equips) {
         const equip = await this.equipService.findOne(equip_uuid);
         if (equip) {
-          const { name } = equip;
-          new_equips.push(name);
+          new_equips.push(equip);
         }
       }
       reservation.equips = new_equips;
