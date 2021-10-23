@@ -3,10 +3,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
 import { UserStatus, UserType } from './user.meta';
+import { ReserveEquip } from '../reservation/equip/reserve.equip.entity';
 
 @Entity()
 @Unique(['email', 'id'])
@@ -40,4 +42,14 @@ export class User extends BaseEntity {
 
   @Column()
   lastLoginAt: Date;
+
+  /**
+   * Database Relation
+   */
+
+  @OneToMany(
+    () => ReserveEquip,
+    (equip_reservation) => equip_reservation.booker,
+  )
+  equip_reservation: ReserveEquip[];
 }

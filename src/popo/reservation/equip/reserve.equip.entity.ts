@@ -3,10 +3,13 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
+  JoinColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ReservationStatus } from '../reservation.meta';
 import { EquipOwner } from '../../equip/equip.meta';
+import { User } from '../../user/user.entity';
 
 @Entity()
 export class ReserveEquip extends BaseEntity {
@@ -16,8 +19,8 @@ export class ReserveEquip extends BaseEntity {
   @Column('simple-array', { nullable: false })
   equips: string[]; // 장비의 uuid
 
-  @Column({ nullable: false })
-  user: string; // 예약한 유저의 uuid
+  @Column({ nullable: true })
+  booker_id: string; // 예약한 유저의 uuid
 
   @Column({ nullable: false })
   owner: EquipOwner; // 장비의 owner
@@ -47,4 +50,14 @@ export class ReserveEquip extends BaseEntity {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  /**
+   * Database Relation
+   */
+
+  @ManyToOne(() => User, (user) => user.equip_reservation, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'booker_id' })
+  booker: User;
 }
