@@ -13,7 +13,7 @@ export class ReservePlace extends BaseEntity {
   uuid: string;
 
   @Column({ nullable: false })
-  place: string; // 장소의 uuid
+  place: string; // 장소의 uuid // TODO: deprecate
 
   @Column({ nullable: false })
   user: string; // 예약한 유저의 uuid
@@ -37,7 +37,7 @@ export class ReservePlace extends BaseEntity {
   endTime: number; // hh:mm
 
   @Column({ nullable: false, default: ReservationStatus.in_process })
-  reserveStatus: ReservationStatus;
+  status: ReservationStatus;
 
   @CreateDateColumn()
   createdAt: Date;

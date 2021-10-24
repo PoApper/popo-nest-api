@@ -84,7 +84,7 @@ export class ReserveEquipController {
       whereOption['owner'] = owner;
     }
     if (status) {
-      whereOption['reserveStatus'] = status;
+      whereOption['status'] = status;
     }
     if (date) {
       whereOption['date'] = date;
@@ -117,11 +117,11 @@ export class ReserveEquipController {
       const user: any = req.user;
       const existUser = await this.userService.findOne({ id: user.id });
 
-      const reservs = await this.reserveEquipService.find({
+      const reservations = await this.reserveEquipService.find({
         where: { booker_id: existUser.uuid },
         order: { createdAt: 'DESC' },
       });
-      return this.joinEquips(reservs);
+      return this.joinEquips(reservations);
     }
   }
 
@@ -157,7 +157,7 @@ export class ReserveEquipController {
       // Send e-mail to client.
       const skipList = [UserType.admin, UserType.association, UserType.club];
       if (!skipList.includes(response.userType)) {
-        await this.mailService.sendReserveStatusMail(
+        await this.mailService.sendReservationPatchMail(
           response.email,
           response.title,
           ReservationStatus[status],

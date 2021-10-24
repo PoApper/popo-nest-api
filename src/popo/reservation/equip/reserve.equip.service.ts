@@ -44,7 +44,7 @@ export class ReserveEquipService {
       date: dto.date,
       startTime: dto.startTime,
       endTime: dto.endTime,
-      reserveStatus: ReservationStatus.in_process,
+      status: ReservationStatus.in_process,
     });
   }
 
@@ -64,7 +64,7 @@ export class ReserveEquipService {
     return this.reserveEquipRepo.delete(uuid);
   }
 
-  async updateStatus(uuid: string, reserveStatus: ReservationStatus) {
+  async updateStatus(uuid: string, status: ReservationStatus) {
     const existReserve = await this.findOne(uuid);
 
     if (!existReserve) {
@@ -74,7 +74,7 @@ export class ReserveEquipService {
     this.reserveEquipRepo.update(
       { uuid: uuid },
       {
-        reserveStatus: reserveStatus,
+        status: status,
       },
     );
 

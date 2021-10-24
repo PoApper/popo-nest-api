@@ -46,7 +46,7 @@ export class ReserveEquip extends BaseEntity {
   endTime: number; // hhmm
 
   @Column({ nullable: false, default: ReservationStatus.in_process })
-  reserveStatus: ReservationStatus;
+  status: ReservationStatus;
 
   @CreateDateColumn()
   createdAt: Date;

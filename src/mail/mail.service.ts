@@ -96,7 +96,7 @@ export class MailService {
     console.log(`장비 예약 생성 메일: success to mailing: ${email}`);
   }
 
-  async sendReserveStatusMail(email: string, title: string, status: string) {
+  async sendReservationPatchMail(email: string, title: string, status: string) {
     await this.mailerService.sendMail({
       to: email,
       from: process.env.GMAIL_USER,

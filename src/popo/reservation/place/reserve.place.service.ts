@@ -73,7 +73,7 @@ export class ReservePlaceService {
       date: dto.date,
       startTime: dto.startTime,
       endTime: dto.endTime,
-      reserveStatus: ReservationStatus.in_process,
+      status: ReservationStatus.in_process,
     });
   }
 
@@ -105,7 +105,7 @@ export class ReservePlaceService {
     return this.reservePlaceRepo.find({ place: existPlace.uuid, date: date });
   }
 
-  async updateStatus(uuid: string, reserveStatus: ReservationStatus) {
+  async updateStatus(uuid: string, status: ReservationStatus) {
     const existReserve = await this.findOne(uuid);
 
     if (!existReserve) {
@@ -115,7 +115,7 @@ export class ReservePlaceService {
     this.reservePlaceRepo.update(
       { uuid: uuid },
       {
-        reserveStatus: reserveStatus,
+        status: status,
       },
     );
 

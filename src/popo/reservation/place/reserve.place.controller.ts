@@ -93,11 +93,11 @@ export class ReservePlaceController {
       const user: any = req.user;
       const existUser = await this.userService.findOne({ id: user.id });
 
-      const reservs = await this.reservePlaceService.find({
+      const reservations = await this.reservePlaceService.find({
         where: { user: existUser.uuid },
         order: { createdAt: 'DESC' },
       });
-      return this.hidePlaceUuid(reservs);
+      return this.hidePlaceUuid(reservations);
     }
   }
 
@@ -122,7 +122,7 @@ export class ReservePlaceController {
   @Get('placeName/:placeName/:date') // hide user uuid
   async checkByPlaceNameAndDate(
     @Param('placeName') placeName: string,
-    @Param('date') date: number,
+    @Param('date') date: string,
   ) {
     const existReservations =
       await this.reservePlaceService.findAllByPlaceNameAndDate(placeName, date);
@@ -139,12 +139,12 @@ export class ReservePlaceController {
     return this.reservePlaceService.find({ date: date });
   }
 
-  @Get('reserveStatus/:status')
+  @Get('status/:status')
   @UseGuards(JwtAuthGuard)
   getAllByStatusWithUserName(
     @Param('status') reserve_status: ReservationStatus,
   ) {
-    return this.reservePlaceService.find({ reserveStatus: reserve_status });
+    return this.reservePlaceService.find({ status: reserve_status });
   }
 
   @Patch(':uuid/status/:status')
@@ -160,18 +160,11 @@ export class ReservePlaceController {
       ReservationStatus[status],
     );
 
-    console.log(
-      'chechckc',
-      sendEmail,
-      sendEmail === 'true',
-      sendEmail === 'false',
-    );
-
     if (sendEmail === 'true') {
       // Send e-mail to client.
       const skipList = [UserType.admin, UserType.association, UserType.club];
       if (!skipList.includes(response.userType)) {
-        await this.mailService.sendReserveStatusMail(
+        await this.mailService.sendReservationPatchMail(
           response.email,
           response.title,
           ReservationStatus[status],
