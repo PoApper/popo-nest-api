@@ -117,9 +117,9 @@ export class ReserveEquipController {
 
   @Get('user/:uuid')
   @UseGuards(JwtAuthGuard)
-  async getUserReservation(@Req() req, @Param('uuid') uuid: string) {
+  async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
-      where: { user: uuid },
+      where: { booker_id: uuid },
       order: { createdAt: 'DESC' },
     });
     return this.joinEquips(reservations);

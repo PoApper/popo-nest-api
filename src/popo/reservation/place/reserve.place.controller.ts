@@ -34,13 +34,6 @@ export class ReservePlaceController {
     private readonly mailService: MailService,
   ) {}
 
-  @Post('admin')
-  @UseGuards(JwtAuthGuard)
-  async create(@Body() dto: CreateReservePlaceDto) {
-    // admin 용 create
-    return this.reservePlaceService.save(dto);
-  }
-
   @Post()
   @UseGuards(JwtAuthGuard)
   async createWithNameAndId(@Body() dto: CreateReservePlaceDto) {
@@ -60,7 +53,7 @@ export class ReservePlaceController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
-  get(@Query('page') page: number) {
+  getAll(@Query('page') page: number) {
     if (!page) {
       return this.reservePlaceService.find({ order: { createdAt: 'DESC' } });
     }
@@ -80,25 +73,27 @@ export class ReservePlaceController {
     return this.reservePlaceService.count();
   }
 
-  @Get(['user', 'user/:uuid'])
+  @Get('user')
   @UseGuards(JwtAuthGuard)
-  async getUserReservation(@Req() req: Request, @Param('uuid') uuid: string) {
-    if (uuid) {
-      return await this.reservePlaceService.find({
-        where: { user: uuid },
-        order: { createdAt: 'DESC' },
-      });
-    } else {
-      // 내 예약 조회
-      const user: any = req.user;
-      const existUser = await this.userService.findOne({ id: user.id });
+  async getMyReservation(@Req() req: Request) {
+    const user: any = req.user;
+    const existUser = await this.userService.findOne({ id: user.id });
 
-      const reservations = await this.reservePlaceService.find({
-        where: { user: existUser.uuid },
-        order: { createdAt: 'DESC' },
-      });
-      return this.hidePlaceUuid(reservations);
-    }
+    const reservations = await this.reservePlaceService.find({
+      where: { user: existUser.uuid },
+      order: { createdAt: 'DESC' },
+    });
+    return this.joinPlace(reservations);
+  }
+
+  @Get('user/:uuid')
+  @UseGuards(JwtAuthGuard)
+  async getUserReservation(@Param('uuid') uuid: string) {
+    const reservations = await this.reservePlaceService.find({
+      where: { user: uuid },
+      order: { createdAt: 'DESC' },
+    });
+    return this.joinPlace(reservations);
   }
 
   @Get('place/:place_uuid')
@@ -116,7 +111,7 @@ export class ReservePlaceController {
     const existReservations = await this.reservePlaceService.findAllByPlaceName(
       placeName,
     );
-    return this.hideUserUuid(existReservations);
+    return this.joinUser(existReservations);
   }
 
   @Get('placeName/:placeName/:date') // hide user uuid
@@ -126,7 +121,7 @@ export class ReservePlaceController {
   ) {
     const existReservations =
       await this.reservePlaceService.findAllByPlaceNameAndDate(placeName, date);
-    return this.hideUserUuid(existReservations);
+    return this.joinUser(existReservations);
   }
 
   @Get('placeName/:placeName/admin') // reveal user uuid
@@ -180,7 +175,7 @@ export class ReservePlaceController {
     return this.reservePlaceService.remove(uuid);
   }
 
-  private async hideUserUuid(reservations) {
+  private async joinUser(reservations) {
     const refinedReservations = [];
 
     for (const reservation of reservations) {
@@ -194,7 +189,7 @@ export class ReservePlaceController {
     return refinedReservations;
   }
 
-  private async hidePlaceUuid(reservations) {
+  private async joinPlace(reservations) {
     const refinedReservations = [];
     for (const reservation of reservations) {
       const place = await this.placeService.findOne(reservation.place);
