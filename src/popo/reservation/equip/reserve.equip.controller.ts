@@ -23,7 +23,7 @@ import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
 
-@ApiTags('Reservation Equip')
+@ApiTags('Equipment Reservation')
 @Controller('reservation-equip')
 export class ReserveEquipController {
   constructor(
@@ -40,7 +40,7 @@ export class ReserveEquipController {
     const existUser = await this.userService.findOne({ id: user.id });
 
     const saveDto = Object.assign(dto, { booker_id: existUser.uuid });
-    const saveReserve = await this.reserveEquipService.save(saveDto);
+    const new_reservation = await this.reserveEquipService.save(saveDto);
 
     const existEquips = await this.equipService.findByIds(dto.equips);
 
@@ -50,13 +50,13 @@ export class ReserveEquipController {
     // send e-mail to staff
     unique_emails.forEach((email) =>
       this.mailService.sendEquipReserveCreateMailToStaff(
-        email ?? process.env.ADMIN_EMAIL,
+        email,
         existEquips,
-        saveReserve,
+        new_reservation,
       ),
     );
 
-    return saveReserve;
+    return new_reservation;
   }
 
   @Get('count')
@@ -96,10 +96,9 @@ export class ReserveEquipController {
       findOption['take'] = take;
     }
 
-    const reservations = await this.reserveEquipService.find(findOption);
-
-    const refined1 = await this.joinBooker(reservations);
-    return this.joinEquips(refined1);
+    let reservations = await this.reserveEquipService.find(findOption);
+    reservations = await this.joinBooker(reservations);
+    return this.joinEquips(reservations);
   }
 
   @Get('user')

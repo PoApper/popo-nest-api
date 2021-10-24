@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ReserveEquip } from './reserve.equip.entity';
 import { Repository } from 'typeorm';
+import { ReserveEquip } from './reserve.equip.entity';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
 import { EquipService } from '../../equip/equip.service';
@@ -42,8 +42,8 @@ export class ReserveEquipService {
       title: dto.title,
       description: dto.description,
       date: dto.date,
-      startTime: dto.startTime,
-      endTime: dto.endTime,
+      start_time: dto.start_time,
+      end_time: dto.end_time,
       status: ReservationStatus.in_process,
     });
   }

@@ -24,7 +24,7 @@ import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { PlaceService } from '../../place/place.service';
 
-@ApiTags('Reservation Place')
+@ApiTags('Place Reservation')
 @Controller('reservation-place')
 export class ReservePlaceController {
   constructor(
@@ -37,17 +37,19 @@ export class ReservePlaceController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async createWithNameAndId(@Body() dto: CreateReservePlaceDto) {
-    const saveReserve = await this.reservePlaceService.saveWithNameAndId(dto);
+    const new_reservation = await this.reservePlaceService.saveWithNameAndId(
+      dto,
+    );
     const existPlace = await this.placeService.findOne(dto.place);
 
     // Send e-mail to staff.
     this.mailService.sendPlaceReserveCreateMailToStaff(
-      existPlace.staff_email ?? process.env.ADMIN_EMAIL,
+      existPlace.staff_email,
       existPlace,
-      saveReserve,
+      new_reservation,
     );
 
-    return saveReserve;
+    return new_reservation;
   }
 
   @Get()
@@ -77,10 +79,9 @@ export class ReservePlaceController {
       findOption['take'] = take;
     }
 
-    const reservations = await this.reservePlaceService.find(findOption);
-
-    const refined1 = await this.joinUser(reservations);
-    return this.joinPlace(refined1);
+    let reservations = await this.reservePlaceService.find(findOption);
+    reservations = await this.joinUser(reservations);
+    return this.joinPlace(reservations);
   }
 
   @Get('count')

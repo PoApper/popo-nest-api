@@ -55,8 +55,8 @@ export class ReservePlaceService {
 
     for (const reservation of bookedReservations) {
       if (
-        dto.endTime <= reservation.startTime ||
-        reservation.endTime <= dto.startTime
+        dto.end_time <= reservation.start_time ||
+        reservation.end_time <= dto.start_time
       ) {
         continue;
       } else {
@@ -71,8 +71,8 @@ export class ReservePlaceService {
       title: dto.title,
       description: dto.description,
       date: dto.date,
-      startTime: dto.startTime,
-      endTime: dto.endTime,
+      start_time: dto.start_time,
+      end_time: dto.end_time,
       status: ReservationStatus.in_process,
     });
   }

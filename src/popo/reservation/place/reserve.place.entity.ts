@@ -31,10 +31,10 @@ export class ReservePlace extends BaseEntity {
   date: string; // YYYYMMDD
 
   @Column({ nullable: false })
-  startTime: number; // hh:mm
+  start_time: number; // hh:mm
 
   @Column({ nullable: false })
-  endTime: number; // hh:mm
+  end_time: number; // hh:mm
 
   @Column({ nullable: false, default: ReservationStatus.in_process })
   status: ReservationStatus;
