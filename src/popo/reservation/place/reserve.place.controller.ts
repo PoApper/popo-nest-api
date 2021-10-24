@@ -10,7 +10,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { ReservePlaceService } from './reserve.place.service';
@@ -51,19 +51,36 @@ export class ReservePlaceController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserType.admin, UserType.association, UserType.staff)
-  getAll(@Query('page') page: number) {
-    if (!page) {
-      return this.reservePlaceService.find({ order: { createdAt: 'DESC' } });
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'date', required: false })
+  @ApiQuery({ name: 'skip', required: false })
+  @ApiQuery({ name: 'take', required: false })
+  async getAll(
+    @Query('status') status: string,
+    @Query('date') date: string,
+    @Query('skip') skip: number,
+    @Query('take') take: number,
+  ) {
+    const whereOption = {};
+    if (status) {
+      whereOption['status'] = status;
+    }
+    if (date) {
+      whereOption['date'] = date;
     }
 
-    const pageSize = 10;
-    return this.reservePlaceService.find({
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      order: { createdAt: 'DESC' },
-    });
+    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
+    if (skip) {
+      findOption['skip'] = skip;
+    }
+    if (take) {
+      findOption['take'] = take;
+    }
+
+    const reservations = await this.reservePlaceService.find(findOption);
+
+    const refined1 = await this.joinUser(reservations);
+    return this.joinPlace(refined1);
   }
 
   @Get('count')
@@ -127,19 +144,6 @@ export class ReservePlaceController {
   @Get('placeName/:placeName/admin') // reveal user uuid
   getByPlaceName(@Param('placeName') placeName: string) {
     return this.reservePlaceService.findAllByPlaceName(placeName);
-  }
-
-  @Get('date/:date')
-  getByDate(@Param('date') date: number) {
-    return this.reservePlaceService.find({ date: date });
-  }
-
-  @Get('status/:status')
-  @UseGuards(JwtAuthGuard)
-  getAllByStatusWithUserName(
-    @Param('status') reserve_status: ReservationStatus,
-  ) {
-    return this.reservePlaceService.find({ status: reserve_status });
   }
 
   @Patch(':uuid/status/:status')

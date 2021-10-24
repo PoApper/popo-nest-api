@@ -70,7 +70,7 @@ export class ReserveEquipController {
   @ApiQuery({ name: 'date', required: false })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
-  async findAll(
+  async getAll(
     @Query('owner') owner: string,
     @Query('status') status: string,
     @Query('date') date: string,
@@ -96,9 +96,9 @@ export class ReserveEquipController {
       findOption['take'] = take;
     }
 
-    const reservs = await this.reserveEquipService.find(findOption);
+    const reservations = await this.reserveEquipService.find(findOption);
 
-    const refined1 = await this.joinBooker(reservs);
+    const refined1 = await this.joinBooker(reservations);
     return this.joinEquips(refined1);
   }
 
