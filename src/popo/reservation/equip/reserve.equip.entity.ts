@@ -49,7 +49,7 @@ export class ReserveEquip extends BaseEntity {
   status: ReservationStatus;
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   /**
    * Database Relation

@@ -40,5 +40,5 @@ export class ReservePlace extends BaseEntity {
   status: ReservationStatus;
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 }

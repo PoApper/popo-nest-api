@@ -71,7 +71,7 @@ export class ReservePlaceController {
       whereOption['date'] = date;
     }
 
-    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
+    const findOption = { where: whereOption, order: { created_at: 'DESC' } };
     if (skip) {
       findOption['skip'] = skip;
     }
@@ -85,8 +85,6 @@ export class ReservePlaceController {
   }
 
   @Get('count')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserType.admin, UserType.association, UserType.staff)
   count() {
     return this.reservePlaceService.count();
   }
@@ -99,7 +97,7 @@ export class ReservePlaceController {
 
     const reservations = await this.reservePlaceService.find({
       where: { user: existUser.uuid },
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
     });
     return this.joinPlace(reservations);
   }
@@ -109,7 +107,7 @@ export class ReservePlaceController {
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reservePlaceService.find({
       where: { user: uuid },
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
     });
     return this.joinPlace(reservations);
   }
@@ -120,7 +118,7 @@ export class ReservePlaceController {
   async getByPlace(@Param('place_uuid') place_uuid: string) {
     return this.reservePlaceService.find({
       where: { place: place_uuid },
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
     });
   }
 

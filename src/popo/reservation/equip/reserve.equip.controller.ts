@@ -88,7 +88,7 @@ export class ReserveEquipController {
       whereOption['date'] = date;
     }
 
-    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
+    const findOption = { where: whereOption, order: { created_at: 'DESC' } };
     if (skip) {
       findOption['skip'] = skip;
     }
@@ -109,7 +109,7 @@ export class ReserveEquipController {
 
     const reservations = await this.reserveEquipService.find({
       where: { booker_id: existUser.uuid },
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
     });
     return this.joinEquips(reservations);
   }
@@ -119,7 +119,7 @@ export class ReserveEquipController {
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
       where: { booker_id: uuid },
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
     });
     return this.joinEquips(reservations);
   }
