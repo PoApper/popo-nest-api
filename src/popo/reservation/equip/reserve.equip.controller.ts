@@ -33,17 +33,15 @@ export class ReserveEquipController {
     private readonly mailService: MailService,
   ) {}
 
-  @Post('admin')
-  @UseGuards(JwtAuthGuard)
-  async create(@Body() dto: CreateReserveEquipDto) {
-    // admin 용 create
-    return this.reserveEquipService.save(dto);
-  }
-
   @Post()
   @UseGuards(JwtAuthGuard)
-  async post(@Body() dto: CreateReserveEquipDto) {
-    const saveReserve = await this.reserveEquipService.save(dto);
+  async post(@Req() req, @Body() dto: CreateReserveEquipDto) {
+    const user: any = req.user;
+    const existUser = await this.userService.findOne({ id: user.id });
+
+    const saveDto = Object.assign(dto, { booker_id: existUser.uuid });
+    const saveReserve = await this.reserveEquipService.save(saveDto);
+
     const existEquips = await this.equipService.findByIds(dto.equips);
 
     const staff_emails = existEquips.map((equip) => equip.staff_email);
@@ -104,25 +102,27 @@ export class ReserveEquipController {
     return this.joinEquips(refined1);
   }
 
-  @Get(['user', 'user/:uuid'])
+  @Get('user')
+  @UseGuards(JwtAuthGuard)
+  async getMyReservation(@Req() req) {
+    const user: any = req.user;
+    const existUser = await this.userService.findOne({ id: user.id });
+
+    const reservations = await this.reserveEquipService.find({
+      where: { booker_id: existUser.uuid },
+      order: { createdAt: 'DESC' },
+    });
+    return this.joinEquips(reservations);
+  }
+
+  @Get('user/:uuid')
   @UseGuards(JwtAuthGuard)
   async getUserReservation(@Req() req, @Param('uuid') uuid: string) {
-    if (uuid) {
-      return await this.reserveEquipService.find({
-        where: { user: uuid },
-        order: { createdAt: 'DESC' },
-      });
-    } else {
-      // 내 예약 조회
-      const user: any = req.user;
-      const existUser = await this.userService.findOne({ id: user.id });
-
-      const reservations = await this.reserveEquipService.find({
-        where: { booker_id: existUser.uuid },
-        order: { createdAt: 'DESC' },
-      });
-      return this.joinEquips(reservations);
-    }
+    const reservations = await this.reserveEquipService.find({
+      where: { user: uuid },
+      order: { createdAt: 'DESC' },
+    });
+    return this.joinEquips(reservations);
   }
 
   @Get(':uuid')

@@ -29,14 +29,14 @@ export class ReserveEquipService {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
 
-    const existUser = await this.userService.findOne({ uuid: dto.user });
+    const existUser = await this.userService.findOne({ uuid: dto.booker_id });
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     }
 
     return this.reserveEquipRepo.save({
       equips: dto.equips,
-      user: existUser.uuid,
+      booker_id: dto.booker_id,
       owner: dto.owner,
       phone: dto.phone,
       title: dto.title,
