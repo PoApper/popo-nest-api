@@ -17,7 +17,7 @@ export class ReserveEquip extends BaseEntity {
   uuid: string;
 
   @Column('simple-array', { nullable: false })
-  equips: string[]; // 장비의 uuid
+  equipments: string[]; // 장비의 uuid
 
   @Column({ nullable: true })
   booker_id: string; // 예약한 유저의 uuid

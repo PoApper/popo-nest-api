@@ -24,7 +24,7 @@ export class ReserveEquipService {
   ) {}
 
   async save(dto: CreateReserveEquipDto) {
-    const existEquips = await this.equipService.findByIds(dto.equips);
+    const existEquips = await this.equipService.findByIds(dto.equipments);
     if (!existEquips) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
@@ -35,7 +35,7 @@ export class ReserveEquipService {
     }
 
     return this.reserveEquipRepo.save({
-      equips: dto.equips,
+      equipments: dto.equipments,
       booker_id: dto.booker_id,
       owner: dto.owner,
       phone: dto.phone,

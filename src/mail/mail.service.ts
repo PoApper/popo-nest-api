@@ -70,7 +70,7 @@ export class MailService {
   // TODO: refactor date and time format
   async sendEquipReserveCreateMailToStaff(
     recipient_email: string,
-    equips: Equip[],
+    equipments: Equip[],
     reservation,
   ) {
     recipient_email = EmailValidator.validate(recipient_email)
@@ -89,7 +89,7 @@ export class MailService {
         </head>
         <body>
           <h2>[POPO] 장비 예약이 생성되었습니다</h2>
-          <p>장비 ${equips
+          <p>장비 ${equipments
             .map((equip) => equip.name)
             .join(', ')}에 대한 예약 "<strong>${reservation.title}</strong>"(${
         reservation.date

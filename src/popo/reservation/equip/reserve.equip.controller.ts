@@ -42,7 +42,7 @@ export class ReserveEquipController {
     const saveDto = Object.assign(dto, { booker_id: existUser.uuid });
     const new_reservation = await this.reserveEquipService.save(saveDto);
 
-    const existEquips = await this.equipService.findByIds(dto.equips);
+    const existEquips = await this.equipService.findByIds(dto.equipments);
 
     const staff_emails = existEquips.map((equip) => equip.staff_email);
     const unique_emails = new Set(staff_emails);
@@ -184,14 +184,14 @@ export class ReserveEquipController {
   private async joinEquips(reservations) {
     const refinedReservations = [];
     for (const reservation of reservations) {
-      const new_equips = [];
-      for (const equip_uuid of reservation.equips) {
-        const equip = await this.equipService.findOne(equip_uuid);
-        if (equip) {
-          new_equips.push(equip);
+      const equipments_list = [];
+      for (const equip_uuid of reservation.equipments) {
+        const equipment = await this.equipService.findOne(equip_uuid);
+        if (equipment) {
+          equipments_list.push(equipment);
         }
       }
-      reservation.equips = new_equips;
+      reservation.equipments = equipments_list;
       refinedReservations.push(reservation);
     }
     return refinedReservations;
