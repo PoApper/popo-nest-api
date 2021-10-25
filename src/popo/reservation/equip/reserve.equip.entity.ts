@@ -17,10 +17,10 @@ export class ReserveEquip extends BaseEntity {
   uuid: string;
 
   @Column('simple-array', { nullable: false })
-  equipments: string[]; // 장비의 uuid
+  equipments: string[]; // Array of equipment uuids
 
   @Column({ nullable: true })
-  booker_id: string; // 예약한 유저의 uuid
+  booker_id: string; // uuid of booker
 
   @Column({ nullable: false })
   owner: EquipOwner; // 장비의 owner

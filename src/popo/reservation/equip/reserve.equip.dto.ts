@@ -2,7 +2,7 @@ import { EquipOwner } from '../../equip/equip.meta';
 
 export class CreateReserveEquipDto {
   readonly equipments: string[]; // Array of equipment uuids
-  readonly booker_id?: string; // booker uuid
+  readonly booker_id?: string; // uuid of booker
   readonly owner: EquipOwner; // equip-owner
   readonly phone: string;
   readonly title: string;
