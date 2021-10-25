@@ -41,9 +41,7 @@ export class ReservePlaceController {
     const existUser = await this.userService.findOne({ id: user.id });
 
     const saveDto = Object.assign(dto, { booker_id: existUser.uuid });
-    const new_reservation = await this.reservePlaceService.saveWithNameAndId(
-      saveDto,
-    );
+    const new_reservation = await this.reservePlaceService.save(saveDto);
 
     const existPlace = await this.placeService.findOne(dto.place_id);
 
@@ -111,7 +109,7 @@ export class ReservePlaceController {
   @UseGuards(JwtAuthGuard)
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reservePlaceService.find({
-      where: { user: uuid },
+      where: { booker_id: uuid },
       order: { created_at: 'DESC' },
     });
     return this.joinPlace(reservations);
