@@ -15,8 +15,8 @@ export class ReservePlace extends BaseEntity {
   @Column({ nullable: false })
   place: string; // 장소의 uuid // TODO: deprecate
 
-  @Column({ nullable: false })
-  user: string; // 예약한 유저의 uuid
+  @Column({ nullable: true })
+  booker_id: string; // uuid of booker
 
   @Column({ nullable: false })
   phone: string; // 010-xxxx-xxxx

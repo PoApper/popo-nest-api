@@ -80,7 +80,7 @@ export class ReservePlaceController {
     }
 
     let reservations = await this.reservePlaceService.find(findOption);
-    reservations = await this.joinUser(reservations);
+    reservations = await this.joinBooker(reservations);
     return this.joinPlace(reservations);
   }
 
@@ -127,7 +127,7 @@ export class ReservePlaceController {
     const existReservations = await this.reservePlaceService.findAllByPlaceName(
       placeName,
     );
-    return this.joinUser(existReservations);
+    return this.joinBooker(existReservations);
   }
 
   @Get('placeName/:placeName/:date') // hide user uuid
@@ -137,7 +137,7 @@ export class ReservePlaceController {
   ) {
     const existReservations =
       await this.reservePlaceService.findAllByPlaceNameAndDate(placeName, date);
-    return this.joinUser(existReservations);
+    return this.joinBooker(existReservations);
   }
 
   @Get('placeName/:placeName/admin') // reveal user uuid
@@ -178,14 +178,14 @@ export class ReservePlaceController {
     return this.reservePlaceService.remove(uuid);
   }
 
-  private async joinUser(reservations) {
+  private async joinBooker(reservations) {
     const refinedReservations = [];
 
     for (const reservation of reservations) {
-      const user = await this.userService.findOne(reservation.user);
-      if (user) {
-        const { name } = user;
-        reservation.user = name;
+      const booker = await this.userService.findOne(reservation.booker_id);
+      if (booker) {
+        const { password, cryptoSalt, ...booker_info } = booker;
+        reservation.booker = booker_info;
         refinedReservations.push(reservation);
       }
     }

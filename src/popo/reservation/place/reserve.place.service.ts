@@ -29,7 +29,7 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    const existUser = await this.userService.findOne({ uuid: dto.user });
+    const existUser = await this.userService.findOne({ uuid: dto.booker });
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     }
@@ -43,7 +43,7 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    const existUser = await this.userService.findOne({ uuid: dto.user });
+    const existUser = await this.userService.findOne({ uuid: dto.booker });
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     }
@@ -66,7 +66,7 @@ export class ReservePlaceService {
 
     return this.reservePlaceRepo.save({
       place: existPlace.uuid,
-      user: existUser.uuid,
+      booker_id: existUser.uuid,
       phone: dto.phone,
       title: dto.title,
       description: dto.description,
@@ -120,7 +120,7 @@ export class ReservePlaceService {
     );
 
     const existUser = await this.userService.findOne({
-      uuid: existReserve.user,
+      uuid: existReserve.booker_id,
     });
 
     return {
