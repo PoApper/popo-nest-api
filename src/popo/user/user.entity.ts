@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { UserStatus, UserType } from './user.meta';
 import { ReserveEquip } from '../reservation/equip/reserve.equip.entity';
+import { ReservePlace } from '../reservation/place/reserve.place.entity';
 
 @Entity()
 @Unique(['email', 'id'])
@@ -52,4 +53,10 @@ export class User extends BaseEntity {
     (equip_reservation) => equip_reservation.booker,
   )
   equip_reservation: ReserveEquip[];
+
+  @OneToMany(
+    () => ReservePlace,
+    (place_reservation) => place_reservation.booker,
+  )
+  place_reservation: ReservePlace[];
 }

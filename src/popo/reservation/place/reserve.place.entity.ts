@@ -3,9 +3,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ReservationStatus } from '../reservation.meta';
+import { User } from '../../user/user.entity';
 
 @Entity()
 export class ReservePlace extends BaseEntity {
@@ -41,4 +44,14 @@ export class ReservePlace extends BaseEntity {
 
   @CreateDateColumn()
   created_at: Date;
+
+  /**
+   * Database Relation
+   */
+
+  @ManyToOne(() => User, (user) => user.place_reservation, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'booker_id' })
+  booker: User;
 }
