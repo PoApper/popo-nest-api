@@ -15,8 +15,8 @@ export class ReservePlace extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
-  @Column({ nullable: false })
-  place: string; // 장소의 uuid // TODO: deprecate
+  @Column({ nullable: true })
+  place_id: string; // uuid of place
 
   @Column({ nullable: true })
   booker_id: string; // uuid of booker

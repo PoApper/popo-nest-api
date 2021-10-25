@@ -24,7 +24,7 @@ export class ReservePlaceService {
   ) {}
 
   async save(dto: CreateReservePlaceDto) {
-    const existPlace = await this.placeService.findOne(dto.place);
+    const existPlace = await this.placeService.findOne(dto.place_id);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
@@ -38,7 +38,7 @@ export class ReservePlaceService {
   }
 
   async saveWithNameAndId(dto: CreateReservePlaceDto) {
-    const existPlace = await this.placeService.findOne(dto.place);
+    const existPlace = await this.placeService.findOne(dto.place_id);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
@@ -65,7 +65,7 @@ export class ReservePlaceService {
     }
 
     return this.reservePlaceRepo.save({
-      place: existPlace.uuid,
+      place_id: existPlace.uuid,
       booker_id: existUser.uuid,
       phone: dto.phone,
       title: dto.title,
@@ -94,7 +94,7 @@ export class ReservePlaceService {
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
-    return this.reservePlaceRepo.find({ place: existPlace.uuid });
+    return this.reservePlaceRepo.find({ place_id: existPlace.uuid });
   }
 
   async findAllByPlaceNameAndDate(placeName: string, date: string) {
@@ -102,7 +102,10 @@ export class ReservePlaceService {
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
-    return this.reservePlaceRepo.find({ place: existPlace.uuid, date: date });
+    return this.reservePlaceRepo.find({
+      place_id: existPlace.uuid,
+      date: date,
+    });
   }
 
   async updateStatus(uuid: string, status: ReservationStatus) {

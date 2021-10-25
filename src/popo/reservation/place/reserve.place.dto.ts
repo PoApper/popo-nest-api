@@ -1,5 +1,5 @@
 export class CreateReservePlaceDto {
-  readonly place: string; // uuid of place
+  readonly place_id: string; // uuid of place
   readonly booker_id?: string; // uuid of booker
   readonly phone: string;
   readonly title: string;

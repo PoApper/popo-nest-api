@@ -45,7 +45,7 @@ export class ReservePlaceController {
       saveDto,
     );
 
-    const existPlace = await this.placeService.findOne(dto.place);
+    const existPlace = await this.placeService.findOne(dto.place_id);
 
     // Send e-mail to staff.
     this.mailService.sendPlaceReserveCreateMailToStaff(
@@ -101,7 +101,7 @@ export class ReservePlaceController {
     const existUser = await this.userService.findOne({ id: user.id });
 
     const reservations = await this.reservePlaceService.find({
-      where: { user: existUser.uuid },
+      where: { booker_id: existUser.uuid },
       order: { created_at: 'DESC' },
     });
     return this.joinPlace(reservations);
@@ -200,10 +200,9 @@ export class ReservePlaceController {
   private async joinPlace(reservations) {
     const refinedReservations = [];
     for (const reservation of reservations) {
-      const place = await this.placeService.findOne(reservation.place);
+      const place = await this.placeService.findOne(reservation.place_id);
       if (place) {
-        const { name } = place;
-        reservation.place = name;
+        reservation.place = place;
         refinedReservations.push(reservation);
       }
     }
