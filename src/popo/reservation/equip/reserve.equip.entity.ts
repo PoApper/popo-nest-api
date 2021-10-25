@@ -38,12 +38,10 @@ export class ReserveEquip extends BaseEntity {
   date: string; // YYYYMMDD
 
   @Column({ nullable: false })
-  // TODO: migration into HH:MM
-  start_time: number; // hhmm
+  start_time: string; // HHmm
 
   @Column({ nullable: false })
-  // TODO: migration into HH:MM
-  end_time: number; // hhmm
+  end_time: string; // HHmm
 
   @Column({ nullable: false, default: ReservationStatus.in_process })
   status: ReservationStatus;
