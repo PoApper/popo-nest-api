@@ -14,7 +14,6 @@ import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { ReserveEquipService } from './reserve.equip.service';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
-import { UserService } from '../../user/user.service';
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
@@ -28,7 +27,6 @@ import { EquipService } from '../../equip/equip.service';
 export class ReserveEquipController {
   constructor(
     private readonly reserveEquipService: ReserveEquipService,
-    private readonly userService: UserService,
     private readonly equipService: EquipService,
     private readonly mailService: MailService,
   ) {}
@@ -37,9 +35,8 @@ export class ReserveEquipController {
   @UseGuards(JwtAuthGuard)
   async post(@Req() req, @Body() dto: CreateReserveEquipDto) {
     const user: any = req.user;
-    const existUser = await this.userService.findOne({ id: user.id });
 
-    const saveDto = Object.assign(dto, { booker_id: existUser.uuid });
+    const saveDto = Object.assign(dto, { booker_id: user.uuid });
     const new_reservation = await this.reserveEquipService.save(saveDto);
 
     const existEquips = await this.equipService.findByIds(dto.equipments);
@@ -97,21 +94,20 @@ export class ReserveEquipController {
     }
 
     let reservations = await this.reserveEquipService.find(findOption);
-    reservations = await this.joinBooker(reservations);
-    return this.joinEquips(reservations);
+    reservations = await this.reserveEquipService.joinBooker(reservations);
+    return this.reserveEquipService.joinEquips(reservations);
   }
 
   @Get('user')
   @UseGuards(JwtAuthGuard)
   async getMyReservation(@Req() req) {
     const user: any = req.user;
-    const existUser = await this.userService.findOne({ id: user.id });
 
     const reservations = await this.reserveEquipService.find({
-      where: { booker_id: existUser.uuid },
+      where: { booker_id: user.uuid },
       order: { created_at: 'DESC' },
     });
-    return this.joinEquips(reservations);
+    return this.reserveEquipService.joinEquips(reservations);
   }
 
   @Get('user/:uuid')
@@ -121,7 +117,7 @@ export class ReserveEquipController {
       where: { booker_id: uuid },
       order: { created_at: 'DESC' },
     });
-    return this.joinEquips(reservations);
+    return this.reserveEquipService.joinEquips(reservations);
   }
 
   @Get(':uuid')
@@ -163,37 +159,5 @@ export class ReserveEquipController {
         );
       }
     }
-  }
-
-  private async joinBooker(reservations) {
-    const refinedReservations = [];
-
-    for (const reservation of reservations) {
-      const booker = await this.userService.findOne({
-        uuid: reservation.booker_id,
-      });
-      if (booker) {
-        const { password, cryptoSalt, ...booker_info } = booker;
-        reservation.booker = booker_info;
-        refinedReservations.push(reservation);
-      }
-    }
-    return refinedReservations;
-  }
-
-  private async joinEquips(reservations) {
-    const refinedReservations = [];
-    for (const reservation of reservations) {
-      const equipments_list = [];
-      for (const equip_uuid of reservation.equipments) {
-        const equipment = await this.equipService.findOne(equip_uuid);
-        if (equipment) {
-          equipments_list.push(equipment);
-        }
-      }
-      reservation.equipments = equipments_list;
-      refinedReservations.push(reservation);
-    }
-    return refinedReservations;
   }
 }

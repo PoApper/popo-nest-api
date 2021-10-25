@@ -29,23 +29,7 @@ export class ReserveEquipService {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
 
-    const existUser = await this.userService.findOne({ uuid: dto.booker_id });
-    if (!existUser) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
-    }
-
-    return this.reserveEquipRepo.save({
-      equipments: dto.equipments,
-      booker_id: dto.booker_id,
-      owner: dto.owner,
-      phone: dto.phone,
-      title: dto.title,
-      description: dto.description,
-      date: dto.date,
-      start_time: dto.start_time,
-      end_time: dto.end_time,
-      status: ReservationStatus.in_process,
-    });
+    return this.reserveEquipRepo.save(dto);
   }
 
   count() {
@@ -87,5 +71,37 @@ export class ReserveEquipService {
       email: existUser.email,
       title: existReserve.title,
     };
+  }
+
+  async joinBooker(reservations) {
+    const refinedReservations = [];
+
+    for (const reservation of reservations) {
+      const booker = await this.userService.findOne({
+        uuid: reservation.booker_id,
+      });
+      if (booker) {
+        const { password, cryptoSalt, ...booker_info } = booker;
+        reservation.booker = booker_info;
+        refinedReservations.push(reservation);
+      }
+    }
+    return refinedReservations;
+  }
+
+  async joinEquips(reservations) {
+    const refinedReservations = [];
+    for (const reservation of reservations) {
+      const equipments_list = [];
+      for (const equip_uuid of reservation.equipments) {
+        const equipment = await this.equipService.findOne(equip_uuid);
+        if (equipment) {
+          equipments_list.push(equipment);
+        }
+      }
+      reservation.equipments = equipments_list;
+      refinedReservations.push(reservation);
+    }
+    return refinedReservations;
   }
 }

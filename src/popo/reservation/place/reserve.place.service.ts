@@ -102,4 +102,30 @@ export class ReservePlaceService {
   remove(uuid: string) {
     return this.reservePlaceRepo.delete(uuid);
   }
+
+  async joinBooker(reservations) {
+    const refinedReservations = [];
+
+    for (const reservation of reservations) {
+      const booker = await this.userService.findOne(reservation.booker_id);
+      if (booker) {
+        const { password, cryptoSalt, ...booker_info } = booker;
+        reservation.booker = booker_info;
+        refinedReservations.push(reservation);
+      }
+    }
+    return refinedReservations;
+  }
+
+  async joinPlace(reservations) {
+    const refinedReservations = [];
+    for (const reservation of reservations) {
+      const place = await this.placeService.findOne(reservation.place_id);
+      if (place) {
+        reservation.place = place;
+        refinedReservations.push(reservation);
+      }
+    }
+    return refinedReservations;
+  }
 }

@@ -15,7 +15,6 @@ import { Request } from 'express';
 
 import { ReservePlaceService } from './reserve.place.service';
 import { CreateReservePlaceDto } from './reserve.place.dto';
-import { UserService } from '../../user/user.service';
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
@@ -30,7 +29,6 @@ export class ReservePlaceController {
   constructor(
     private readonly reservePlaceService: ReservePlaceService,
     private readonly placeService: PlaceService,
-    private readonly userService: UserService,
     private readonly mailService: MailService,
   ) {}
 
@@ -38,9 +36,8 @@ export class ReservePlaceController {
   @UseGuards(JwtAuthGuard)
   async createWithNameAndId(@Req() req, @Body() dto: CreateReservePlaceDto) {
     const user: any = req.user;
-    const existUser = await this.userService.findOne({ id: user.id });
 
-    const saveDto = Object.assign(dto, { booker_id: existUser.uuid });
+    const saveDto = Object.assign(dto, { booker_id: user.uuid });
     const new_reservation = await this.reservePlaceService.save(saveDto);
 
     const existPlace = await this.placeService.findOne(dto.place_id);
@@ -83,8 +80,8 @@ export class ReservePlaceController {
     }
 
     let reservations = await this.reservePlaceService.find(findOption);
-    reservations = await this.joinBooker(reservations);
-    return this.joinPlace(reservations);
+    reservations = await this.reservePlaceService.joinBooker(reservations);
+    return this.reservePlaceService.joinPlace(reservations);
   }
 
   @Get('count')
@@ -96,13 +93,12 @@ export class ReservePlaceController {
   @UseGuards(JwtAuthGuard)
   async getMyReservation(@Req() req: Request) {
     const user: any = req.user;
-    const existUser = await this.userService.findOne({ id: user.id });
 
     const reservations = await this.reservePlaceService.find({
-      where: { booker_id: existUser.uuid },
+      where: { booker_id: user.uuid },
       order: { created_at: 'DESC' },
     });
-    return this.joinPlace(reservations);
+    return this.reservePlaceService.joinPlace(reservations);
   }
 
   @Get('user/:uuid')
@@ -112,7 +108,7 @@ export class ReservePlaceController {
       where: { booker_id: uuid },
       order: { created_at: 'DESC' },
     });
-    return this.joinPlace(reservations);
+    return this.reservePlaceService.joinPlace(reservations);
   }
 
   @Get('place/:place_uuid')
@@ -130,7 +126,7 @@ export class ReservePlaceController {
     const existReservations = await this.reservePlaceService.findAllByPlaceName(
       placeName,
     );
-    return this.joinBooker(existReservations);
+    return this.reservePlaceService.joinBooker(existReservations);
   }
 
   @Get('placeName/:placeName/:date') // hide user uuid
@@ -140,7 +136,7 @@ export class ReservePlaceController {
   ) {
     const existReservations =
       await this.reservePlaceService.findAllByPlaceNameAndDate(placeName, date);
-    return this.joinBooker(existReservations);
+    return this.reservePlaceService.joinBooker(existReservations);
   }
 
   @Get('placeName/:placeName/admin') // reveal user uuid
@@ -179,31 +175,5 @@ export class ReservePlaceController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   delete(@Param('uuid') uuid: string) {
     return this.reservePlaceService.remove(uuid);
-  }
-
-  private async joinBooker(reservations) {
-    const refinedReservations = [];
-
-    for (const reservation of reservations) {
-      const booker = await this.userService.findOne(reservation.booker_id);
-      if (booker) {
-        const { password, cryptoSalt, ...booker_info } = booker;
-        reservation.booker = booker_info;
-        refinedReservations.push(reservation);
-      }
-    }
-    return refinedReservations;
-  }
-
-  private async joinPlace(reservations) {
-    const refinedReservations = [];
-    for (const reservation of reservations) {
-      const place = await this.placeService.findOne(reservation.place_id);
-      if (place) {
-        reservation.place = place;
-        refinedReservations.push(reservation);
-      }
-    }
-    return refinedReservations;
   }
 }
