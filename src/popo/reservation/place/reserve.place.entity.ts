@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { ReservationStatus } from '../reservation.meta';
 import { User } from '../../user/user.entity';
+import { Place } from '../../place/place.entity';
 
 @Entity()
 export class ReservePlace extends BaseEntity {
@@ -48,6 +49,12 @@ export class ReservePlace extends BaseEntity {
   /**
    * Database Relation
    */
+
+  @ManyToOne(() => Place, (place) => place.place_reservation, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'place_id' })
+  place: Place;
 
   @ManyToOne(() => User, (user) => user.place_reservation, {
     onDelete: 'CASCADE',

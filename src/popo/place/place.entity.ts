@@ -3,18 +3,19 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  PrimaryColumn,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { PlaceRegion } from './place.meta';
+import { ReservePlace } from '../reservation/place/reserve.place.entity';
 
 @Entity()
 export class Place extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
-  @PrimaryColumn({ nullable: false })
+  @Column({ nullable: false })
   name: string;
 
   @Column('text', { nullable: true })
@@ -37,4 +38,11 @@ export class Place extends BaseEntity {
 
   @UpdateDateColumn()
   updateAt: Date;
+
+  /**
+   * Database Relation
+   */
+
+  @OneToMany(() => ReservePlace, (place_reservation) => place_reservation.place)
+  place_reservation: ReservePlace[];
 }
