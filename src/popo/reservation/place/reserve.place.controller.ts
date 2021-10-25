@@ -36,10 +36,15 @@ export class ReservePlaceController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async createWithNameAndId(@Body() dto: CreateReservePlaceDto) {
+  async createWithNameAndId(@Req() req, @Body() dto: CreateReservePlaceDto) {
+    const user: any = req.user;
+    const existUser = await this.userService.findOne({ id: user.id });
+
+    const saveDto = Object.assign(dto, { booker_id: existUser.uuid });
     const new_reservation = await this.reservePlaceService.saveWithNameAndId(
-      dto,
+      saveDto,
     );
+
     const existPlace = await this.placeService.findOne(dto.place);
 
     // Send e-mail to staff.
