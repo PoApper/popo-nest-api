@@ -17,10 +17,10 @@ export class ReserveEquip extends BaseEntity {
   uuid: string;
 
   @Column('simple-array', { nullable: false })
-  equips: string[]; // 장비의 uuid
+  equipments: string[]; // Array of equipment uuids
 
   @Column({ nullable: true })
-  booker_id: string; // 예약한 유저의 uuid
+  booker_id: string; // uuid of booker
 
   @Column({ nullable: false })
   owner: EquipOwner; // 장비의 owner
@@ -38,18 +38,16 @@ export class ReserveEquip extends BaseEntity {
   date: string; // YYYYMMDD
 
   @Column({ nullable: false })
-  // TODO: migration into HH:MM
-  startTime: number; // hhmm
+  start_time: string; // HHmm
 
   @Column({ nullable: false })
-  // TODO: migration into HH:MM
-  endTime: number; // hhmm
+  end_time: string; // HHmm
 
   @Column({ nullable: false, default: ReservationStatus.in_process })
-  reserveStatus: ReservationStatus;
+  status: ReservationStatus;
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   /**
    * Database Relation

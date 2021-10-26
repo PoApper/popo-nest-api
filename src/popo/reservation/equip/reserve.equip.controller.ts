@@ -14,7 +14,6 @@ import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { ReserveEquipService } from './reserve.equip.service';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
-import { UserService } from '../../user/user.service';
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
@@ -23,28 +22,24 @@ import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
 
-@ApiTags('Reservation Equip')
+@ApiTags('Equipment Reservation')
 @Controller('reservation-equip')
 export class ReserveEquipController {
   constructor(
     private readonly reserveEquipService: ReserveEquipService,
-    private readonly userService: UserService,
     private readonly equipService: EquipService,
     private readonly mailService: MailService,
   ) {}
 
-  @Post('admin')
-  @UseGuards(JwtAuthGuard)
-  async create(@Body() dto: CreateReserveEquipDto) {
-    // admin 용 create
-    return this.reserveEquipService.save(dto);
-  }
-
   @Post()
   @UseGuards(JwtAuthGuard)
-  async post(@Body() dto: CreateReserveEquipDto) {
-    const saveReserve = await this.reserveEquipService.save(dto);
-    const existEquips = await this.equipService.findByIds(dto.equips);
+  async post(@Req() req, @Body() dto: CreateReserveEquipDto) {
+    const user: any = req.user;
+
+    const saveDto = Object.assign(dto, { booker_id: user.uuid });
+    const new_reservation = await this.reserveEquipService.save(saveDto);
+
+    const existEquips = await this.equipService.findByIds(dto.equipments);
 
     const staff_emails = existEquips.map((equip) => equip.staff_email);
     const unique_emails = new Set(staff_emails);
@@ -52,13 +47,13 @@ export class ReserveEquipController {
     // send e-mail to staff
     unique_emails.forEach((email) =>
       this.mailService.sendEquipReserveCreateMailToStaff(
-        email ?? process.env.ADMIN_EMAIL,
+        email,
         existEquips,
-        saveReserve,
+        new_reservation,
       ),
     );
 
-    return saveReserve;
+    return new_reservation;
   }
 
   @Get('count')
@@ -72,7 +67,7 @@ export class ReserveEquipController {
   @ApiQuery({ name: 'date', required: false })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
-  async findAll(
+  async getAll(
     @Query('owner') owner: string,
     @Query('status') status: string,
     @Query('date') date: string,
@@ -84,13 +79,13 @@ export class ReserveEquipController {
       whereOption['owner'] = owner;
     }
     if (status) {
-      whereOption['reserveStatus'] = status;
+      whereOption['status'] = status;
     }
     if (date) {
       whereOption['date'] = date;
     }
 
-    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
+    const findOption = { where: whereOption, order: { created_at: 'DESC' } };
     if (skip) {
       findOption['skip'] = skip;
     }
@@ -98,31 +93,31 @@ export class ReserveEquipController {
       findOption['take'] = take;
     }
 
-    const reservs = await this.reserveEquipService.find(findOption);
-
-    const refined1 = await this.joinBooker(reservs);
-    return this.joinEquips(refined1);
+    let reservations = await this.reserveEquipService.find(findOption);
+    reservations = await this.reserveEquipService.joinBooker(reservations);
+    return this.reserveEquipService.joinEquips(reservations);
   }
 
-  @Get(['user', 'user/:uuid'])
+  @Get('user')
   @UseGuards(JwtAuthGuard)
-  async getUserReservation(@Req() req, @Param('uuid') uuid: string) {
-    if (uuid) {
-      return await this.reserveEquipService.find({
-        where: { user: uuid },
-        order: { createdAt: 'DESC' },
-      });
-    } else {
-      // 내 예약 조회
-      const user: any = req.user;
-      const existUser = await this.userService.findOne({ id: user.id });
+  async getMyReservation(@Req() req) {
+    const user: any = req.user;
 
-      const reservs = await this.reserveEquipService.find({
-        where: { booker_id: existUser.uuid },
-        order: { createdAt: 'DESC' },
-      });
-      return this.joinEquips(reservs);
-    }
+    const reservations = await this.reserveEquipService.find({
+      where: { booker_id: user.uuid },
+      order: { created_at: 'DESC' },
+    });
+    return this.reserveEquipService.joinEquips(reservations);
+  }
+
+  @Get('user/:uuid')
+  @UseGuards(JwtAuthGuard)
+  async getUserReservation(@Param('uuid') uuid: string) {
+    const reservations = await this.reserveEquipService.find({
+      where: { booker_id: uuid },
+      order: { created_at: 'DESC' },
+    });
+    return this.reserveEquipService.joinEquips(reservations);
   }
 
   @Get(':uuid')
@@ -157,44 +152,12 @@ export class ReserveEquipController {
       // Send e-mail to client.
       const skipList = [UserType.admin, UserType.association, UserType.club];
       if (!skipList.includes(response.userType)) {
-        await this.mailService.sendReserveStatusMail(
+        await this.mailService.sendReservationPatchMail(
           response.email,
           response.title,
           ReservationStatus[status],
         );
       }
     }
-  }
-
-  private async joinBooker(reservations) {
-    const refinedReservations = [];
-
-    for (const reservation of reservations) {
-      const booker = await this.userService.findOne({
-        uuid: reservation.booker_id,
-      });
-      if (booker) {
-        const { password, cryptoSalt, ...booker_info } = booker;
-        reservation.booker = booker_info;
-        refinedReservations.push(reservation);
-      }
-    }
-    return refinedReservations;
-  }
-
-  private async joinEquips(reservations) {
-    const refinedReservations = [];
-    for (const reservation of reservations) {
-      const new_equips = [];
-      for (const equip_uuid of reservation.equips) {
-        const equip = await this.equipService.findOne(equip_uuid);
-        if (equip) {
-          new_equips.push(equip);
-        }
-      }
-      reservation.equips = new_equips;
-      refinedReservations.push(reservation);
-    }
-    return refinedReservations;
   }
 }

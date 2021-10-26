@@ -20,7 +20,7 @@ export class ReservationStatisticsController {
     const data = {};
     while (query_idx.isBefore(query_end)) {
       data[query_idx.format('YYYY-MM')] = await this.reservePlaceService.count({
-        createdAt: Between(query_idx.format(), query_idx.add(1, 'M').format()),
+        created_at: Between(query_idx.format(), query_idx.add(1, 'M').format()),
       });
     }
 

@@ -3,20 +3,24 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ReservationStatus } from '../reservation.meta';
+import { User } from '../../user/user.entity';
+import { Place } from '../../place/place.entity';
 
 @Entity()
 export class ReservePlace extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
-  @Column({ nullable: false })
-  place: string; // 장소의 uuid
+  @Column({ nullable: true })
+  place_id: string; // uuid of place
 
-  @Column({ nullable: false })
-  user: string; // 예약한 유저의 uuid
+  @Column({ nullable: true })
+  booker_id: string; // uuid of booker
 
   @Column({ nullable: false })
   phone: string; // 010-xxxx-xxxx
@@ -31,14 +35,30 @@ export class ReservePlace extends BaseEntity {
   date: string; // YYYYMMDD
 
   @Column({ nullable: false })
-  startTime: number; // hh:mm
+  start_time: string; // HHmm
 
   @Column({ nullable: false })
-  endTime: number; // hh:mm
+  end_time: string; // HHmm
 
   @Column({ nullable: false, default: ReservationStatus.in_process })
-  reserveStatus: ReservationStatus;
+  status: ReservationStatus;
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
+
+  /**
+   * Database Relation
+   */
+
+  @ManyToOne(() => Place, (place) => place.place_reservation, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'place_id' })
+  place: Place;
+
+  @ManyToOne(() => User, (user) => user.place_reservation, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'booker_id' })
+  booker: User;
 }

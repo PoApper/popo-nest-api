@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
+import * as EmailValidator from 'email-validator';
 import { Equip } from '../popo/equip/equip.entity';
 import { Place } from '../popo/place/place.entity';
 
@@ -7,9 +8,9 @@ import { Place } from '../popo/place/place.entity';
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
 
-  async sendVerificationMail(email: string, uuid: string) {
+  async sendVerificationMail(recipient_email: string, uuid: string) {
     await this.mailerService.sendMail({
-      to: email,
+      to: recipient_email,
       from: process.env.GMAIL_USER,
       subject: '[POPO] 가입 인증',
       html: `
@@ -33,17 +34,20 @@ export class MailService {
         </body>
       </html>`,
     });
-    console.log(`success to mailing: ${email}`);
+    console.log(`success to mailing: ${recipient_email}`);
   }
 
   // TODO: refactor date and time format
   async sendPlaceReserveCreateMailToStaff(
-    email: string,
+    recipient_email: string,
     place: Place,
     reservation,
   ) {
+    recipient_email = EmailValidator.validate(recipient_email)
+      ? recipient_email
+      : process.env.ADMIN_EMAIL;
     await this.mailerService.sendMail({
-      to: email,
+      to: recipient_email,
       from: process.env.GMAIL_USER,
       subject: `[POPO] 장소 예약이 생성되었습니다.`,
       html: `
@@ -55,22 +59,25 @@ export class MailService {
         </head>
         <body>
           <h2>[POPO] 장소 예약이 생성되었습니다</h2>
-          <p>장소 ${place.name}에 대한 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.startTime} ~ ${reservation.endTime})이/가 생성 되었습니다.</p>
+          <p>장소 ${place.name}에 대한 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가 생성 되었습니다.</p>
           <p>장소 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
         </body>
       </html>`,
     });
-    console.log(`장소 예약 생성 메일: success to mailing: ${email}`);
+    console.log(`장소 예약 생성 메일: success to mailing: ${recipient_email}`);
   }
 
   // TODO: refactor date and time format
   async sendEquipReserveCreateMailToStaff(
-    email: string,
-    equips: Equip[],
+    recipient_email: string,
+    equipments: Equip[],
     reservation,
   ) {
+    recipient_email = EmailValidator.validate(recipient_email)
+      ? recipient_email
+      : process.env.ADMIN_EMAIL;
     await this.mailerService.sendMail({
-      to: email,
+      to: recipient_email,
       from: process.env.GMAIL_USER,
       subject: `[POPO] 장비 예약이 생성되었습니다.`,
       html: `
@@ -82,21 +89,21 @@ export class MailService {
         </head>
         <body>
           <h2>[POPO] 장비 예약이 생성되었습니다</h2>
-          <p>장비 ${equips
+          <p>장비 ${equipments
             .map((equip) => equip.name)
             .join(', ')}에 대한 예약 "<strong>${reservation.title}</strong>"(${
         reservation.date
-      } - ${reservation.startTime} ~ ${
-        reservation.endTime
+      } - ${reservation.start_time} ~ ${
+        reservation.end_time
       })이/가 생성 되었습니다.</p>
           <p>장비 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
         </body>
       </html>`,
     });
-    console.log(`장비 예약 생성 메일: success to mailing: ${email}`);
+    console.log(`장비 예약 생성 메일: success to mailing: ${recipient_email}`);
   }
 
-  async sendReserveStatusMail(email: string, title: string, status: string) {
+  async sendReservationPatchMail(email: string, title: string, status: string) {
     await this.mailerService.sendMail({
       to: email,
       from: process.env.GMAIL_USER,

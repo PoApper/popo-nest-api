@@ -24,39 +24,15 @@ export class ReservePlaceService {
   ) {}
 
   async save(dto: CreateReservePlaceDto) {
-    const existPlace = await this.placeService.findOne(dto.place);
-    if (!existPlace) {
-      throw new BadRequestException(Message.NOT_EXISTING_PLACE);
-    }
+    const booked_reservations = await this.find({
+      place_id: dto.place_id,
+      date: dto.date,
+    });
 
-    const existUser = await this.userService.findOne({ uuid: dto.user });
-    if (!existUser) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
-    }
-
-    return this.reservePlaceRepo.save(dto);
-  }
-
-  async saveWithNameAndId(dto: CreateReservePlaceDto) {
-    const existPlace = await this.placeService.findOne(dto.place);
-    if (!existPlace) {
-      throw new BadRequestException(Message.NOT_EXISTING_PLACE);
-    }
-
-    const existUser = await this.userService.findOne({ uuid: dto.user });
-    if (!existUser) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
-    }
-
-    const bookedReservations = await this.findAllByPlaceNameAndDate(
-      existPlace.name,
-      dto.date,
-    );
-
-    for (const reservation of bookedReservations) {
+    for (const reservation of booked_reservations) {
       if (
-        dto.endTime <= reservation.startTime ||
-        reservation.endTime <= dto.startTime
+        dto.end_time <= reservation.start_time ||
+        reservation.end_time <= dto.start_time
       ) {
         continue;
       } else {
@@ -64,17 +40,7 @@ export class ReservePlaceService {
       }
     }
 
-    return this.reservePlaceRepo.save({
-      place: existPlace.uuid,
-      user: existUser.uuid,
-      phone: dto.phone,
-      title: dto.title,
-      description: dto.description,
-      date: dto.date,
-      startTime: dto.startTime,
-      endTime: dto.endTime,
-      reserveStatus: ReservationStatus.in_process,
-    });
+    return this.reservePlaceRepo.save(dto);
   }
 
   find(findOptions?: object) {
@@ -94,7 +60,7 @@ export class ReservePlaceService {
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
-    return this.reservePlaceRepo.find({ place: existPlace.uuid });
+    return this.reservePlaceRepo.find({ place_id: existPlace.uuid });
   }
 
   async findAllByPlaceNameAndDate(placeName: string, date: string) {
@@ -102,10 +68,13 @@ export class ReservePlaceService {
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
-    return this.reservePlaceRepo.find({ place: existPlace.uuid, date: date });
+    return this.reservePlaceRepo.find({
+      place_id: existPlace.uuid,
+      date: date,
+    });
   }
 
-  async updateStatus(uuid: string, reserveStatus: ReservationStatus) {
+  async updateStatus(uuid: string, status: ReservationStatus) {
     const existReserve = await this.findOne(uuid);
 
     if (!existReserve) {
@@ -115,12 +84,12 @@ export class ReservePlaceService {
     this.reservePlaceRepo.update(
       { uuid: uuid },
       {
-        reserveStatus: reserveStatus,
+        status: status,
       },
     );
 
     const existUser = await this.userService.findOne({
-      uuid: existReserve.user,
+      uuid: existReserve.booker_id,
     });
 
     return {
@@ -132,5 +101,31 @@ export class ReservePlaceService {
 
   remove(uuid: string) {
     return this.reservePlaceRepo.delete(uuid);
+  }
+
+  async joinBooker(reservations) {
+    const refinedReservations = [];
+
+    for (const reservation of reservations) {
+      const booker = await this.userService.findOne(reservation.booker_id);
+      if (booker) {
+        const { password, cryptoSalt, ...booker_info } = booker;
+        reservation.booker = booker_info;
+        refinedReservations.push(reservation);
+      }
+    }
+    return refinedReservations;
+  }
+
+  async joinPlace(reservations) {
+    const refinedReservations = [];
+    for (const reservation of reservations) {
+      const place = await this.placeService.findOne(reservation.place_id);
+      if (place) {
+        reservation.place = place;
+        refinedReservations.push(reservation);
+      }
+    }
+    return refinedReservations;
   }
 }
