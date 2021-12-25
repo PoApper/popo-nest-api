@@ -32,7 +32,7 @@ export class User extends BaseEntity {
   @Column({ nullable: false })
   name: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, default: UserType.student })
   userType: UserType;
 
   @Column({ nullable: false, default: UserStatus.deactivated })

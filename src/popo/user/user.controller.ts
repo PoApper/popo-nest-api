@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
@@ -14,11 +15,7 @@ import { UserType } from './user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
-import { ApiTags } from '@nestjs/swagger';
-
-const Message = {
-  FAIL_VERIFICATION_EMAIL_SEND: 'Fail to send verification email.',
-};
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('User')
 @Controller('user')
@@ -33,8 +30,38 @@ export class UserController {
   @Get()
   @Roles(UserType.admin)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async getAll() {
-    return this.userService.find({ order: { lastLoginAt: 'DESC' } });
+  @ApiQuery({ name: 'type', required: false })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'skip', required: false })
+  @ApiQuery({ name: 'take', required: false })
+  async getAll(
+    @Query('type') type: string,
+    @Query('status') status: string,
+    @Query('skip') skip: number,
+    @Query('take') take: number,
+  ) {
+    const whereOption = {};
+    if (type) {
+      whereOption['userType'] = type;
+    }
+    if (status) {
+      whereOption['userStatus'] = status;
+    }
+
+    const findOption = { where: whereOption, order: { lastLoginAt: 'DESC' } };
+    if (skip) {
+      findOption['skip'] = skip;
+    }
+    if (take) {
+      findOption['take'] = take;
+    }
+
+    return this.userService.find(findOption);
+  }
+
+  @Get('count')
+  countAll() {
+    return this.userService.count();
   }
 
   @Get(':uuid')
