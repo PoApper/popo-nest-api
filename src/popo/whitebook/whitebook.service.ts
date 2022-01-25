@@ -12,11 +12,8 @@ export class WhitebookService {
   ) {}
 
   save(dto: WhitebookDto) {
-    return this.whitebookRepo.save({
-      title: dto.title,
-      link: dto.link,
-      content: dto.content,
-    });
+    console.log(dto);
+    return this.whitebookRepo.save(dto);
   }
 
   findAll(orderOption: object) {
@@ -29,5 +26,13 @@ export class WhitebookService {
         click_count: whitebook.click_count,
       });
     });
+  }
+
+  update(uuid: string, dto: WhitebookDto) {
+    return this.whitebookRepo.update(uuid, dto);
+  }
+
+  delete(uuid: string) {
+    return this.whitebookRepo.delete(uuid);
   }
 }

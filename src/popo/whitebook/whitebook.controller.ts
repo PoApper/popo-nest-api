@@ -1,5 +1,14 @@
 import { ApiTags } from '@nestjs/swagger';
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+} from '@nestjs/common';
 import { WhitebookService } from './whitebook.service';
 import { WhitebookDto } from './whitebook.dto';
 
@@ -21,5 +30,15 @@ export class WhitebookController {
   @Patch('click/:uuid')
   AddOneClickCount(@Param('uuid') uuid: string) {
     return this.whitebookService.addOneClickCount(uuid);
+  }
+
+  @Put(':uuid')
+  update(@Param('uuid') uuid: string, @Body() dto: WhitebookDto) {
+    return this.whitebookService.update(uuid, dto);
+  }
+
+  @Delete(':uuid')
+  delete(@Param('uuid') uuid: string) {
+    return this.whitebookService.delete(uuid);
   }
 }

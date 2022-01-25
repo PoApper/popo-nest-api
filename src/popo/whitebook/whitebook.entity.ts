@@ -18,7 +18,7 @@ export class Whitebook extends BaseEntity {
   @Column({ nullable: false })
   link: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   content: string;
 
   @Column({ default: 0 })
