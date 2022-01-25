@@ -12,7 +12,6 @@ export class WhitebookService {
   ) {}
 
   save(dto: WhitebookDto) {
-    console.log(dto);
     return this.whitebookRepo.save(dto);
   }
 
@@ -23,7 +22,7 @@ export class WhitebookService {
   addOneClickCount(uuid: string) {
     this.whitebookRepo.findOne(uuid).then((whitebook) => {
       return this.whitebookRepo.update(uuid, {
-        click_count: whitebook.click_count,
+        click_count: whitebook.click_count + 1,
       });
     });
   }
