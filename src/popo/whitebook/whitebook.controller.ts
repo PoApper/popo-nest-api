@@ -12,7 +12,7 @@ import {
 import { WhitebookService } from './whitebook.service';
 import { WhitebookDto } from './whitebook.dto';
 
-@ApiTags('Whitebook')
+@ApiTags('생활백서(Whitebook)')
 @Controller('whitebook')
 export class WhitebookController {
   constructor(private readonly whitebookService: WhitebookService) {}
