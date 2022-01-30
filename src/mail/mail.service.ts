@@ -26,7 +26,7 @@ export class MailService {
           <p>- <b>POPO, POstechian's POrtal</b> 드림 -</p>
           <br/>
           <div style="padding: 2px; background-color: crimson; color: white; text-align: center;">
-             <a href="https://popo.poapper.com/activateAccount/${uuid}" style="text-decoration: inherit;">
+             <a href="https://popo.poapper.club/activateAccount/${uuid}" style="text-decoration: inherit;">
               계정 활성하기
              </a>
           </div>

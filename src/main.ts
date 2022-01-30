@@ -13,6 +13,9 @@ async function bootstrap() {
       'https://popo.poapper.com',
       'https://admin.popo.poapper.com',
       'https://dev.popo.poapper.com',
+      'https://popo.poapper.club',
+      'https://admin.popo.poapper.club',
+      'https://dev.popo.poapper.club',
     ],
     credentials: true,
   });
