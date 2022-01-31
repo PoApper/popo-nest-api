@@ -4,8 +4,8 @@
 <br />
 
 <p align="center">
-<img src="https://img.shields.io/badge/node-%3E%3D14.16-brightgreen">
-<img src="https://img.shields.io/badge/npm-%3E%3D7.20-brightgreen">
+<img src="https://img.shields.io/badge/node-%3E%3D16.13.2-brightgreen">
+<img src="https://img.shields.io/badge/npm-%3E%3D8.3.1-brightgreen">
 </p>
 
 
@@ -18,7 +18,7 @@
     <br />
     POPO, POstechian's POrtal
     <br />
-    👉 <a href="http://popo.postech.ac.kr">POPO</a>
+    👉 <a href="http://popo.postech.club">POPO</a>
   </p>
 </p>
 
@@ -36,25 +36,33 @@ $ npm run build
 $ npm run start:prod
 ```
 
-## API Stack
+## Stack
 
 ### Interpreter
 
-- `JS/TS`
+- `node >= 16.13.2`
+- `npm >= 8.3.1`
 
 ### Framework
 
-- `NestJS`
-- `TypeORM`
+- `NestJS >= 7.5.1`
 
 ### Database
 
-- MySQL
+- AWS RDS
 - `@nestjs/typeorm`
 
-### Storage
+### Runner
 
-- Vultr
+- AWS EC2
 
-## Contributors
+### Others
+
+- AWS SES
+- swagger
+
+## Contributors & Maintainer
+
+- Seokyun Ha ([@bluehorn07](https://github.com/BlueHorn07))
+- Jeongwon Choi ([@jjeongone](https://github.com/jjeongone))
 
