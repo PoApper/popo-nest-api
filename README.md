@@ -10,7 +10,7 @@
 
 
 <p align="center">
-  <a href="http://popo.postech.ac.kr">
+  <a href="http://popo.poapper.club">
     <img src="https://raw.githubusercontent.com/PoApper/POPO-nest-api/master/assets/popo.svg" alt="Logo" height="150">
   </a>
   <p align="center">
@@ -18,7 +18,7 @@
     <br />
     POPO, POstechian's POrtal
     <br />
-    👉 <a href="http://popo.postech.club">POPO</a>
+    👉 <a href="http://popo.poapper.club">POPO</a>
   </p>
 </p>
 
