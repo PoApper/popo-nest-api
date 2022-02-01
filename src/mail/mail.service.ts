@@ -11,7 +11,7 @@ export class MailService {
   async sendVerificationMail(recipient_email: string, uuid: string) {
     await this.mailerService.sendMail({
       to: recipient_email,
-      from: process.env.GMAIL_USER,
+      from: process.env.POPO_MAIL_ADDRESS,
       subject: '[POPO] 가입 인증',
       html: `
       <html>
@@ -48,7 +48,7 @@ export class MailService {
       : process.env.ADMIN_EMAIL;
     await this.mailerService.sendMail({
       to: recipient_email,
-      from: process.env.GMAIL_USER,
+      from: process.env.POPO_MAIL_ADDRESS,
       subject: `[POPO] 장소 예약이 생성되었습니다.`,
       html: `
       <html>
@@ -78,7 +78,7 @@ export class MailService {
       : process.env.ADMIN_EMAIL;
     await this.mailerService.sendMail({
       to: recipient_email,
-      from: process.env.GMAIL_USER,
+      from: process.env.POPO_MAIL_ADDRESS,
       subject: `[POPO] 장비 예약이 생성되었습니다.`,
       html: `
       <html>
@@ -106,7 +106,7 @@ export class MailService {
   async sendReservationPatchMail(email: string, title: string, status: string) {
     await this.mailerService.sendMail({
       to: email,
-      from: process.env.GMAIL_USER,
+      from: process.env.POPO_MAIL_ADDRESS,
       subject: `[POPO] 예약이 ${status} 되었습니다!`,
       html: `
       <html>
