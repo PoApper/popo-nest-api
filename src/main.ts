@@ -10,9 +10,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'http://localhost:3001',
-      'https://popo.poapper.com',
-      'https://admin.popo.poapper.com',
-      'https://dev.popo.poapper.com',
+
       'https://popo.poapper.club',
       'https://admin.popo.poapper.club',
       'https://dev.popo.poapper.club',
