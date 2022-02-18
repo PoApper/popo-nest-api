@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { WhitebookService } from './whitebook.service';
 import { WhitebookDto } from './whitebook.dto';
@@ -23,8 +24,16 @@ export class WhitebookController {
   }
 
   @Get()
-  getAll() {
-    return this.whitebookService.findAll({ updatedAt: 'DESC' });
+  getAll(@Query('orderBy') orderBy: string) {
+    if (orderBy === 'click_count') {
+      return this.whitebookService.findAll({ click_count: 'DESC' });
+    } else if (orderBy === 'updatedAt') {
+      return this.whitebookService.findAll({ updatedAt: 'DESC' });
+    } else if (orderBy === 'createdAt') {
+      return this.whitebookService.findAll({ createdAt: 'DESC' });
+    } else {
+      return this.whitebookService.findAll({ title: 'ASC' });
+    }
   }
 
   @Patch('click/:uuid')
