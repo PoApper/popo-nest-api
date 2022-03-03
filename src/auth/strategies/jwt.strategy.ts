@@ -18,12 +18,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
+  // only can access properties described in `generateJwtToken()` function
   async validate(payload: any) {
     return {
       uuid: payload.uuid,
       id: payload.id,
       name: payload.name,
       userType: payload.userType,
+      email: payload.email,
     };
+    // this is what you can access by `@Req() req` with `JwtAuthGuard` decorator
   }
 }
