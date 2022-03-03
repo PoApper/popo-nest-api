@@ -15,8 +15,15 @@ export class WhitebookService {
     return this.whitebookRepo.save(dto);
   }
 
-  findAll(orderOption: object) {
-    return this.whitebookRepo.find({ order: orderOption });
+  findAll(orderOption: object, isLoginUser = false) {
+    if (isLoginUser) {
+      return this.whitebookRepo.find({ order: orderOption });
+    } else {
+      return this.whitebookRepo.find({
+        order: orderOption,
+        where: { show_only_login: false },
+      });
+    }
   }
 
   addOneClickCount(uuid: string) {
