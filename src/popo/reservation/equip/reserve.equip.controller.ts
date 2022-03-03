@@ -44,6 +44,12 @@ export class ReserveEquipController {
     const staff_emails = existEquips.map((equip) => equip.staff_email);
     const unique_emails = new Set(staff_emails);
 
+    // send e-mail to booker
+    await this.mailService.sendEquipReserveCreateMailToBooker(
+      user.email,
+      new_reservation,
+    );
+
     // send e-mail to staff
     unique_emails.forEach((email) =>
       this.mailService.sendEquipReserveCreateMailToStaff(
