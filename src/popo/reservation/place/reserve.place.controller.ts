@@ -42,8 +42,15 @@ export class ReservePlaceController {
 
     const existPlace = await this.placeService.findOne(dto.place_id);
 
-    // Send e-mail to staff.
-    this.mailService.sendPlaceReserveCreateMailToStaff(
+    // Send e-mail to booker
+    await this.mailService.sendPlaceReserveCreateMailToBooker(
+      user.email,
+      existPlace,
+      new_reservation,
+    );
+
+    // Send e-mail to staff
+    await this.mailService.sendPlaceReserveCreateMailToStaff(
       existPlace.staff_email,
       existPlace,
       new_reservation,
