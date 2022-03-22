@@ -25,7 +25,7 @@ export class Place extends BaseEntity {
   location: string;
 
   @Column({ nullable: false })
-  region: PlaceRegion; // 학생회관 / 지곡 / OTHERS
+  region: PlaceRegion; // 학생회관 / 지곡 / OTHERS / 커뮤니티 센터
 
   @Column({ nullable: true })
   staff_email: string;
