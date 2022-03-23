@@ -1,5 +1,3 @@
-
-
 export class CreateIntroAssociationDto {
   readonly name: string;
   readonly content: string;
@@ -7,4 +5,3 @@ export class CreateIntroAssociationDto {
   readonly representative: string;
   readonly contact: string;
 }
-
