@@ -12,6 +12,7 @@ const Message = {
   NOT_EXISTING_EQUIP: "There's no such equip.",
   NOT_EXISTING_RESERVATION: "There's no such reservation.",
   OVERLAP_RESERVATION: 'Reservation time overlapped.',
+  NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
 };
 
 @Injectable()
@@ -27,6 +28,15 @@ export class ReserveEquipService {
     const existEquips = await this.equipService.findByIds(dto.equipments);
     if (!existEquips) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
+    }
+
+    if (
+      !dto.equipments.length ||
+      dto.phone === '' ||
+      dto.title === '' ||
+      dto.description === ''
+    ) {
+      throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
     }
 
     return this.reserveEquipRepo.save(dto);

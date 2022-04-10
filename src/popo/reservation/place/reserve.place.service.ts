@@ -12,6 +12,7 @@ const Message = {
   NOT_EXISTING_PLACE: "There's no such place.",
   NOT_EXISTING_RESERVATION: "There's no such reservation.",
   OVERLAP_RESERVATION: 'Reservation time overlapped.',
+  NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
 };
 
 @Injectable()
@@ -38,6 +39,15 @@ export class ReservePlaceService {
       } else {
         throw new BadRequestException(Message.OVERLAP_RESERVATION);
       }
+    }
+
+    if (
+      dto.title === '' ||
+      dto.phone === '' ||
+      dto.booker_id === '' ||
+      dto.description === ''
+    ) {
+      throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
     }
 
     return this.reservePlaceRepo.save(dto);
