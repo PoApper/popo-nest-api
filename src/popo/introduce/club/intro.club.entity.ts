@@ -37,6 +37,9 @@ export class IntroClub extends BaseEntity {
   @Column({ nullable: true })
   logoName: string;
 
+  @Column({ default: 0 })
+  views: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
