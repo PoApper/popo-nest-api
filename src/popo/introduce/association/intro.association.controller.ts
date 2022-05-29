@@ -55,7 +55,7 @@ export class IntroAssociationController {
 
   @Get()
   get() {
-    return this.introAssociationService.find({ order: { updateAt: 'DESC' } });
+    return this.introAssociationService.find({ order: { name: 'ASC' } });
   }
 
   @Get('name/:name')

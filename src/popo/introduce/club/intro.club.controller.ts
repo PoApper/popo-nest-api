@@ -48,14 +48,14 @@ export class IntroClubController {
 
   @Get()
   get() {
-    return this.introClubService.find({ order: { updateAt: 'DESC' } });
+    return this.introClubService.find({ order: { name: 'ASC' } });
   }
 
   @Get('clubType/:clubType')
   getByClubType(@Param('clubType') clubType: ClubType) {
     return this.introClubService.find({
       where: { clubType: clubType },
-      order: { updateAt: 'DESC' },
+      order: { name: 'ASC' },
     });
   }
 
