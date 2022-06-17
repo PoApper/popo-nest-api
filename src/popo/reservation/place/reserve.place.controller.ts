@@ -15,7 +15,10 @@ import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { ReservePlaceService } from './reserve.place.service';
-import { CreateReservePlaceDto } from './reserve.place.dto';
+import {
+  AcceptPlaceReservationListDto,
+  CreateReservePlaceDto,
+} from './reserve.place.dto';
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
@@ -150,6 +153,33 @@ export class ReservePlaceController {
   @Get('placeName/:placeName/admin') // reveal user uuid
   getByPlaceName(@Param('placeName') placeName: string) {
     return this.reservePlaceService.findAllByPlaceName(placeName);
+  }
+
+  @Patch('all/status/accept')
+  @Roles(UserType.admin, UserType.association, UserType.staff)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async acceptAllStatus(
+    @Body() body: AcceptPlaceReservationListDto,
+    @Query('sendEmail') sendEmail?: string,
+  ) {
+    for (const reservation_uuid of body.uuid_list) {
+      const response = await this.reservePlaceService.updateStatus(
+        reservation_uuid,
+        ReservationStatus.accept,
+      );
+
+      if (sendEmail === 'true') {
+        // Send e-mail to client.
+        const skipList = [UserType.admin, UserType.association, UserType.club];
+        if (!skipList.includes(response.userType)) {
+          await this.mailService.sendReservationPatchMail(
+            response.email,
+            response.title,
+            ReservationStatus[status],
+          );
+        }
+      }
+    }
   }
 
   @Patch(':uuid/status/:status')
