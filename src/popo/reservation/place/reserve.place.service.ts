@@ -24,21 +24,34 @@ export class ReservePlaceService {
     private readonly placeService: PlaceService,
   ) {}
 
-  async save(dto: CreateReservePlaceDto) {
+  async checkPossible(place_id, date, start_time, end_time): Promise<boolean> {
     const booked_reservations = await this.find({
-      place_id: dto.place_id,
-      date: dto.date,
+      place_id: place_id,
+      date: date,
     });
 
     for (const reservation of booked_reservations) {
       if (
-        dto.end_time <= reservation.start_time ||
-        reservation.end_time <= dto.start_time
+        end_time <= reservation.start_time ||
+        reservation.end_time <= start_time
       ) {
         continue;
       } else {
-        throw new BadRequestException(Message.OVERLAP_RESERVATION);
+        return false;
       }
+    }
+    return true;
+  }
+
+  async save(dto: CreateReservePlaceDto) {
+    const isPossible = await this.checkPossible(
+      dto.place_id,
+      dto.date,
+      dto.start_time,
+      dto.end_time,
+    );
+    if (!isPossible) {
+      throw new BadRequestException(Message.OVERLAP_RESERVATION);
     }
 
     if (
