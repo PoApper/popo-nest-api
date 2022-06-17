@@ -24,7 +24,37 @@ export class ReserveEquipService {
     private readonly equipService: EquipService,
   ) {}
 
+  async checkPossible(uuid_list, date, start_time, end_time): Promise<boolean> {
+    const booked_reservations = await this.find({
+      date: date,
+    });
+
+    for (const reservation of booked_reservations) {
+      if (reservation.equipments.some((equip) => uuid_list.includes(equip))) {
+        if (
+          end_time <= reservation.start_time ||
+          reservation.end_time <= start_time
+        ) {
+          continue;
+        } else {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   async save(dto: CreateReserveEquipDto) {
+    const isPossible = await this.checkPossible(
+      dto.equipments,
+      dto.date,
+      dto.start_time,
+      dto.end_time,
+    );
+    if (!isPossible) {
+      throw new BadRequestException(Message.OVERLAP_RESERVATION);
+    }
+
     const existEquips = await this.equipService.findByIds(dto.equipments);
     if (!existEquips) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
