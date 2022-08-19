@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
-
 import { ReservePlaceService } from './reserve.place.service';
 import { CreateReservePlaceDto } from './reserve.place.dto';
 import { MailService } from '../../../mail/mail.service';
@@ -22,6 +21,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { PlaceService } from '../../place/place.service';
+import { PlaceRegion } from '../../place/place.meta';
 
 @ApiTags('Place Reservation')
 @Controller('reservation-place')
@@ -37,10 +37,15 @@ export class ReservePlaceController {
   async createWithNameAndId(@Req() req, @Body() dto: CreateReservePlaceDto) {
     const user: any = req.user;
 
-    const saveDto = Object.assign(dto, { booker_id: user.uuid });
-    const new_reservation = await this.reservePlaceService.save(saveDto);
-
     const existPlace = await this.placeService.findOne(dto.place_id);
+    const saveDto =
+      existPlace.region == PlaceRegion.community_center
+        ? Object.assign(dto, {
+            booker_id: user.uuid,
+            status: ReservationStatus.accept,
+          })
+        : Object.assign(dto, { booker_id: user.uuid });
+    const new_reservation = await this.reservePlaceService.save(saveDto);
 
     // Send e-mail to booker
     await this.mailService.sendPlaceReserveCreateMailToBooker(
