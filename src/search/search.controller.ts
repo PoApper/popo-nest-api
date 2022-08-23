@@ -9,6 +9,6 @@ export class SearchController {
 
   @Get('user')
   searchUser(@Query('q') query: string) {
-    return this.userService.searchByKeyword(query);
+    return this.userService.searchByKeyword(query.toLowerCase());
   }
 }

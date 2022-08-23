@@ -48,9 +48,9 @@ export class UserService {
 
     return qb
       .select('*')
-      .where(`LOWER(name) LIKE LOWER('${keyword}')`)
-      .orWhere(`LOWER(email) LIKE LOWER('${keyword}')`)
-      .orWhere(`LOWER(id) LIKE LOWER('${keyword}')`)
+      .where(`LOWER(name) LIKE '%${keyword}%'`)
+      .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
+      .orWhere(`LOWER(id) LIKE '%${keyword}%'`)
       .orderBy('lastLoginAt', 'DESC')
       .limit(take)
       .getRawMany();
