@@ -43,7 +43,7 @@ export class UserService {
     return this.userRepo.find(findOptions);
   }
 
-  searchByKeyword(keyword: string, take = 10) {
+  searchByKeyword(keyword = '', take = 10, skip = 0) {
     const qb = this.userRepo.createQueryBuilder();
 
     return qb
@@ -52,8 +52,20 @@ export class UserService {
       .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
       .orWhere(`LOWER(id) LIKE '%${keyword}%'`)
       .orderBy('lastLoginAt', 'DESC')
-      .limit(take)
+      .skip(skip)
+      .take(take)
       .getRawMany();
+  }
+  searchCountByKeyword(keyword = '') {
+    const qb = this.userRepo.createQueryBuilder();
+
+    return qb
+      .select('COUNT(*) AS count')
+      .where(`LOWER(name) LIKE '%${keyword}%'`)
+      .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
+      .orWhere(`LOWER(id) LIKE '%${keyword}%'`)
+      .orderBy('lastLoginAt', 'DESC')
+      .getRawOne();
   }
 
   count(findOptions?: object) {
