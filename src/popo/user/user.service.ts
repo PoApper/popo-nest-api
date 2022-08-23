@@ -43,6 +43,19 @@ export class UserService {
     return this.userRepo.find(findOptions);
   }
 
+  searchByKeyword(keyword: string, take = 10) {
+    const qb = this.userRepo.createQueryBuilder();
+
+    return qb
+      .select('*')
+      .where(`LOWER(name) LIKE LOWER('${keyword}')`)
+      .orWhere(`LOWER(email) LIKE LOWER('${keyword}')`)
+      .orWhere(`LOWER(id) LIKE LOWER('${keyword}')`)
+      .orderBy('lastLoginAt', 'DESC')
+      .limit(take)
+      .getRawMany();
+  }
+
   count(findOptions?: object) {
     return this.userRepo.count(findOptions);
   }
