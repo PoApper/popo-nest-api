@@ -33,6 +33,9 @@ export class Place extends BaseEntity {
   @Column({ nullable: true })
   imageName: string;
 
+  @Column({ default: 0 })
+  max_time: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

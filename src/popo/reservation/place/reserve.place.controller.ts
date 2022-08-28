@@ -38,8 +38,13 @@ export class ReservePlaceController {
     const user: any = req.user;
 
     const existPlace = await this.placeService.findOne(dto.place_id);
+    const startTime = Number(dto.start_time.split(':')[0]);
+    const endTime = Number(dto.end_time.split(':')[0]);
+    const timeDiff =
+      startTime < endTime ? endTime - startTime : 24 - startTime + endTime;
     const saveDto =
-      existPlace.region == PlaceRegion.community_center
+      existPlace.region == PlaceRegion.community_center &&
+      timeDiff <= existPlace.max_time
         ? Object.assign(dto, {
             booker_id: user.uuid,
             status: ReservationStatus.accept,

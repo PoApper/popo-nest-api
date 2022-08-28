@@ -28,6 +28,7 @@ export class PlaceService {
       description: dto.description,
       region: dto.region,
       staff_email: dto.staff_email,
+      max_time: dto.max_time,
       imageName: fileName,
     });
   }
