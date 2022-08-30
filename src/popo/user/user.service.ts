@@ -43,6 +43,31 @@ export class UserService {
     return this.userRepo.find(findOptions);
   }
 
+  searchByKeyword(keyword = '', take = 10, skip = 0) {
+    const qb = this.userRepo.createQueryBuilder();
+
+    return qb
+      .select('*')
+      .where(`LOWER(name) LIKE '%${keyword}%'`)
+      .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
+      .orWhere(`LOWER(id) LIKE '%${keyword}%'`)
+      .orderBy('lastLoginAt', 'DESC')
+      .skip(skip)
+      .take(take)
+      .getRawMany();
+  }
+  searchCountByKeyword(keyword = '') {
+    const qb = this.userRepo.createQueryBuilder();
+
+    return qb
+      .select('COUNT(*) AS count')
+      .where(`LOWER(name) LIKE '%${keyword}%'`)
+      .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
+      .orWhere(`LOWER(id) LIKE '%${keyword}%'`)
+      .orderBy('lastLoginAt', 'DESC')
+      .getRawOne();
+  }
+
   count(findOptions?: object) {
     return this.userRepo.count(findOptions);
   }
