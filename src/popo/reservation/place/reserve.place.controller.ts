@@ -42,15 +42,24 @@ export class ReservePlaceController {
     const endTime = Number(dto.end_time.split(':')[0]);
     const timeDiff =
       startTime < endTime ? endTime - startTime : 24 - startTime + endTime;
-    const saveDto =
+
+    let new_reservation;
+
+    if (
       existPlace.region == PlaceRegion.community_center &&
-      timeDiff <= existPlace.max_time
-        ? Object.assign(dto, {
-            booker_id: user.uuid,
-            status: ReservationStatus.accept,
-          })
-        : Object.assign(dto, { booker_id: user.uuid });
-    const new_reservation = await this.reservePlaceService.save(saveDto);
+      timeDiff <= existPlace.max_hour
+    ) {
+      new_reservation = await this.reservePlaceService.save(
+        Object.assign(dto, {
+          booker_id: user.uuid,
+          status: ReservationStatus.accept,
+        }),
+      );
+    } else {
+      new_reservation = await this.reservePlaceService.save(
+        Object.assign(dto, { booker_id: user.uuid }),
+      );
+    }
 
     // Send e-mail to booker
     await this.mailService.sendPlaceReserveCreateMailToBooker(

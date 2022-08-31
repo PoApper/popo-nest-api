@@ -34,7 +34,7 @@ export class Place extends BaseEntity {
   imageName: string;
 
   @Column({ default: 0 })
-  max_time: number;
+  max_hour: number;
 
   @CreateDateColumn()
   createdAt: Date;
