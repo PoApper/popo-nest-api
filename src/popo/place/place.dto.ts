@@ -6,5 +6,5 @@ export class CreatePlaceDto {
   readonly location: string;
   readonly region: PlaceRegion;
   readonly staff_email: string;
-  readonly max_hour?: number;
+  readonly max_minutes?: number;
 }

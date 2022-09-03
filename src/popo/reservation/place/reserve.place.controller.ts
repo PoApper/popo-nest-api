@@ -21,7 +21,6 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { PlaceService } from '../../place/place.service';
-import { PlaceRegion } from '../../place/place.meta';
 
 @ApiTags('Place Reservation')
 @Controller('reservation-place')
@@ -38,28 +37,9 @@ export class ReservePlaceController {
     const user: any = req.user;
 
     const existPlace = await this.placeService.findOne(dto.place_id);
-    const startTime = Number(dto.start_time.split(':')[0]);
-    const endTime = Number(dto.end_time.split(':')[0]);
-    const timeDiff =
-      startTime < endTime ? endTime - startTime : 24 - startTime + endTime;
-
-    let new_reservation;
-
-    if (
-      existPlace.region == PlaceRegion.community_center &&
-      timeDiff <= existPlace.max_hour
-    ) {
-      new_reservation = await this.reservePlaceService.save(
-        Object.assign(dto, {
-          booker_id: user.uuid,
-          status: ReservationStatus.accept,
-        }),
-      );
-    } else {
-      new_reservation = await this.reservePlaceService.save(
-        Object.assign(dto, { booker_id: user.uuid }),
-      );
-    }
+    const new_reservation = await this.reservePlaceService.save(
+      Object.assign(dto, { booker_id: user.uuid }),
+    );
 
     // Send e-mail to booker
     await this.mailService.sendPlaceReserveCreateMailToBooker(

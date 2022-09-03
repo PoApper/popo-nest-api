@@ -6,6 +6,7 @@ import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
+import { PlaceRegion } from '../../place/place.meta';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -13,6 +14,7 @@ const Message = {
   NOT_EXISTING_RESERVATION: "There's no such reservation.",
   OVERLAP_RESERVATION: 'Reservation time overlapped.',
   NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
+  BAD_RESERVATION_TIME: 'Reservation time is not appropriate.',
 };
 
 @Injectable()
@@ -25,6 +27,27 @@ export class ReservePlaceService {
   ) {}
 
   async save(dto: CreateReservePlaceDto) {
+    const existPlace = await this.placeService.findOne(dto.place_id);
+    const startTime =
+      Number(dto.start_time.split(':')[0]) * 60 +
+      Number(dto.start_time.split(':')[1]);
+    const endTime =
+      Number(dto.end_time.split(':')[0]) * 60 +
+      Number(dto.end_time.split(':')[1]);
+    const timeDiff =
+      startTime < endTime ? endTime - startTime : 24 * 60 - startTime + endTime;
+
+    console.log(!existPlace.max_minutes);
+    if (
+      (existPlace.region == PlaceRegion.community_center &&
+        timeDiff <= existPlace.max_minutes) ||
+      !existPlace.max_minutes
+    ) {
+      Object.assign(dto, { status: ReservationStatus.accept });
+    } else if (existPlace.max_minutes && timeDiff > existPlace.max_minutes) {
+      throw new BadRequestException(Message.BAD_RESERVATION_TIME);
+    }
+
     const booked_reservations = await this.find({
       place_id: dto.place_id,
       date: dto.date,

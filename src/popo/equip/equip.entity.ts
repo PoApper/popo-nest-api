@@ -31,6 +31,9 @@ export class Equip extends BaseEntity {
   @Column({ nullable: true })
   imageName: string;
 
+  @Column({ default: null })
+  max_minutes: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
