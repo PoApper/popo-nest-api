@@ -34,6 +34,15 @@ export class IntroAssociation extends BaseEntity {
   @Column({ default: 0 })
   views: number;
 
+  @Column({ nullable: true })
+  homepage_url: string;
+
+  @Column({ nullable: true })
+  facebook_url: string;
+
+  @Column({ nullable: true })
+  instagram_url: string;
+
   // 이미지 슬라이드 구현하면 사용할 Column
   // @Column('simple-array', {nullable: true})
   // contentImageNames: string[];
