@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -54,12 +55,24 @@ export class IntroAssociationController {
 
   @Get()
   get() {
-    return this.introAssociationService.find({ order: { updateAt: 'DESC' } });
+    return this.introAssociationService.find({ order: { name: 'ASC' } });
   }
 
   @Get('name/:name')
-  getOneByName(@Param('name') name: string) {
-    return this.introAssociationService.findOne({ name: name });
+  async getOneByName(@Param('name') name: string) {
+    const introAssociation = await this.introAssociationService.findOne({
+      name: name,
+    });
+
+    if (introAssociation) {
+      await this.introAssociationService.updateViewCount(
+        introAssociation.uuid,
+        introAssociation.views + 1,
+      );
+      return introAssociation;
+    } else {
+      throw new BadRequestException('Not Exist');
+    }
   }
 
   @Get('/image/:imageName')

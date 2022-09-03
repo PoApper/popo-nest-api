@@ -8,12 +8,16 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ReservePlaceService } from './reserve.place.service';
-import { CreateReservePlaceDto } from './reserve.place.dto';
+import {
+  AcceptPlaceReservationListDto,
+  CreateReservePlaceDto,
+} from './reserve.place.dto';
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
@@ -150,6 +154,33 @@ export class ReservePlaceController {
     return this.reservePlaceService.findAllByPlaceName(placeName);
   }
 
+  @Patch('all/status/accept')
+  @Roles(UserType.admin, UserType.association, UserType.staff)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async acceptAllStatus(
+    @Body() body: AcceptPlaceReservationListDto,
+    @Query('sendEmail') sendEmail?: string,
+  ) {
+    for (const reservation_uuid of body.uuid_list) {
+      const response = await this.reservePlaceService.updateStatus(
+        reservation_uuid,
+        ReservationStatus.accept,
+      );
+
+      if (sendEmail === 'true') {
+        // Send e-mail to client.
+        const skipList = [UserType.admin, UserType.association, UserType.club];
+        if (!skipList.includes(response.userType)) {
+          await this.mailService.sendReservationPatchMail(
+            response.email,
+            response.title,
+            ReservationStatus[status],
+          );
+        }
+      }
+    }
+  }
+
   @Patch(':uuid/status/:status')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -177,9 +208,19 @@ export class ReservePlaceController {
   }
 
   @Delete(':uuid')
-  @Roles(UserType.admin, UserType.association, UserType.staff)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  delete(@Param('uuid') uuid: string) {
-    return this.reservePlaceService.remove(uuid);
+  @UseGuards(JwtAuthGuard)
+  async delete(@Param('uuid') uuid: string, @Req() req) {
+    const reservation = await this.reservePlaceService.findOne(uuid);
+    const user = req.user;
+
+    if (user.userType == UserType.admin || user.userType == UserType.staff) {
+      return this.reservePlaceService.remove(uuid);
+    } else {
+      if (reservation.booker_id == user.uuid) {
+        return this.reservePlaceService.remove(uuid);
+      } else {
+        throw new UnauthorizedException('Unauthorized delete action');
+      }
+    }
   }
 }

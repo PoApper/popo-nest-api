@@ -8,3 +8,7 @@ export class CreateReservePlaceDto {
   readonly start_time: string; // hh:mm
   readonly end_time: string; // hh:mm
 }
+
+export class AcceptPlaceReservationListDto {
+  readonly uuid_list: string[];
+}

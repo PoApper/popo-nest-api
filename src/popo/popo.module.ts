@@ -5,6 +5,7 @@ import { EquipModule } from './equip/equip.module';
 import { ReservationModule } from './reservation/reservation.module';
 import { IntroduceModule } from './introduce/introduce.module';
 import { WhitebookModule } from './whitebook/whitebook.module';
+import { SettingModule } from './setting/setting.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { WhitebookModule } from './whitebook/whitebook.module';
     ReservationModule,
     IntroduceModule,
     WhitebookModule,
+    SettingModule,
   ],
   controllers: [],
   providers: [],
