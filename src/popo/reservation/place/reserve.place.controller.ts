@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
+
 import { ReservePlaceService } from './reserve.place.service';
 import {
   AcceptPlaceReservationListDto,
@@ -40,10 +41,10 @@ export class ReservePlaceController {
   async createWithNameAndId(@Req() req, @Body() dto: CreateReservePlaceDto) {
     const user: any = req.user;
 
+    const saveDto = Object.assign(dto, { booker_id: user.uuid });
+    const new_reservation = await this.reservePlaceService.save(saveDto);
+
     const existPlace = await this.placeService.findOne(dto.place_id);
-    const new_reservation = await this.reservePlaceService.save(
-      Object.assign(dto, { booker_id: user.uuid }),
-    );
 
     // Send e-mail to booker
     await this.mailService.sendPlaceReserveCreateMailToBooker(

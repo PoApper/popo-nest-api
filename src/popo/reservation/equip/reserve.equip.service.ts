@@ -13,7 +13,6 @@ const Message = {
   NOT_EXISTING_RESERVATION: "There's no such reservation.",
   OVERLAP_RESERVATION: 'Reservation time overlapped.',
   NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
-  BAD_RESERVATION_TIME: 'Reservation time is not appropriate.',
 };
 
 @Injectable()
@@ -46,31 +45,17 @@ export class ReserveEquipService {
   }
 
   async save(dto: CreateReserveEquipDto) {
-    const startTime =
-      Number(dto.start_time.split(':')[0]) * 60 +
-      Number(dto.start_time.split(':')[1]);
-    const endTime =
-      Number(dto.end_time.split(':')[0]) * 60 +
-      Number(dto.end_time.split(':')[1]);
-    const timeDiff =
-      startTime < endTime ? endTime - startTime : 24 * 60 - startTime + endTime;
     const isPossible = await this.checkPossible(
       dto.equipments,
       dto.date,
       dto.start_time,
       dto.end_time,
     );
-
     if (!isPossible) {
       throw new BadRequestException(Message.OVERLAP_RESERVATION);
     }
 
     const existEquips = await this.equipService.findByIds(dto.equipments);
-    existEquips.map((equip) => {
-      if (equip.max_minutes && timeDiff > equip.max_minutes)
-        throw new BadRequestException(Message.BAD_RESERVATION_TIME);
-    });
-
     if (!existEquips) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }

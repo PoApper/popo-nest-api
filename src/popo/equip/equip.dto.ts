@@ -6,5 +6,4 @@ export class CreateEquipDto {
   readonly fee: number;
   readonly equip_owner: EquipOwner;
   readonly staff_email: string;
-  readonly max_minutes?: number;
 }

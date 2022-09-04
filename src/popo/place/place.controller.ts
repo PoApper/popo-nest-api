@@ -21,7 +21,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { imageFileFilter, editFileName } from '../../utils/fileUpload';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Place')
 @Controller('place')
@@ -31,7 +31,6 @@ export class PlaceController {
   @Post()
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBody({ type: CreatePlaceDto })
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
