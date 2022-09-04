@@ -66,14 +66,13 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.OVERLAP_RESERVATION);
     }
 
-    if (
-      (existPlace.region == PlaceRegion.community_center &&
-        timeDiff <= existPlace.max_minutes) ||
-      !existPlace.max_minutes
+    if (existPlace.max_minutes && timeDiff > existPlace.max_minutes) {
+      throw new BadRequestException(Message.BAD_RESERVATION_TIME);
+    } else if (
+      existPlace.region == PlaceRegion.community_center &&
+      (timeDiff <= existPlace.max_minutes || !existPlace.max_minutes)
     ) {
       Object.assign(dto, { status: ReservationStatus.accept });
-    } else if (existPlace.max_minutes && timeDiff > existPlace.max_minutes) {
-      throw new BadRequestException(Message.BAD_RESERVATION_TIME);
     }
 
     if (
