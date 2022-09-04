@@ -28,6 +28,7 @@ export class EquipService {
       fee: dto.fee,
       equip_owner: dto.equip_owner,
       staff_email: dto.staff_email,
+      max_minutes: dto.max_minutes,
       imageName: fileName,
     });
   }
