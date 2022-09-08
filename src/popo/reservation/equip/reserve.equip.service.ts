@@ -28,6 +28,7 @@ export class ReserveEquipService {
   async checkPossible(uuid_list, date, start_time, end_time): Promise<boolean> {
     const booked_reservations = await this.find({
       date: date,
+      status: ReservationStatus.accept,
     });
 
     for (const reservation of booked_reservations) {

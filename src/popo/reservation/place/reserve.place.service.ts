@@ -30,6 +30,7 @@ export class ReservePlaceService {
     const booked_reservations = await this.find({
       place_id: place_id,
       date: date,
+      status: ReservationStatus.accept,
     });
 
     for (const reservation of booked_reservations) {
