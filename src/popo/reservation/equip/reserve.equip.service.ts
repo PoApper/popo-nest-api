@@ -39,10 +39,11 @@ export class ReserveEquipService {
 
     for (const reservation of booked_reservations) {
       if (reservation.equipments.some((equip) => uuid_list.includes(equip))) {
-        const isNonOverlap =
-          end_time <= reservation.start_time ||
-          reservation.end_time <= start_time;
-        if (!isNonOverlap) {
+        const isOverlap =
+          reservation.start_time < end_time &&
+          start_time < reservation.end_time;
+
+        if (isOverlap) {
           return true;
         }
       }

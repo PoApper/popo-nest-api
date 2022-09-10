@@ -40,11 +40,10 @@ export class ReservePlaceService {
     });
 
     for (const reservation of booked_reservations) {
-      const isNonOverlap =
-        end_time <= reservation.start_time ||
-        reservation.end_time <= start_time;
+      const isOverlap =
+        reservation.start_time < end_time && start_time < reservation.end_time;
 
-      if (!isNonOverlap) {
+      if (isOverlap) {
         return true;
       }
     }
