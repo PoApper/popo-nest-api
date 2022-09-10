@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Equip } from './equip.entity';
-import { CreateEquipDto } from './equip.dto';
+import { EquipmentDto } from './equip.dto';
 import * as fs from 'fs';
 import { EquipOwner } from './equip.meta';
 
@@ -21,7 +21,7 @@ export class EquipService {
     private readonly equipRepo: Repository<Equip>,
   ) {}
 
-  async save(dto: CreateEquipDto, fileName: string) {
+  async save(dto: EquipmentDto, fileName: string) {
     return this.equipRepo.save({
       name: dto.name,
       description: dto.description,
@@ -45,6 +45,14 @@ export class EquipService {
     return this.equipRepo.findOne(findOptions, maybeOptions);
   }
 
+  async findOneOrFail(findOptions: object, maybeOptions?: object) {
+    const equip = await this.equipRepo.findOne(findOptions, maybeOptions);
+    if (!equip) {
+      throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
+    }
+    return equip;
+  }
+
   async findOneByName(name: string) {
     const existEquip = await this.equipRepo.findOne({ name: name });
 
@@ -62,32 +70,23 @@ export class EquipService {
     });
   }
 
-  async update(uuid: string, dto: CreateEquipDto, imageName: string) {
+  async update(uuid: string, dto: EquipmentDto, imageName: string | null) {
     const existEquip = await this.findOne({ uuid: uuid });
-
     if (!existEquip) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
 
+    let saveDto: object = Object.assign({}, dto);
+
     // delete previous image
     if (imageName) {
-      console.log(imageName);
       if (fs.existsSync(`./uploads/equip/${existEquip.imageName}`)) {
         fs.unlinkSync(`./uploads/equip/${existEquip.imageName}`);
       }
+      saveDto = Object.assign(saveDto, { imageName: imageName });
     }
 
-    return this.equipRepo.update(
-      { uuid: uuid },
-      {
-        name: dto.name,
-        description: dto.description,
-        fee: dto.fee,
-        equip_owner: dto.equip_owner,
-        staff_email: dto.staff_email,
-        imageName: imageName ? imageName : existEquip.imageName,
-      },
-    );
+    return this.equipRepo.update({ uuid: uuid }, saveDto);
   }
 
   async delete(uuid: string) {

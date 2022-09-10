@@ -5,8 +5,8 @@ export class CreateReservePlaceDto {
   readonly title: string;
   readonly description: string;
   readonly date: string; // YYYYMMDD
-  readonly start_time: string; // hh:mm
-  readonly end_time: string; // hh:mm
+  readonly start_time: string; // hhmm
+  readonly end_time: string; // hhmm
 }
 
 export class AcceptPlaceReservationListDto {

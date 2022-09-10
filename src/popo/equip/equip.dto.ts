@@ -1,6 +1,6 @@
 import { EquipOwner } from './equip.meta';
 
-export class CreateEquipDto {
+export class EquipmentDto {
   readonly name: string;
   readonly description: string;
   readonly fee: number;
