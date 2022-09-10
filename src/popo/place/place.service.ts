@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as fs from 'fs';
 import { Place } from './place.entity';
-import { CreatePlaceDto } from './place.dto';
+import { PlaceDto } from './place.dto';
 import { PlaceRegion } from './place.meta';
 
 const Message = {
@@ -21,7 +21,7 @@ export class PlaceService {
     private readonly placeRepo: Repository<Place>,
   ) {}
 
-  save(dto: CreatePlaceDto, fileName: string) {
+  save(dto: PlaceDto, fileName: string) {
     return this.placeRepo.save({
       name: dto.name,
       location: dto.location,
@@ -56,31 +56,23 @@ export class PlaceService {
     });
   }
 
-  // TODO: refactor code
-  async update(uuid: string, dto: CreatePlaceDto, imageName: string) {
+  async update(uuid: string, dto: PlaceDto, imageName: string | null) {
     const existPlace = await this.findOne(uuid);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    const partialEntity = {
-      uuid: uuid,
-      name: dto.name,
-      location: dto.location,
-      description: dto.description,
-      staff_email: dto.staff_email,
-      region: dto.region,
-    };
+    let saveDto: object = Object.assign({}, dto);
 
     // delete previous image
     if (imageName) {
       if (fs.existsSync(`./uploads/place/${existPlace.imageName}`)) {
         fs.unlinkSync(`./uploads/place/${existPlace.imageName}`);
       }
-      partialEntity['imageName'] = imageName;
+      saveDto = Object.assign(saveDto, { imageName: imageName });
     }
 
-    return this.placeRepo.update({ uuid: uuid }, partialEntity);
+    return this.placeRepo.update({ uuid: uuid }, saveDto);
   }
 
   async remove(uuid: string) {
