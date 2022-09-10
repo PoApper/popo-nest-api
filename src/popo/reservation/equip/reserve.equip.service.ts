@@ -6,6 +6,7 @@ import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
 import { EquipService } from '../../equip/equip.service';
 import { ReservationStatus } from '../reservation.meta';
+import * as moment from 'moment';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -25,7 +26,12 @@ export class ReserveEquipService {
     private readonly equipService: EquipService,
   ) {}
 
-  async checkPossible(uuid_list, date, start_time, end_time): Promise<boolean> {
+  async isReservationOverlap(
+    uuid_list: string[],
+    date: string,
+    start_time: string,
+    end_time: string,
+  ): Promise<boolean> {
     const booked_reservations = await this.find({
       date: date,
       status: ReservationStatus.accept,
@@ -33,48 +39,33 @@ export class ReserveEquipService {
 
     for (const reservation of booked_reservations) {
       if (reservation.equipments.some((equip) => uuid_list.includes(equip))) {
-        if (
+        const isNonOverlap =
           end_time <= reservation.start_time ||
-          reservation.end_time <= start_time
-        ) {
-          continue;
-        } else {
-          return false;
+          reservation.end_time <= start_time;
+        if (!isNonOverlap) {
+          return true;
         }
       }
     }
-    return true;
+    return false;
+  }
+
+  isOverMaxMinutes(
+    max_minutes: number,
+    start_time: string,
+    end_time: string,
+  ): boolean {
+    const startMoment = moment(start_time, 'hhmm');
+    const endMoment = moment(end_time, 'hhmm');
+    const minutesDiff = moment
+      .duration(endMoment.diff(startMoment))
+      .asMinutes();
+
+    return max_minutes && minutesDiff > max_minutes;
   }
 
   async save(dto: CreateReserveEquipDto) {
-    const startTime =
-      Number(dto.start_time.split(':')[0]) * 60 +
-      Number(dto.start_time.split(':')[1]);
-    const endTime =
-      Number(dto.end_time.split(':')[0]) * 60 +
-      Number(dto.end_time.split(':')[1]);
-    const timeDiff =
-      startTime < endTime ? endTime - startTime : 24 * 60 - startTime + endTime;
-    const isPossible = await this.checkPossible(
-      dto.equipments,
-      dto.date,
-      dto.start_time,
-      dto.end_time,
-    );
-
-    if (!isPossible) {
-      throw new BadRequestException(Message.OVERLAP_RESERVATION);
-    }
-
-    const existEquips = await this.equipService.findByIds(dto.equipments);
-    existEquips.map((equip) => {
-      if (equip.max_minutes && timeDiff > equip.max_minutes)
-        throw new BadRequestException(Message.BAD_RESERVATION_TIME);
-    });
-
-    if (!existEquips) {
-      throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
-    }
+    const { equipments, date, start_time, end_time } = dto;
 
     if (
       !dto.equipments.length ||
@@ -83,6 +74,31 @@ export class ReserveEquipService {
       dto.description === ''
     ) {
       throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
+    }
+    const existEquips = await this.equipService.findByIds(dto.equipments);
+    if (!existEquips) {
+      throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
+    }
+
+    for (const equip of existEquips) {
+      const isOverMaxMinutes = this.isOverMaxMinutes(
+        equip.max_minutes,
+        start_time,
+        end_time,
+      );
+      if (isOverMaxMinutes) {
+        throw new BadRequestException(Message.BAD_RESERVATION_TIME);
+      }
+    }
+
+    const isReservationOverlap = await this.isReservationOverlap(
+      equipments,
+      date,
+      start_time,
+      end_time,
+    );
+    if (isReservationOverlap) {
+      throw new BadRequestException(Message.OVERLAP_RESERVATION);
     }
 
     return this.reserveEquipRepo.save(dto);

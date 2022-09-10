@@ -7,6 +7,7 @@ import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
 import { PlaceRegion } from '../../place/place.meta';
+import * as moment from 'moment';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -26,7 +27,12 @@ export class ReservePlaceService {
     private readonly placeService: PlaceService,
   ) {}
 
-  async checkPossible(place_id, date, start_time, end_time): Promise<boolean> {
+  async isReservationOverlap(
+    place_id: string,
+    date: string,
+    start_time: string,
+    end_time: string,
+  ): Promise<boolean> {
     const booked_reservations = await this.find({
       place_id: place_id,
       date: date,
@@ -34,47 +40,33 @@ export class ReservePlaceService {
     });
 
     for (const reservation of booked_reservations) {
-      if (
+      const isNonOverlap =
         end_time <= reservation.start_time ||
-        reservation.end_time <= start_time
-      ) {
-        continue;
-      } else {
-        return false;
+        reservation.end_time <= start_time;
+
+      if (!isNonOverlap) {
+        return true;
       }
     }
-    return true;
+    return false;
+  }
+
+  isOverMaxMinutes(
+    max_minutes: number,
+    start_time: string,
+    end_time: string,
+  ): boolean {
+    const startMoment = moment(start_time, 'hhmm');
+    const endMoment = moment(end_time, 'hhmm');
+    const minutesDiff = moment
+      .duration(endMoment.diff(startMoment))
+      .asMinutes();
+
+    return max_minutes && minutesDiff > max_minutes;
   }
 
   async save(dto: CreateReservePlaceDto) {
-    const existPlace = await this.placeService.findOne(dto.place_id);
-    const startTime =
-      Number(dto.start_time.split(':')[0]) * 60 +
-      Number(dto.start_time.split(':')[1]);
-    const endTime =
-      Number(dto.end_time.split(':')[0]) * 60 +
-      Number(dto.end_time.split(':')[1]);
-    const timeDiff =
-      startTime < endTime ? endTime - startTime : 24 * 60 - startTime + endTime;
-    const isPossible = await this.checkPossible(
-      dto.place_id,
-      dto.date,
-      dto.start_time,
-      dto.end_time,
-    );
-
-    if (!isPossible) {
-      throw new BadRequestException(Message.OVERLAP_RESERVATION);
-    }
-
-    if (existPlace.max_minutes && timeDiff > existPlace.max_minutes) {
-      throw new BadRequestException(Message.BAD_RESERVATION_TIME);
-    } else if (
-      existPlace.region == PlaceRegion.community_center &&
-      (timeDiff <= existPlace.max_minutes || !existPlace.max_minutes)
-    ) {
-      Object.assign(dto, { status: ReservationStatus.accept });
-    }
+    const { place_id, date, start_time, end_time } = dto;
 
     if (
       dto.title === '' ||
@@ -85,7 +77,33 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
     }
 
-    return this.reservePlaceRepo.save(dto);
+    const existPlace = await this.placeService.findOneOrFail(place_id);
+
+    const isOverMaxMinutes = this.isOverMaxMinutes(
+      existPlace.max_minutes,
+      start_time,
+      end_time,
+    );
+    if (isOverMaxMinutes) {
+      throw new BadRequestException(Message.BAD_RESERVATION_TIME);
+    }
+
+    const isReservationOverlap = await this.isReservationOverlap(
+      place_id,
+      date,
+      start_time,
+      end_time,
+    );
+    if (isReservationOverlap) {
+      throw new BadRequestException(Message.OVERLAP_RESERVATION);
+    }
+
+    let saveDto = Object.assign({}, dto);
+    if (existPlace.region === PlaceRegion.community_center) {
+      saveDto = Object.assign(dto, { status: ReservationStatus.accept });
+    }
+
+    return this.reservePlaceRepo.save(saveDto);
   }
 
   find(findOptions?: object) {

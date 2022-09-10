@@ -45,6 +45,14 @@ export class EquipService {
     return this.equipRepo.findOne(findOptions, maybeOptions);
   }
 
+  async findOneOrFail(findOptions: object, maybeOptions?: object) {
+    const equip = await this.equipRepo.findOne(findOptions, maybeOptions);
+    if (!equip) {
+      throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
+    }
+    return equip;
+  }
+
   async findOneByName(name: string) {
     const existEquip = await this.equipRepo.findOne({ name: name });
 

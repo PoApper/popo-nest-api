@@ -45,6 +45,14 @@ export class PlaceService {
     return this.placeRepo.findOne({ uuid: uuid }, findOptions);
   }
 
+  findOneOrFail(uuid: string, findOptions?: any) {
+    const place = this.placeRepo.findOne({ uuid: uuid }, findOptions);
+    if (!place) {
+      throw new BadRequestException(Message.NOT_EXISTING_PLACE);
+    }
+    return place;
+  }
+
   findOneByName(name: string) {
     return this.placeRepo.findOne({ name: name });
   }
