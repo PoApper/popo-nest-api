@@ -132,19 +132,16 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async updatePW(@Req() req: Request, @Body() body) {
     const user: any = req.user;
-    const pw = body['password'];
-    await this.userService.updatePWByID(user.id, pw);
+    const password = body['password'];
+    await this.userService.updatePWByID(user.id, password);
   }
 
   @Get('myInfo')
   @UseGuards(JwtAuthGuard)
   async getMyInfo(@Req() req: Request) {
     const user: any = req.user;
-    const {
-      password,
-      cryptoSalt,
-      ...UserInfo
-    } = await this.userService.findOneById(user.id);
+    const { password, cryptoSalt, ...UserInfo } =
+      await this.userService.findOneById(user.id);
 
     return UserInfo;
   }

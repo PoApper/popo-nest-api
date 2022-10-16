@@ -1,4 +1,4 @@
-import {UserStatus, UserType} from "./user.meta";
+import { UserStatus, UserType } from './user.meta';
 
 export class CreateUserDto {
   readonly email: string;
@@ -11,8 +11,11 @@ export class CreateUserDto {
 export class UpdateUserDto {
   readonly email: string;
   readonly id: string;
-  readonly password: string;
   readonly name: string;
   readonly userType: UserType;
   readonly userStatus: UserStatus;
+}
+
+export class UpdatePasswordDto {
+  readonly password: string;
 }

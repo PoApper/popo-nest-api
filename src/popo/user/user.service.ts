@@ -93,6 +93,10 @@ export class UserService {
     return this.userRepo.findOne({ id: id });
   }
 
+  findOneByUuid(uuid: string) {
+    return this.userRepo.findOne({ uuid: uuid });
+  }
+
   async update(uuid: string, updateUserDto: UpdateUserDto) {
     const existUser = await this.findOne({ uuid: uuid });
     if (!existUser) {
@@ -140,37 +144,55 @@ export class UserService {
     }
   }
 
-  async updatePWByID(id: string, pw: string) {
+  async updatePasswordByUuid(uuid: string, password: string) {
+    const existUser = await this.findOneByUuid(uuid);
+
+    if (!existUser) {
+      throw new BadRequestException(Message.NOT_EXISTING_USER);
+    }
+
+    const cryptoSalt = crypto.randomBytes(64).toString('base64');
+    const encryptedPassword = this.encryptPassword(password, cryptoSalt);
+
+    return this.userRepo.update(
+      { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
+      {
+        password: encryptedPassword,
+        cryptoSalt: cryptoSalt,
+      },
+    );
+  }
+
+  async updatePWByID(id: string, password: string) {
     const existUser = await this.findOneById(id);
 
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
-    } else {
-      const cryptoSalt = crypto.randomBytes(64).toString('base64');
-      const encryptedPassword = this.encryptPassword(pw, cryptoSalt);
-
-      this.userRepo.update(
-        { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
-        {
-          password: encryptedPassword,
-          cryptoSalt: cryptoSalt,
-        },
-      );
     }
+
+    const cryptoSalt = crypto.randomBytes(64).toString('base64');
+    const encryptedPassword = this.encryptPassword(password, cryptoSalt);
+
+    return this.userRepo.update(
+      { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
+      {
+        password: encryptedPassword,
+        cryptoSalt: cryptoSalt,
+      },
+    );
   }
 
   async updateUserStatus(uuid: string, status) {
     const existUser = await this.findOne({ uuid: uuid });
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
-    } else {
-      return this.userRepo.update(
-        { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
-        {
-          userStatus: status,
-        },
-      );
     }
+    return this.userRepo.update(
+      { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
+      {
+        userStatus: status,
+      },
+    );
   }
 
   async remove(uuid: string) {
