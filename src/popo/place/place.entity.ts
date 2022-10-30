@@ -36,6 +36,9 @@ export class Place extends BaseEntity {
   @Column({ default: 24 * 60 })
   max_minutes: number;
 
+  @Column('text')
+  opening_hours: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
