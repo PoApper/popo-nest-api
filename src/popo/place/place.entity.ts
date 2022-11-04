@@ -36,8 +36,9 @@ export class Place extends BaseEntity {
   @Column({ default: 24 * 60 })
   max_minutes: number;
 
-  @Column('text')
+  @Column('text', { default: '{"Everyday":"00:00-24:00"}' })
   opening_hours: string;
+  // if null, there's no rule for opening hours.
 
   @CreateDateColumn()
   createdAt: Date;
