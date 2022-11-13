@@ -22,15 +22,17 @@ export class PlaceService {
   ) {}
 
   save(dto: PlaceDto, fileName: string) {
-    return this.placeRepo.save({
+    const saveDto = {
       name: dto.name,
       location: dto.location,
       description: dto.description,
       region: dto.region,
       staff_email: dto.staff_email,
       max_minutes: dto.max_minutes,
+      opening_hours: dto.opening_hours,
       imageName: fileName,
-    });
+    };
+    return this.placeRepo.save(saveDto);
   }
 
   async find() {

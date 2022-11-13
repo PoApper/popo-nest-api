@@ -7,4 +7,5 @@ export class PlaceDto {
   readonly region: PlaceRegion;
   readonly staff_email: string;
   readonly max_minutes: number;
+  readonly opening_hours: string;
 }
