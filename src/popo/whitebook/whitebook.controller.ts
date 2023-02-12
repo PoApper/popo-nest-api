@@ -9,9 +9,11 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { WhitebookService } from './whitebook.service';
 import { WhitebookDto } from './whitebook.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('생활백서(Whitebook)')
 @Controller('whitebook')
@@ -33,6 +35,20 @@ export class WhitebookController {
       return this.whitebookService.findAll({ createdAt: 'DESC' });
     } else {
       return this.whitebookService.findAll({ title: 'ASC' });
+    }
+  }
+
+  @Get('with-login')
+  @UseGuards(JwtAuthGuard)
+  getAllForLoginUser(@Query('orderBy') orderBy: string) {
+    if (orderBy === 'click_count') {
+      return this.whitebookService.findAll({ click_count: 'DESC' }, true);
+    } else if (orderBy === 'updatedAt') {
+      return this.whitebookService.findAll({ updatedAt: 'DESC' }, true);
+    } else if (orderBy === 'createdAt') {
+      return this.whitebookService.findAll({ createdAt: 'DESC' }, true);
+    } else {
+      return this.whitebookService.findAll({ title: 'ASC' }, true);
     }
   }
 

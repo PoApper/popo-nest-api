@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
@@ -51,6 +52,12 @@ export class ReserveEquipController {
         existEquips,
         new_reservation,
       ),
+    );
+
+    // send e-mail to booker
+    await this.mailService.sendEquipReserveCreateMailToBooker(
+      user.email,
+      new_reservation,
     );
 
     return new_reservation;
@@ -127,8 +134,19 @@ export class ReserveEquipController {
 
   @Delete(':uuid')
   @UseGuards(JwtAuthGuard)
-  delete(@Param('uuid') uuid: string) {
-    return this.reserveEquipService.remove(uuid);
+  async delete(@Param('uuid') uuid: string, @Req() req) {
+    const reservation = await this.reserveEquipService.findOne(uuid);
+    const user = req.user;
+
+    if (user.userType == UserType.admin || user.userType == UserType.staff) {
+      return this.reserveEquipService.remove(uuid);
+    } else {
+      if (reservation.booker_id == user.uuid) {
+        return this.reserveEquipService.remove(uuid);
+      } else {
+        throw new UnauthorizedException('Unauthorized delete action');
+      }
+    }
   }
 
   /**

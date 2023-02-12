@@ -37,6 +37,18 @@ export class IntroClub extends BaseEntity {
   @Column({ nullable: true })
   logoName: string;
 
+  @Column({ default: 0 })
+  views: number;
+
+  @Column({ nullable: true })
+  homepage_url: string;
+
+  @Column({ nullable: true })
+  facebook_url: string;
+
+  @Column({ nullable: true })
+  instagram_url: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

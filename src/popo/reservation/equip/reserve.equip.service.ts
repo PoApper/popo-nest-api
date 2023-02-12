@@ -6,12 +6,15 @@ import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
 import { EquipService } from '../../equip/equip.service';
 import { ReservationStatus } from '../reservation.meta';
+import * as moment from 'moment';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
   NOT_EXISTING_EQUIP: "There's no such equip.",
   NOT_EXISTING_RESERVATION: "There's no such reservation.",
   OVERLAP_RESERVATION: 'Reservation time overlapped.',
+  NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
+  BAD_RESERVATION_TIME: 'Reservation time is not appropriate.',
 };
 
 @Injectable()
@@ -23,10 +26,80 @@ export class ReserveEquipService {
     private readonly equipService: EquipService,
   ) {}
 
+  async isReservationOverlap(
+    uuid_list: string[],
+    date: string,
+    start_time: string,
+    end_time: string,
+  ): Promise<boolean> {
+    const booked_reservations = await this.find({
+      date: date,
+      status: ReservationStatus.accept,
+    });
+
+    for (const reservation of booked_reservations) {
+      if (reservation.equipments.some((equip) => uuid_list.includes(equip))) {
+        const isOverlap =
+          reservation.start_time < end_time &&
+          start_time < reservation.end_time;
+
+        if (isOverlap) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  isOverMaxMinutes(
+    max_minutes: number,
+    start_time: string,
+    end_time: string,
+  ): boolean {
+    const startMoment = moment(start_time, 'hhmm');
+    const endMoment = moment(end_time, 'hhmm');
+    const minutesDiff = moment
+      .duration(endMoment.diff(startMoment))
+      .asMinutes();
+
+    return max_minutes && minutesDiff > max_minutes;
+  }
+
   async save(dto: CreateReserveEquipDto) {
+    const { equipments, date, start_time, end_time } = dto;
+
+    if (
+      !dto.equipments.length ||
+      dto.phone === '' ||
+      dto.title === '' ||
+      dto.description === ''
+    ) {
+      throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
+    }
     const existEquips = await this.equipService.findByIds(dto.equipments);
     if (!existEquips) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
+    }
+
+    for (const equip of existEquips) {
+      const isOverMaxMinutes = this.isOverMaxMinutes(
+        equip.max_minutes,
+        start_time,
+        end_time,
+      );
+      if (isOverMaxMinutes) {
+        throw new BadRequestException(Message.BAD_RESERVATION_TIME);
+      }
+    }
+
+    const isReservationOverlap = await this.isReservationOverlap(
+      equipments,
+      date,
+      start_time,
+      end_time,
+    );
+    if (isReservationOverlap) {
+      throw new BadRequestException(Message.OVERLAP_RESERVATION);
     }
 
     return this.reserveEquipRepo.save(dto);

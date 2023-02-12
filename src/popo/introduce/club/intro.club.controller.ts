@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -47,20 +48,30 @@ export class IntroClubController {
 
   @Get()
   get() {
-    return this.introClubService.find({ order: { updateAt: 'DESC' } });
+    return this.introClubService.find({ order: { name: 'ASC' } });
   }
 
   @Get('clubType/:clubType')
   getByClubType(@Param('clubType') clubType: ClubType) {
     return this.introClubService.find({
       where: { clubType: clubType },
-      order: { updateAt: 'DESC' },
+      order: { name: 'ASC' },
     });
   }
 
   @Get('name/:name')
-  getOneByName(@Param('name') name: string) {
-    return this.introClubService.findOne({ name: name });
+  async getOneByName(@Param('name') name: string) {
+    const introClub = await this.introClubService.findOne({ name: name });
+
+    if (introClub) {
+      await this.introClubService.updateViewCount(
+        introClub.uuid,
+        introClub.views + 1,
+      );
+      return introClub;
+    } else {
+      throw new BadRequestException('Not Exist');
+    }
   }
 
   @Get('/image/:imageName')

@@ -14,14 +14,14 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { PlaceService } from './place.service';
-import { CreatePlaceDto } from './place.dto';
+import { PlaceDto } from './place.dto';
 import { PlaceRegion } from './place.meta';
 import { UserType } from '../user/user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { imageFileFilter, editFileName } from '../../utils/fileUpload';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Place')
 @Controller('place')
@@ -31,6 +31,7 @@ export class PlaceController {
   @Post()
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBody({ type: PlaceDto })
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
@@ -40,7 +41,7 @@ export class PlaceController {
       fileFilter: imageFileFilter,
     }),
   )
-  async create(@Body() createPlaceDto: CreatePlaceDto, @UploadedFile() file) {
+  async create(@Body() createPlaceDto: PlaceDto, @UploadedFile() file) {
     const fileName = file ? file.filename : null;
     return this.placeService.save(createPlaceDto, fileName);
   }
@@ -84,7 +85,7 @@ export class PlaceController {
   )
   async put(
     @Param('uuid') uuid: string,
-    @Body() updatePlaceDto: CreatePlaceDto,
+    @Body() updatePlaceDto: PlaceDto,
     @UploadedFile() file,
   ) {
     const fileName = file ? file.filename : null;

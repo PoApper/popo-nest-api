@@ -17,7 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 import { EquipService } from './equip.service';
 import { EquipOwner } from './equip.meta';
-import { CreateEquipDto } from './equip.dto';
+import { EquipmentDto } from './equip.dto';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { UserType } from '../user/user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -41,7 +41,7 @@ export class EquipController {
       fileFilter: imageFileFilter,
     }),
   )
-  async create(@Body() dto: CreateEquipDto, @UploadedFile() file) {
+  async create(@Body() dto: EquipmentDto, @UploadedFile() file) {
     const fileName = file ? file.filename : null;
     return this.equipService.save(dto, fileName);
   }
@@ -85,7 +85,7 @@ export class EquipController {
   )
   async put(
     @Param('uuid') uuid: string,
-    @Body() dto: CreateEquipDto,
+    @Body() dto: EquipmentDto,
     @UploadedFile() file,
   ) {
     const fileName = file ? file.filename : null;

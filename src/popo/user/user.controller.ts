@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { CreateUserDto, UpdatePasswordDto, UpdateUserDto } from './user.dto';
 import { UserType } from './user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
@@ -93,6 +93,17 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async put(@Param('uuid') uuid: string, @Body() dto: UpdateUserDto) {
     return await this.userService.update(uuid, dto);
+  }
+
+  // only uuid format is allowed for security!
+  @Put('password/:uuid')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserType.admin)
+  async updatePassword(
+    @Param('uuid') uuid: string,
+    @Body() dto: UpdatePasswordDto,
+  ) {
+    return await this.userService.updatePasswordByUuid(uuid, dto.password);
   }
 
   @Delete(':uuid')

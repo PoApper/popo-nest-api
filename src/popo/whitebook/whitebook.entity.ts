@@ -24,6 +24,9 @@ export class Whitebook extends BaseEntity {
   @Column({ default: 0 })
   click_count: number;
 
+  @Column({ default: false })
+  show_only_login: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 
