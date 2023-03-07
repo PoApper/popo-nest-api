@@ -38,5 +38,5 @@ lerna-debug.log*
 *.png
 
 .env
-
+.env*
 
