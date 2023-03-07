@@ -1,0 +1,19 @@
+# AWS Codedeploy
+version: 0.0
+os: linux
+
+files:
+  - source: /
+    destination: /home/ec2-user/popo-nest-api
+file_exists_behavior: OVERWRITE
+
+permissions:
+  - object: /home/ec2-user/popo-nest-api
+    owner: ec2-user
+    group: ec2-user
+
+hooks:
+  AfterInstall:
+    - location: codedeploy/deploy.sh
+      timeout: 300
+      runas: ec2-user
