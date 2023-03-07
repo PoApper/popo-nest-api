@@ -4,7 +4,5 @@ services:
     image: popo-nest-api:latest
     ports:
       - "4000:4000"
-    depends_on:
-      - database
     env_file:
       - .env.production
