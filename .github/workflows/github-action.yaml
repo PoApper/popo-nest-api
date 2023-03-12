@@ -1,6 +1,6 @@
 on:
-  # Github Action manual trigger
-  workflow_dispatch:
+  push:
+    tags:
 
 name: Deploy
 
