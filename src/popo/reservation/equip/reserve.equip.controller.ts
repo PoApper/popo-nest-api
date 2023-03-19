@@ -24,6 +24,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
+import { MoreThanOrEqual } from 'typeorm';
 
 @ApiTags('Equipment Reservation')
 @Controller('reservation-equip')
@@ -81,6 +82,7 @@ export class ReserveEquipController {
     @Query('owner') owner: string,
     @Query('status') status: string,
     @Query('date') date: string,
+    @Query('startDate') startDate: string,
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
@@ -93,6 +95,9 @@ export class ReserveEquipController {
     }
     if (date) {
       whereOption['date'] = date;
+    }
+    if (startDate) {
+      whereOption['date'] = MoreThanOrEqual(startDate);
     }
 
     const findOption = { where: whereOption, order: { created_at: 'DESC' } };
