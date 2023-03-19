@@ -135,9 +135,14 @@ export class ReservePlaceController {
   }
 
   @Get('placeName/:placeName') // hide user uuid
-  async checkByPlaceName(@Param('placeName') placeName: string) {
+  @ApiQuery({ name: 'startDate', required: false })
+  async checkByPlaceName(
+    @Param('placeName') placeName: string,
+    @Query('startDate') startDate: string,
+  ) {
     const existReservations = await this.reservePlaceService.findAllByPlaceName(
       placeName,
+      startDate,
     );
     return this.reservePlaceService.joinBooker(existReservations);
   }
@@ -150,11 +155,6 @@ export class ReservePlaceController {
     const existReservations =
       await this.reservePlaceService.findAllByPlaceNameAndDate(placeName, date);
     return this.reservePlaceService.joinBooker(existReservations);
-  }
-
-  @Get('placeName/:placeName/admin') // reveal user uuid
-  getByPlaceName(@Param('placeName') placeName: string) {
-    return this.reservePlaceService.findAllByPlaceName(placeName);
   }
 
   @Patch('all/status/accept')

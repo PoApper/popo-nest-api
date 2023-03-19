@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
@@ -117,12 +117,23 @@ export class ReservePlaceService {
     return this.reservePlaceRepo.findOne(uuid);
   }
 
-  async findAllByPlaceName(placeName: string) {
+  async findAllByPlaceName(placeName: string, startDate?: string) {
     const existPlace = await this.placeService.findOneByName(placeName);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
-    return this.reservePlaceRepo.find({ place_id: existPlace.uuid });
+
+    const findOption = {
+      place_id: existPlace.uuid,
+    };
+
+    if (startDate) {
+      findOption['date'] = MoreThanOrEqual(startDate);
+    }
+
+    console.log(findOption);
+
+    return this.reservePlaceRepo.find(findOption);
   }
 
   async findAllByPlaceNameAndDate(placeName: string, date: string) {
