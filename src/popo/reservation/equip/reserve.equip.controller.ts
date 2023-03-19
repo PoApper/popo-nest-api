@@ -1,5 +1,6 @@
 import {
   Body,
+  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -10,6 +11,7 @@ import {
   Req,
   UnauthorizedException,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -25,6 +27,7 @@ import { EquipService } from '../../equip/equip.service';
 
 @ApiTags('Equipment Reservation')
 @Controller('reservation-equip')
+@UseInterceptors(CacheInterceptor)
 export class ReserveEquipController {
   constructor(
     private readonly reserveEquipService: ReserveEquipService,

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -26,6 +27,7 @@ import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Introduce Club')
 @Controller('introduce/club')
+@UseInterceptors(CacheInterceptor)
 export class IntroClubController {
   constructor(private readonly introClubService: IntroClubService) {}
 
