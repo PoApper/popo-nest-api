@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -25,6 +26,7 @@ import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Introduce Association')
 @Controller('introduce/association')
+@UseInterceptors(CacheInterceptor)
 export class IntroAssociationController {
   constructor(
     private readonly introAssociationService: IntroAssociationService,
