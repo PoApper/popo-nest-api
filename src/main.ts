@@ -14,6 +14,8 @@ async function bootstrap() {
       'https://popo.poapper.club',
       'https://admin.popo.poapper.club',
       'https://dev.popo.poapper.club',
+
+      'https://popo.postech.ac.kr',
     ],
     credentials: true,
   });
