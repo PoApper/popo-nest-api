@@ -6,7 +6,7 @@ import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
-import { PlaceRegion } from '../../place/place.meta';
+// import { PlaceRegion } from '../../place/place.meta';
 import * as moment from 'moment';
 
 const Message = {
@@ -98,9 +98,12 @@ export class ReservePlaceService {
     }
 
     let saveDto = Object.assign({}, dto);
-    if (existPlace.region === PlaceRegion.community_center) {
+    if (existPlace.enable_auto_accept) {
       saveDto = Object.assign(dto, { status: ReservationStatus.accept });
     }
+    // if (existPlace.region === PlaceRegion.community_center) {
+    //   saveDto = Object.assign(dto, { status: ReservationStatus.accept });
+    // }
 
     return this.reservePlaceRepo.save(saveDto);
   }
