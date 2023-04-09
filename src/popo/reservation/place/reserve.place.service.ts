@@ -8,6 +8,7 @@ import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
 // import { PlaceRegion } from '../../place/place.meta';
 import * as moment from 'moment';
+import { PlaceEnableAutoAccept } from '../../place/place.meta';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -98,7 +99,7 @@ export class ReservePlaceService {
     }
 
     let saveDto = Object.assign({}, dto);
-    if (existPlace.enable_auto_accept) {
+    if (existPlace.enable_auto_accept === PlaceEnableAutoAccept.active) {
       saveDto = Object.assign(dto, { status: ReservationStatus.accept });
     }
     // if (existPlace.region === PlaceRegion.community_center) {

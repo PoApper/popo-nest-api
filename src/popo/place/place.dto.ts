@@ -1,4 +1,4 @@
-import { PlaceRegion } from './place.meta';
+import { PlaceEnableAutoAccept, PlaceRegion } from './place.meta';
 
 export class PlaceDto {
   readonly name: string;
@@ -8,5 +8,5 @@ export class PlaceDto {
   readonly staff_email: string;
   readonly max_minutes: number;
   readonly opening_hours: string;
-  readonly enable_auto_accept: boolean;
+  readonly enable_auto_accept: PlaceEnableAutoAccept;
 }
