@@ -41,6 +41,9 @@ export class Place extends BaseEntity {
   // if null, there's no rule for opening hours.
   // checking opening hours is implemented on the frontend side.
 
+  @Column({ default: false })
+  enable_auto_accept: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 
