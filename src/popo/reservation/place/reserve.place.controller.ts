@@ -160,7 +160,7 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinBooker(existReservations);
   }
 
-  @Get('sync-place-reservation-count')
+  @Get('sync-reservation-count')
   async syncPlaceReservationCount() {
     const placeList = await this.placeService.find();
     for (const place of placeList) {
