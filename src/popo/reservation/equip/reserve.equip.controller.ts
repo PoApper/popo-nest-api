@@ -46,6 +46,11 @@ export class ReserveEquipController {
 
     const existEquips = await this.equipService.findByIds(dto.equipments);
 
+    // update equipment reservation count
+    for (const equipment of existEquips) {
+      await this.equipService.updateReservationCountByDelta(equipment.uuid, +1);
+    }
+
     const staff_emails = existEquips.map((equip) => equip.staff_email);
     const unique_emails = new Set(staff_emails);
 
@@ -65,11 +70,6 @@ export class ReserveEquipController {
     );
 
     return new_reservation;
-  }
-
-  @Get('count')
-  countAll() {
-    return this.reserveEquipService.count();
   }
 
   @Get()
@@ -135,6 +135,22 @@ export class ReserveEquipController {
     return this.reserveEquipService.joinEquips(reservations);
   }
 
+  @Get('sync-reservation-count')
+  async syncPlaceReservationCount() {
+    const equipmentList = await this.equipService.find();
+    for (const equipment of equipmentList) {
+      const reservationCount =
+        await this.reserveEquipService.countEquipmentReservations(
+          equipment.uuid,
+        );
+      await this.equipService.updateReservationCount(
+        equipment.uuid,
+        reservationCount,
+      );
+    }
+    return `Sync Done: ${equipmentList.length} Equipments`;
+  }
+
   @Get(':uuid')
   getOne(@Param('uuid') uuid) {
     return this.reserveEquipService.findOne(uuid);
@@ -147,19 +163,20 @@ export class ReserveEquipController {
     const user = req.user;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
-      return this.reserveEquipService.remove(uuid);
+      await this.reserveEquipService.remove(uuid);
     } else {
       if (reservation.booker_id == user.uuid) {
-        return this.reserveEquipService.remove(uuid);
+        await this.reserveEquipService.remove(uuid);
       } else {
         throw new UnauthorizedException('Unauthorized delete action');
       }
     }
-  }
 
-  /**
-   * Additional APIs
-   */
+    // update equipment reservation count
+    for (const equipment_id of reservation.equipments) {
+      await this.equipService.updateReservationCountByDelta(equipment_id, -1);
+    }
+  }
 
   @Patch(':uuid/status/:status')
   @Roles(UserType.admin, UserType.association, UserType.staff)

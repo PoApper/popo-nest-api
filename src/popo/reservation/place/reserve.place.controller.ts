@@ -48,6 +48,9 @@ export class ReservePlaceController {
       Object.assign(dto, { booker_id: user.uuid }),
     );
 
+    // update place reservation count
+    await this.placeService.updateReservationCountByDelta(dto.place_id, +1);
+
     // Send e-mail to staff
     await this.mailService.sendPlaceReserveCreateMailToStaff(
       existPlace.staff_email,
@@ -157,6 +160,21 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinBooker(existReservations);
   }
 
+  @Get('sync-reservation-count')
+  async syncPlaceReservationCount() {
+    const placeList = await this.placeService.find();
+    for (const place of placeList) {
+      const reservationCount = await this.reservePlaceService.count({
+        place_id: place.uuid,
+      });
+      await this.placeService.updateReservationCount(
+        place.uuid,
+        reservationCount,
+      );
+    }
+    return `Sync Done: ${placeList.length} Places`;
+  }
+
   @Patch('all/status/accept')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -217,13 +235,19 @@ export class ReservePlaceController {
     const user = req.user;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
-      return this.reservePlaceService.remove(uuid);
+      await this.reservePlaceService.remove(uuid);
     } else {
       if (reservation.booker_id == user.uuid) {
-        return this.reservePlaceService.remove(uuid);
+        await this.reservePlaceService.remove(uuid);
       } else {
         throw new UnauthorizedException('Unauthorized delete action');
       }
     }
+
+    // update place reservation count
+    await this.placeService.updateReservationCountByDelta(
+      reservation.place_id,
+      -1,
+    );
   }
 }
