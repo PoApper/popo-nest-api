@@ -44,6 +44,9 @@ export class Place extends BaseEntity {
   @Column({ default: PlaceEnableAutoAccept.inactive })
   enable_auto_accept: PlaceEnableAutoAccept;
 
+  @Column({ default: 0 })
+  total_reservation_count: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
