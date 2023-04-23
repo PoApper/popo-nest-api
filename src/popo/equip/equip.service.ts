@@ -89,6 +89,21 @@ export class EquipService {
     return this.equipRepo.update({ uuid: uuid }, saveDto);
   }
 
+  async updateReservationCountByDelta(uuid: string, delta: number) {
+    const place = await this.equipRepo.findOneOrFail(uuid);
+    return this.equipRepo.update(
+      { uuid: uuid },
+      { total_reservation_count: place.total_reservation_count + delta },
+    );
+  }
+
+  updateReservationCount(uuid: string, reservation_count: number) {
+    return this.equipRepo.update(
+      { uuid: uuid },
+      { total_reservation_count: reservation_count },
+    );
+  }
+
   async delete(uuid: string) {
     const existEquip = await this.findOne({ uuid: uuid });
 

@@ -243,6 +243,7 @@ export class ReservePlaceController {
         throw new UnauthorizedException('Unauthorized delete action');
       }
     }
+
     // update place reservation count
     await this.placeService.updateReservationCountByDelta(
       reservation.place_id,

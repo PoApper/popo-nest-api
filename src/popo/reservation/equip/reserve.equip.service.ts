@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { ReserveEquip } from './reserve.equip.entity';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
@@ -105,8 +105,10 @@ export class ReserveEquipService {
     return this.reserveEquipRepo.save(dto);
   }
 
-  count() {
-    return this.reserveEquipRepo.count();
+  countEquipmentReservations(equipment_id: string) {
+    return this.reserveEquipRepo.count({
+      where: { equipments: Like(`%${equipment_id}%`) },
+    });
   }
 
   find(findOptions?: object) {
