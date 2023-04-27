@@ -107,7 +107,7 @@ export class ReservePlaceService {
         status: In([ReservationStatus.accept, ReservationStatus.in_process]),
       },
     });
-    if (reservationsOfDay.length > 1) {
+    if (reservationsOfDay.length) {
       throw new BadRequestException(Message.DUPLICATED_RESERVATION_EXIST);
     }
 
