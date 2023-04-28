@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
-import { MoreThanOrEqual, Repository } from 'typeorm';
+import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
@@ -16,6 +16,8 @@ const Message = {
   OVERLAP_RESERVATION: 'Reservation time overlapped.',
   NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
   BAD_RESERVATION_TIME: 'Reservation time is not appropriate.',
+  DUPLICATED_RESERVATION_EXIST:
+    'Your reservation is already exist on that day: accepted or in-progress.',
 };
 
 @Injectable()
@@ -65,7 +67,7 @@ export class ReservePlaceService {
   }
 
   async save(dto: CreateReservePlaceDto) {
-    const { place_id, date, start_time, end_time } = dto;
+    const { place_id, date, start_time, end_time, booker_id } = dto;
 
     if (
       dto.title === '' ||
@@ -95,6 +97,18 @@ export class ReservePlaceService {
     );
     if (isReservationOverlap) {
       throw new BadRequestException(Message.OVERLAP_RESERVATION);
+    }
+
+    const reservationsOfDay = await this.reservePlaceRepo.find({
+      where: {
+        booker_id: booker_id,
+        place_id: place_id,
+        date: date,
+        status: In([ReservationStatus.accept, ReservationStatus.in_process]),
+      },
+    });
+    if (reservationsOfDay.length) {
+      throw new BadRequestException(Message.DUPLICATED_RESERVATION_EXIST);
     }
 
     let saveDto = Object.assign({}, dto);

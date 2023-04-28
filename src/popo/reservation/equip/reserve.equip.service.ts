@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { In, Like, Repository } from 'typeorm';
 import { ReserveEquip } from './reserve.equip.entity';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
@@ -15,6 +15,8 @@ const Message = {
   OVERLAP_RESERVATION: 'Reservation time overlapped.',
   NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
   BAD_RESERVATION_TIME: 'Reservation time is not appropriate.',
+  DUPLICATED_RESERVATION_EXIST:
+    'Your reservation is already exist on that day: accepted or in-progress.',
 };
 
 @Injectable()
@@ -66,7 +68,7 @@ export class ReserveEquipService {
   }
 
   async save(dto: CreateReserveEquipDto) {
-    const { equipments, date, start_time, end_time } = dto;
+    const { equipments, date, start_time, end_time, booker_id, owner } = dto;
 
     if (
       !dto.equipments.length ||
@@ -100,6 +102,18 @@ export class ReserveEquipService {
     );
     if (isReservationOverlap) {
       throw new BadRequestException(Message.OVERLAP_RESERVATION);
+    }
+
+    const reservationsOfDay = await this.reserveEquipRepo.find({
+      where: {
+        booker_id: booker_id,
+        date: date,
+        owner: owner,
+        status: In([ReservationStatus.accept, ReservationStatus.in_process]),
+      },
+    });
+    if (reservationsOfDay.length) {
+      throw new BadRequestException(Message.DUPLICATED_RESERVATION_EXIST);
     }
 
     return this.reserveEquipRepo.save(dto);
