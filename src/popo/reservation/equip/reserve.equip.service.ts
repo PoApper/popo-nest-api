@@ -166,12 +166,11 @@ export class ReserveEquipService {
     const refinedReservations = [];
 
     for (const reservation of reservations) {
-      const booker = await this.userService.findOne({
-        uuid: reservation.booker_id,
-      });
+      const booker = await this.userService.findOneByUuidWithInfo(
+        reservation.booker_id,
+      );
       if (booker) {
-        const { password, cryptoSalt, ...booker_info } = booker;
-        reservation.booker = booker_info;
+        reservation.booker = booker;
         refinedReservations.push(reservation);
       }
     }

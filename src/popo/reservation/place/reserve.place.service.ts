@@ -145,8 +145,6 @@ export class ReservePlaceService {
       findOption['date'] = MoreThanOrEqual(startDate);
     }
 
-    console.log(findOption);
-
     return this.reservePlaceRepo.find(findOption);
   }
 
@@ -168,7 +166,7 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
     }
 
-    this.reservePlaceRepo.update(
+    await this.reservePlaceRepo.update(
       { uuid: uuid },
       {
         status: status,
@@ -194,10 +192,11 @@ export class ReservePlaceService {
     const refinedReservations = [];
 
     for (const reservation of reservations) {
-      const booker = await this.userService.findOne(reservation.booker_id);
+      const booker = await this.userService.findOneByUuidWithInfo(
+        reservation.booker_id,
+      );
       if (booker) {
-        const { password, cryptoSalt, ...booker_info } = booker;
-        reservation.booker = booker_info;
+        reservation.booker = booker;
         refinedReservations.push(reservation);
       }
     }
