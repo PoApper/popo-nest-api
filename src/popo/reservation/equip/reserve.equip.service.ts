@@ -144,7 +144,7 @@ export class ReserveEquipService {
       throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
     }
 
-    this.reserveEquipRepo.update(
+    await this.reserveEquipRepo.update(
       { uuid: uuid },
       {
         status: status,
