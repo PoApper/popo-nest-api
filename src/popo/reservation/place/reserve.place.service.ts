@@ -6,8 +6,8 @@ import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
-import * as moment from 'moment';
 import { PlaceEnableAutoAccept } from '../../place/place.meta';
+import { calculateReservationDurationMinutes } from '../../../utils/reservation-utils';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -16,8 +16,8 @@ const Message = {
   OVERLAP_RESERVATION: 'Reservation time overlapped.',
   NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
   BAD_RESERVATION_TIME: 'Reservation time is not appropriate.',
-  DUPLICATED_RESERVATION_EXIST:
-    'Your reservation is already exist on that day: accepted or in-progress.',
+  OVER_MAX_RESERVATION_TIME:
+    "You've overed allocated reservation minutes of that day.",
 };
 
 @Injectable()
@@ -57,11 +57,10 @@ export class ReservePlaceService {
     start_time: string,
     end_time: string,
   ): boolean {
-    const startMoment = moment(start_time, 'hhmm');
-    const endMoment = moment(end_time, 'hhmm');
-    const minutesDiff = moment
-      .duration(endMoment.diff(startMoment))
-      .asMinutes();
+    const minutesDiff = calculateReservationDurationMinutes(
+      start_time,
+      end_time,
+    );
 
     return max_minutes && minutesDiff > max_minutes;
   }
@@ -107,8 +106,17 @@ export class ReservePlaceService {
         status: In([ReservationStatus.accept, ReservationStatus.in_process]),
       },
     });
-    if (reservationsOfDay.length) {
-      throw new BadRequestException(Message.DUPLICATED_RESERVATION_EXIST);
+    let totalReservationMinutes = 0;
+    for (const reservation of reservationsOfDay) {
+      const reservationDuration = calculateReservationDurationMinutes(
+        reservation.start_time,
+        reservation.end_time,
+      );
+      totalReservationMinutes += reservationDuration;
+    }
+
+    if (totalReservationMinutes >= existPlace.max_minutes) {
+      throw new BadRequestException(Message.OVER_MAX_RESERVATION_TIME);
     }
 
     let saveDto = Object.assign({}, dto);
