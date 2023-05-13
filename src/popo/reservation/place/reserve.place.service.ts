@@ -15,7 +15,6 @@ const Message = {
   NOT_EXISTING_RESERVATION: "There's no such reservation.",
   OVERLAP_RESERVATION: 'Reservation time overlapped.',
   NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
-  BAD_RESERVATION_TIME: 'Reservation time is not appropriate.',
   OVER_MAX_RESERVATION_TIME:
     'Over the allocated reservation minutes of that day.',
 };
