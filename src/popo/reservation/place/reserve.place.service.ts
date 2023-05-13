@@ -52,19 +52,6 @@ export class ReservePlaceService {
     return false;
   }
 
-  isOverMaxMinutes(
-    max_minutes: number,
-    start_time: string,
-    end_time: string,
-  ): boolean {
-    const minutesDiff = calculateReservationDurationMinutes(
-      start_time,
-      end_time,
-    );
-
-    return max_minutes && minutesDiff > max_minutes;
-  }
-
   async save(dto: CreateReservePlaceDto) {
     const { place_id, date, start_time, end_time, booker_id } = dto;
 
@@ -79,15 +66,6 @@ export class ReservePlaceService {
 
     const existPlace = await this.placeService.findOneOrFail(place_id);
 
-    const isOverMaxMinutes = this.isOverMaxMinutes(
-      existPlace.max_minutes,
-      start_time,
-      end_time,
-    );
-    if (isOverMaxMinutes) {
-      throw new BadRequestException(Message.BAD_RESERVATION_TIME);
-    }
-
     const isReservationOverlap = await this.isReservationOverlap(
       place_id,
       date,
@@ -98,6 +76,20 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.OVERLAP_RESERVATION);
     }
 
+    // Reservation Duration Check
+    const newReservationMinutes = calculateReservationDurationMinutes(
+      dto.start_time,
+      dto.end_time,
+    );
+    if (
+      existPlace.max_minutes &&
+      newReservationMinutes > existPlace.max_minutes
+    ) {
+      throw new BadRequestException(
+        `${Message.OVER_MAX_RESERVATION_TIME}: max ${existPlace.max_minutes} mins, new ${newReservationMinutes} mins`,
+      );
+    }
+
     const reservationsOfDay = await this.reservePlaceRepo.find({
       where: {
         booker_id: booker_id,
@@ -106,6 +98,7 @@ export class ReservePlaceService {
         status: In([ReservationStatus.accept, ReservationStatus.in_process]),
       },
     });
+
     let totalReservationMinutes = 0;
     for (const reservation of reservationsOfDay) {
       const reservationDuration = calculateReservationDurationMinutes(
@@ -114,16 +107,14 @@ export class ReservePlaceService {
       );
       totalReservationMinutes += reservationDuration;
     }
-    const newReservationMinutes = calculateReservationDurationMinutes(
-      dto.start_time,
-      dto.end_time,
-    );
 
     if (
       totalReservationMinutes + newReservationMinutes >
       existPlace.max_minutes
     ) {
-      throw new BadRequestException(Message.OVER_MAX_RESERVATION_TIME);
+      throw new BadRequestException(
+        `${Message.OVER_MAX_RESERVATION_TIME}: max ${existPlace.max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
+      );
     }
 
     let saveDto = Object.assign({}, dto);
