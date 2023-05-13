@@ -64,8 +64,9 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
     }
 
-    const existPlace = await this.placeService.findOneOrFail(place_id);
+    const targetPlace = await this.placeService.findOneOrFail(place_id);
 
+    // Reservation Overlap Check
     const isReservationOverlap = await this.isReservationOverlap(
       place_id,
       date,
@@ -82,11 +83,11 @@ export class ReservePlaceService {
       dto.end_time,
     );
     if (
-      existPlace.max_minutes &&
-      newReservationMinutes > existPlace.max_minutes
+      targetPlace.max_minutes &&
+      newReservationMinutes > targetPlace.max_minutes
     ) {
       throw new BadRequestException(
-        `${Message.OVER_MAX_RESERVATION_TIME}: max ${existPlace.max_minutes} mins, new ${newReservationMinutes} mins`,
+        `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetPlace.max_minutes} mins, new ${newReservationMinutes} mins`,
       );
     }
 
@@ -110,15 +111,15 @@ export class ReservePlaceService {
 
     if (
       totalReservationMinutes + newReservationMinutes >
-      existPlace.max_minutes
+      targetPlace.max_minutes
     ) {
       throw new BadRequestException(
-        `${Message.OVER_MAX_RESERVATION_TIME}: max ${existPlace.max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
+        `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetPlace.max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
       );
     }
 
     let saveDto = Object.assign({}, dto);
-    if (existPlace.enable_auto_accept === PlaceEnableAutoAccept.active) {
+    if (targetPlace.enable_auto_accept === PlaceEnableAutoAccept.active) {
       saveDto = Object.assign(dto, { status: ReservationStatus.accept });
     }
 
