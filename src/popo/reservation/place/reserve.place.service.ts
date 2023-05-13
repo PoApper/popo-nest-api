@@ -114,8 +114,15 @@ export class ReservePlaceService {
       );
       totalReservationMinutes += reservationDuration;
     }
+    const newReservationMinutes = calculateReservationDurationMinutes(
+      dto.start_time,
+      dto.end_time,
+    );
 
-    if (totalReservationMinutes >= existPlace.max_minutes) {
+    if (
+      totalReservationMinutes + newReservationMinutes >
+      existPlace.max_minutes
+    ) {
       throw new BadRequestException(Message.OVER_MAX_RESERVATION_TIME);
     }
 
