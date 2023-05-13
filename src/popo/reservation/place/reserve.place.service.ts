@@ -17,7 +17,7 @@ const Message = {
   NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
   BAD_RESERVATION_TIME: 'Reservation time is not appropriate.',
   OVER_MAX_RESERVATION_TIME:
-    "You've overed allocated reservation minutes of that day.",
+    'Over the allocated reservation minutes of that day.',
 };
 
 @Injectable()
