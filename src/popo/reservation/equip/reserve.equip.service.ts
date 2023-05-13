@@ -102,7 +102,7 @@ export class ReserveEquipService {
         newReservationMinutes > targetEquipment.max_minutes
       ) {
         throw new BadRequestException(
-          `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetEquipment.max_minutes} mins, new ${newReservationMinutes} mins`,
+          `${Message.OVER_MAX_RESERVATION_TIME}: ${targetEquipment.name} max ${targetEquipment.max_minutes} mins, new ${newReservationMinutes} mins`,
         );
       }
 
@@ -120,7 +120,7 @@ export class ReserveEquipService {
         targetEquipment.max_minutes
       ) {
         throw new BadRequestException(
-          `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetEquipment.max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
+          `${Message.OVER_MAX_RESERVATION_TIME}: ${targetEquipment.name} max ${targetEquipment.max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
         );
       }
     }
