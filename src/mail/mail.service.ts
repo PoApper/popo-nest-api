@@ -196,4 +196,31 @@ export class MailService {
     });
     console.log(`success to mailing: ${email}`);
   }
+
+  async sendPasswordChangeMail(email: string, userToken: string) {
+    await this.mailerService.sendMail({
+      to: email,
+      from: process.env.POPO_MAIL_ADDRESS,
+      subject: `[POPO] 비밀번호 변경 링크`,
+      html: `
+      <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+            </style>
+        </head>
+        <body>
+          <h2>[POPO] 비밀번호 변경 링크 입니다</h2>
+          <div style="padding: 2px; background-color: crimson; color: white; text-align: center;">
+             <a href="https://popo.poapper.club/auth/change-password?${userToken}" style="text-decoration: inherit;">
+              비밀번호 변경하기
+             </a>
+          </div>
+          <br/>
+          <p>😱본인의 비밀번호 변경이 아니라면, 즉시 POPO 관리팀에게 연락바랍니다.😱</p>
+        </body>
+      </html>`,
+    });
+    console.log(`success to mailing: ${email}`);
+  }
 }

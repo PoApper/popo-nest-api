@@ -11,9 +11,10 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { Request, Response } from 'express';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UserStatus, UserType } from '../popo/user/user.meta';
 import { UserService } from '../popo/user/user.service';
@@ -21,7 +22,8 @@ import { CreateUserDto } from '../popo/user/user.dto';
 import { MailService } from '../mail/mail.service';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
-import { ApiTags } from '@nestjs/swagger';
+import { PasswordChangeDto, PasswordChangeRequestDto } from './auth.dto';
+import { encryptWord } from '../utils/encrypt-utils';
 
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
@@ -140,9 +142,33 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getMyInfo(@Req() req: Request) {
     const user: any = req.user;
-    const { password, cryptoSalt, ...UserInfo } =
-      await this.userService.findOneById(user.id);
+    return this.userService.findOneByUuidWithInfo(user.id);
+  }
 
-    return UserInfo;
+  @Post('request-password-change')
+  async sendPasswordChangeLink(@Body() dto: PasswordChangeRequestDto) {
+    const targetUser = await this.userService.findOneByEmail(dto.email);
+    if (!targetUser) {
+      throw new BadRequestException('No User for given email');
+    }
+
+    // Update Password Change Request Event
+    await this.userService.updatePasswordChangeRequestEventById(targetUser.id);
+
+    // Generate User Token
+    const userToken = encryptWord(
+      targetUser.uuid,
+      targetUser.cryptoSalt,
+      100,
+      12,
+    );
+
+    // Send Password Change Email
+    await this.mailService.sendPasswordChangeMail(dto.email, userToken);
+  }
+
+  @Post('change-password')
+  async changePassword(@Body() dto: PasswordChangeDto) {
+    // Check Password Change Request is expired
   }
 }
