@@ -212,7 +212,7 @@ export class MailService {
         <body>
           <h2>[POPO] 비밀번호 변경 링크 입니다</h2>
           <div style="padding: 2px; background-color: crimson; color: white; text-align: center;">
-             <a href="https://popo.poapper.club/auth/change-password?${userToken}" style="text-decoration: inherit;">
+             <a href="https://api.popo.poapper.club/auth/auth-password-chang?uuid=${userToken}" style="text-decoration: inherit;">
               비밀번호 변경하기
              </a>
           </div>

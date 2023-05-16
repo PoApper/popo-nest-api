@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -23,7 +24,7 @@ import { MailService } from '../mail/mail.service';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
 import { PasswordChangeDto, PasswordChangeRequestDto } from './auth.dto';
-import { encryptWord } from '../utils/encrypt-utils';
+import { PasswordChangeRequestStatus } from './password-change-request.type';
 
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
@@ -152,23 +153,58 @@ export class AuthController {
       throw new BadRequestException('No User for given email');
     }
 
-    // Update Password Change Request Event
-    await this.userService.updatePasswordChangeRequestEventById(targetUser.id);
-
-    // Generate User Token
-    const userToken = encryptWord(
+    // Generate Password Change Request Event
+    const pwChangeReq = await this.authService.createPasswordChangeRequest(
       targetUser.uuid,
-      targetUser.cryptoSalt,
-      100,
-      12,
     );
 
     // Send Password Change Email
-    await this.mailService.sendPasswordChangeMail(dto.email, userToken);
+    await this.mailService.sendPasswordChangeMail(dto.email, pwChangeReq.uuid);
+  }
+
+  @Get('auth-password-change')
+  async authenticatePasswordChange(
+    @Query('uuid') request_uuid: string,
+    @Res() res,
+  ) {
+    await this.authService.updatePasswordChangeRequestStatus(
+      request_uuid,
+      PasswordChangeRequestStatus.AUTHENTICATED,
+    );
+
+    const redirectUrl = `https://popo.poapper.club/auth/change-password?uuid=${request_uuid}`;
+
+    return res.redirect(redirectUrl);
   }
 
   @Post('change-password')
   async changePassword(@Body() dto: PasswordChangeDto) {
+    const pwChangeRequest = await this.authService.findPasswordChangeRequest(
+      dto.change_request_uuid,
+    );
+    if (!pwChangeRequest) {
+      throw new BadRequestException('Invalid Password Change Request UUID');
+    }
+
     // Check Password Change Request is expired
+    const now = new Date();
+    const diffSeconds = Math.floor(
+      (Number(now) - Number(pwChangeRequest.created_at)) / 1000,
+    );
+    if (diffSeconds > 10 * 60) {
+      throw new BadRequestException('Password Changed Request is expired!');
+    }
+
+    // Change Password
+    await this.userService.updatePasswordByUuid(
+      pwChangeRequest.user_uuid,
+      dto.new_password,
+    );
+
+    // Complete Request Status
+    await this.authService.updatePasswordChangeRequestStatus(
+      dto.change_request_uuid,
+      PasswordChangeRequestStatus.COMPLETED,
+    );
   }
 }

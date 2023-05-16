@@ -4,5 +4,5 @@ export class PasswordChangeRequestDto {
 
 export class PasswordChangeDto {
   new_password: string;
-  user_token: string;
+  change_request_uuid: string;
 }

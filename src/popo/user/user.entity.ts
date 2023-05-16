@@ -44,9 +44,6 @@ export class User extends BaseEntity {
   @Column()
   lastLoginAt: Date;
 
-  @Column({ nullable: true })
-  last_password_change_request_at: Date;
-
   /**
    * Database Relation
    */
