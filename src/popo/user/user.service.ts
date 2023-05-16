@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { User } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { encryptWord } from '../../utils/encrypt-utils';
 
 const Message = {
   EXISTING_EMAIL: 'This email is already used.',
@@ -25,7 +26,7 @@ export class UserService {
       throw new BadRequestException(Message.EXISTING_EMAIL);
     } else {
       const cryptoSalt = crypto.randomBytes(64).toString('base64');
-      const encryptedPassword = this.encryptPassword(dto.password, cryptoSalt);
+      const encryptedPassword = encryptWord(dto.password, cryptoSalt);
 
       return this.userRepo.save({
         email: dto.email,
@@ -146,18 +147,30 @@ export class UserService {
     );
   }
 
+  async updatePasswordChangeRequestEventById(id: string) {
+    const targetUser = await this.findOneById(id);
+    if (!targetUser) {
+      throw new BadRequestException(Message.NOT_EXISTING_USER);
+    }
+
+    return this.userRepo.update(
+      { uuid: targetUser.uuid, email: targetUser.email, id: targetUser.id },
+      { last_password_change_request_at: new Date() },
+    );
+  }
+
   async updateLoginById(id: string) {
     const existUser = await this.findOneById(id);
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
-    } else {
-      this.userRepo.update(
-        { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
-        {
-          lastLoginAt: new Date(),
-        },
-      );
     }
+
+    return this.userRepo.update(
+      { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
+      {
+        lastLoginAt: new Date(),
+      },
+    );
   }
 
   async updatePasswordByUuid(uuid: string, password: string) {
@@ -168,7 +181,7 @@ export class UserService {
     }
 
     const cryptoSalt = crypto.randomBytes(64).toString('base64');
-    const encryptedPassword = this.encryptPassword(password, cryptoSalt);
+    const encryptedPassword = encryptWord(password, cryptoSalt);
 
     return this.userRepo.update(
       { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
@@ -187,7 +200,7 @@ export class UserService {
     }
 
     const cryptoSalt = crypto.randomBytes(64).toString('base64');
-    const encryptedPassword = this.encryptPassword(password, cryptoSalt);
+    const encryptedPassword = encryptWord(password, cryptoSalt);
 
     return this.userRepo.update(
       { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
@@ -219,12 +232,5 @@ export class UserService {
     }
 
     return this.userRepo.delete({ uuid: uuid });
-  }
-
-  // password encrypt util
-  private encryptPassword(password: string, cryptoSalt: string) {
-    return crypto
-      .pbkdf2Sync(password, cryptoSalt, 10000, 64, 'sha512')
-      .toString('base64');
   }
 }

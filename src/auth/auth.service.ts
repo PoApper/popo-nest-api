@@ -1,8 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as crypto from 'crypto';
 import { UserService } from '../popo/user/user.service';
 import { UserStatus } from '../popo/user/user.meta';
+import { encryptWord } from '../utils/encrypt-utils';
 
 /**
  * retrieving a user and verifying the password.
@@ -24,7 +24,7 @@ export class AuthService {
         throw new UnauthorizedException('Not activated account.');
       }
 
-      const encryptedPassword = this.encryptPassword(password, cryptoSalt);
+      const encryptedPassword = encryptWord(password, cryptoSalt);
       if (user.password === encryptedPassword) {
         const { password, ...result } = user;
         return result;
@@ -43,12 +43,5 @@ export class AuthService {
       email: user.email,
     };
     return this.jwtService.sign(payload);
-  }
-
-  // password encrypt util
-  private encryptPassword(password: string, cryptoSalt: string) {
-    return crypto
-      .pbkdf2Sync(password, cryptoSalt, 10000, 64, 'sha512')
-      .toString('base64');
   }
 }
