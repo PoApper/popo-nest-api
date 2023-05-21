@@ -147,18 +147,6 @@ export class UserService {
     );
   }
 
-  async updatePasswordChangeRequestEventById(id: string) {
-    const targetUser = await this.findOneById(id);
-    if (!targetUser) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
-    }
-
-    return this.userRepo.update(
-      { uuid: targetUser.uuid, email: targetUser.email, id: targetUser.id },
-      { last_password_change_request_at: new Date() },
-    );
-  }
-
   async updateLoginById(id: string) {
     const existUser = await this.findOneById(id);
     if (!existUser) {
