@@ -85,6 +85,22 @@ export class PlaceService {
     return this.placeRepo.update({ uuid: uuid }, saveDto);
   }
 
+  // delta: +1 or -1
+  async updateReservationCountByDelta(uuid: string, delta: number) {
+    const place = await this.placeRepo.findOneOrFail(uuid);
+    return this.placeRepo.update(
+      { uuid: uuid },
+      { total_reservation_count: place.total_reservation_count + delta },
+    );
+  }
+
+  updateReservationCount(uuid: string, reservation_count: number) {
+    return this.placeRepo.update(
+      { uuid: uuid },
+      { total_reservation_count: reservation_count },
+    );
+  }
+
   async remove(uuid: string) {
     const existPlace = await this.findOne(uuid);
 

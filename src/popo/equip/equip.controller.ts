@@ -1,5 +1,6 @@
 import {
   Body,
+  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -24,8 +25,9 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { editFileName, imageFileFilter } from '../../utils/fileUpload';
 
-@ApiTags('Equip')
+@ApiTags('Equipment')
 @Controller('equip')
+@UseInterceptors(CacheInterceptor)
 export class EquipController {
   constructor(private readonly equipService: EquipService) {}
 

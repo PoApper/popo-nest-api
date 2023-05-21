@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { PlaceRegion } from './place.meta';
+import { PlaceEnableAutoAccept, PlaceRegion } from './place.meta';
 import { ReservePlace } from '../reservation/place/reserve.place.entity';
 
 @Entity()
@@ -40,6 +40,12 @@ export class Place extends BaseEntity {
   opening_hours: string;
   // if null, there's no rule for opening hours.
   // checking opening hours is implemented on the frontend side.
+
+  @Column({ default: PlaceEnableAutoAccept.inactive })
+  enable_auto_accept: PlaceEnableAutoAccept;
+
+  @Column({ default: 0 })
+  total_reservation_count: number;
 
   @CreateDateColumn()
   createdAt: Date;

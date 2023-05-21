@@ -4,3 +4,8 @@ export enum PlaceRegion {
   others = 'OTHERS', // 생활관 외
   community_center = 'COMMUNITY_CENTER',
 }
+
+export enum PlaceEnableAutoAccept {
+  active = 'Active',
+  inactive = 'Inactive',
+}

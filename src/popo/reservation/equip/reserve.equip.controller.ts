@@ -1,5 +1,6 @@
 import {
   Body,
+  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -10,6 +11,7 @@ import {
   Req,
   UnauthorizedException,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -22,9 +24,11 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
+import { MoreThanOrEqual } from 'typeorm';
 
 @ApiTags('Equipment Reservation')
 @Controller('reservation-equip')
+@UseInterceptors(CacheInterceptor)
 export class ReserveEquipController {
   constructor(
     private readonly reserveEquipService: ReserveEquipService,
@@ -41,6 +45,11 @@ export class ReserveEquipController {
     const new_reservation = await this.reserveEquipService.save(saveDto);
 
     const existEquips = await this.equipService.findByIds(dto.equipments);
+
+    // update equipment reservation count
+    for (const equipment of existEquips) {
+      await this.equipService.updateReservationCountByDelta(equipment.uuid, +1);
+    }
 
     const staff_emails = existEquips.map((equip) => equip.staff_email);
     const unique_emails = new Set(staff_emails);
@@ -63,11 +72,6 @@ export class ReserveEquipController {
     return new_reservation;
   }
 
-  @Get('count')
-  countAll() {
-    return this.reserveEquipService.count();
-  }
-
   @Get()
   @ApiQuery({ name: 'owner', required: false })
   @ApiQuery({ name: 'status', required: false })
@@ -78,6 +82,7 @@ export class ReserveEquipController {
     @Query('owner') owner: string,
     @Query('status') status: string,
     @Query('date') date: string,
+    @Query('startDate') startDate: string,
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
@@ -90,6 +95,9 @@ export class ReserveEquipController {
     }
     if (date) {
       whereOption['date'] = date;
+    }
+    if (startDate) {
+      whereOption['date'] = MoreThanOrEqual(startDate);
     }
 
     const findOption = { where: whereOption, order: { created_at: 'DESC' } };
@@ -127,6 +135,22 @@ export class ReserveEquipController {
     return this.reserveEquipService.joinEquips(reservations);
   }
 
+  @Get('sync-reservation-count')
+  async syncPlaceReservationCount() {
+    const equipmentList = await this.equipService.find();
+    for (const equipment of equipmentList) {
+      const reservationCount =
+        await this.reserveEquipService.countEquipmentReservations(
+          equipment.uuid,
+        );
+      await this.equipService.updateReservationCount(
+        equipment.uuid,
+        reservationCount,
+      );
+    }
+    return `Sync Done: ${equipmentList.length} Equipments`;
+  }
+
   @Get(':uuid')
   getOne(@Param('uuid') uuid) {
     return this.reserveEquipService.findOne(uuid);
@@ -139,19 +163,20 @@ export class ReserveEquipController {
     const user = req.user;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
-      return this.reserveEquipService.remove(uuid);
+      await this.reserveEquipService.remove(uuid);
     } else {
       if (reservation.booker_id == user.uuid) {
-        return this.reserveEquipService.remove(uuid);
+        await this.reserveEquipService.remove(uuid);
       } else {
         throw new UnauthorizedException('Unauthorized delete action');
       }
     }
-  }
 
-  /**
-   * Additional APIs
-   */
+    // update equipment reservation count
+    for (const equipment_id of reservation.equipments) {
+      await this.equipService.updateReservationCountByDelta(equipment_id, -1);
+    }
+  }
 
   @Patch(':uuid/status/:status')
   @Roles(UserType.admin, UserType.association, UserType.staff)

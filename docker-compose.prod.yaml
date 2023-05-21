@@ -4,5 +4,7 @@ services:
     image: popo-nest-api:latest
     ports:
       - "4000:4000"
+    volumes:
+      - ./uploads:/usr/src/app/uploads
     env_file:
       - .env.production

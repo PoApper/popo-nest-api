@@ -1,5 +1,6 @@
 import {
   Body,
+  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -25,6 +26,7 @@ import { ApiBody, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Place')
 @Controller('place')
+@UseInterceptors(CacheInterceptor)
 export class PlaceController {
   constructor(private readonly placeService: PlaceService) {}
 

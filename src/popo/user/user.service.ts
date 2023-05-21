@@ -76,6 +76,22 @@ export class UserService {
     return this.userRepo.findOne(findOptions, maybeOption);
   }
 
+  findOneByUuidWithInfo(uuid: string) {
+    return this.userRepo.findOne({
+      where: { uuid: uuid },
+      select: [
+        'uuid',
+        'id',
+        'email',
+        'name',
+        'userType',
+        'userStatus',
+        'createdAt',
+        'lastLoginAt',
+      ],
+    });
+  }
+
   findOneOrFail(findOptions: object, maybeOption?: object) {
     const existUser = this.userRepo.findOne(findOptions, maybeOption);
     if (existUser) {

@@ -1,5 +1,6 @@
 import {
   Body,
+  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -10,6 +11,7 @@ import {
   Req,
   UnauthorizedException,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -28,6 +30,7 @@ import { PlaceService } from '../../place/place.service';
 
 @ApiTags('Place Reservation')
 @Controller('reservation-place')
+@UseInterceptors(CacheInterceptor)
 export class ReservePlaceController {
   constructor(
     private readonly reservePlaceService: ReservePlaceService,
@@ -44,6 +47,9 @@ export class ReservePlaceController {
     const new_reservation = await this.reservePlaceService.save(
       Object.assign(dto, { booker_id: user.uuid }),
     );
+
+    // update place reservation count
+    await this.placeService.updateReservationCountByDelta(dto.place_id, +1);
 
     // Send e-mail to staff
     await this.mailService.sendPlaceReserveCreateMailToStaff(
@@ -132,9 +138,14 @@ export class ReservePlaceController {
   }
 
   @Get('placeName/:placeName') // hide user uuid
-  async checkByPlaceName(@Param('placeName') placeName: string) {
+  @ApiQuery({ name: 'startDate', required: false })
+  async checkByPlaceName(
+    @Param('placeName') placeName: string,
+    @Query('startDate') startDate: string,
+  ) {
     const existReservations = await this.reservePlaceService.findAllByPlaceName(
       placeName,
+      startDate,
     );
     return this.reservePlaceService.joinBooker(existReservations);
   }
@@ -149,9 +160,19 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinBooker(existReservations);
   }
 
-  @Get('placeName/:placeName/admin') // reveal user uuid
-  getByPlaceName(@Param('placeName') placeName: string) {
-    return this.reservePlaceService.findAllByPlaceName(placeName);
+  @Get('sync-reservation-count')
+  async syncPlaceReservationCount() {
+    const placeList = await this.placeService.find();
+    for (const place of placeList) {
+      const reservationCount = await this.reservePlaceService.count({
+        place_id: place.uuid,
+      });
+      await this.placeService.updateReservationCount(
+        place.uuid,
+        reservationCount,
+      );
+    }
+    return `Sync Done: ${placeList.length} Places`;
   }
 
   @Patch('all/status/accept')
@@ -214,13 +235,19 @@ export class ReservePlaceController {
     const user = req.user;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
-      return this.reservePlaceService.remove(uuid);
+      await this.reservePlaceService.remove(uuid);
     } else {
       if (reservation.booker_id == user.uuid) {
-        return this.reservePlaceService.remove(uuid);
+        await this.reservePlaceService.remove(uuid);
       } else {
         throw new UnauthorizedException('Unauthorized delete action');
       }
     }
+
+    // update place reservation count
+    await this.placeService.updateReservationCountByDelta(
+      reservation.place_id,
+      -1,
+    );
   }
 }

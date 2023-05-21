@@ -1,5 +1,13 @@
 import { ApiTags } from '@nestjs/swagger';
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  CacheInterceptor,
+  Controller,
+  Get,
+  Post,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   GetObjectCommand,
   PutObjectCommand,
@@ -14,6 +22,7 @@ import { Readable } from 'stream';
 
 @ApiTags('POPO 세팅')
 @Controller('setting')
+@UseInterceptors(CacheInterceptor)
 export class SettingController {
   private readonly s3 = new S3Client({
     region: process.env.S3_REGION,
