@@ -10,8 +10,7 @@ import { AuthController } from './auth.controller';
 import { MailModule } from '../mail/mail.module';
 import { ReservePlaceModule } from '../popo/reservation/place/reserve.place.module';
 import { ReserveEquipModule } from '../popo/reservation/equip/reserve.equip.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { PasswordChangeRequestEntity } from './password-change-request.entity';
+import { PasswordChangeModule } from './password-change/password-change.module';
 
 @Module({
   imports: [
@@ -20,7 +19,7 @@ import { PasswordChangeRequestEntity } from './password-change-request.entity';
     ReservePlaceModule,
     ReserveEquipModule,
     PassportModule,
-    TypeOrmModule.forFeature([PasswordChangeRequestEntity]),
+    PasswordChangeModule,
     JwtModule.register({
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '360000s' },
