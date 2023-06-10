@@ -4,7 +4,6 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
-import { Readable } from 'stream';
 
 @Injectable()
 export class FileService {
@@ -15,15 +14,6 @@ export class FileService {
   private readonly cfDistUrl: string = process.env.S3_CF_DIST_URL;
 
   constructor() {}
-
-  private streamToString(stream: Readable): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const chunks: Uint8Array[] = [];
-      stream.on('data', (chunk) => chunks.push(chunk));
-      stream.on('error', reject);
-      stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
-    });
-  }
 
   async uploadText(key: string, text: string) {
     await this.s3.send(
