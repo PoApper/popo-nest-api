@@ -14,8 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { FormDataRequest } from 'nestjs-form-data';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 
 import { PlaceService } from './place.service';
 import { PlaceDto, PlaceImageDto } from './place.dto';
@@ -26,6 +25,7 @@ import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { imageFileFilter, editFileName } from '../../utils/fileUpload';
 import { FileService } from '../../file/file.service';
+import { FileBody } from '../../file/file-body.decorator';
 
 @ApiTags('Place')
 @Controller('place')
@@ -40,38 +40,14 @@ export class PlaceController {
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBody({ type: PlaceDto })
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/place',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  async create(@Body() createPlaceDto: PlaceDto, @UploadedFile() file) {
-    const fileName = file ? file.filename : null;
-    return this.placeService.save(createPlaceDto, fileName);
+  async create(@Body() createPlaceDto: PlaceDto) {
+    return this.placeService.save(createPlaceDto);
   }
 
   @Post('image/:place_id')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @FormDataRequest()
-  @ApiBody({
-    required: true,
-    type: 'multipart/form-data',
-    schema: {
-      type: 'object',
-      properties: {
-        image: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
-  @ApiConsumes('multipart/form-data')
+  @FileBody('image')
   async uploadImage(
     @Param('place_id') place_id: string,
     @Body() dto: PlaceImageDto,

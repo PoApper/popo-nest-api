@@ -21,7 +21,7 @@ export class PlaceService {
     private readonly placeRepo: Repository<Place>,
   ) {}
 
-  save(dto: PlaceDto, fileName: string) {
+  save(dto: PlaceDto) {
     const saveDto = {
       name: dto.name,
       location: dto.location,
@@ -30,7 +30,6 @@ export class PlaceService {
       staff_email: dto.staff_email,
       max_minutes: dto.max_minutes,
       opening_hours: dto.opening_hours,
-      imageName: fileName,
     };
     return this.placeRepo.save(saveDto);
   }
