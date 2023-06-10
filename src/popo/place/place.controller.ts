@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FormDataRequest } from 'nestjs-form-data';
 
 import { PlaceService } from './place.service';
@@ -58,12 +58,25 @@ export class PlaceController {
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @FormDataRequest()
-  @ApiBody({ type: PlaceImageDto })
+  @ApiBody({
+    required: true,
+    type: 'multipart/form-data',
+    schema: {
+      type: 'object',
+      properties: {
+        image: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiConsumes('multipart/form-data')
   async uploadImage(
     @Param('place_id') place_id: string,
     @Body() dto: PlaceImageDto,
   ) {
-    return this.fileService.uploadFile(place_id, dto.image);
+    return this.fileService.uploadFile(`place/${place_id}`, dto.image);
   }
 
   @Get()
