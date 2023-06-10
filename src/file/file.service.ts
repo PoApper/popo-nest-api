@@ -4,6 +4,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
+import { MemoryStoredFile } from 'nestjs-form-data';
 
 @Injectable()
 export class FileService {
@@ -26,7 +27,7 @@ export class FileService {
     return `${this.cfDistUrl}/${key}`;
   }
 
-  async uploadFile(key: string, file) {
+  async uploadFile(key: string, file: MemoryStoredFile) {
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
