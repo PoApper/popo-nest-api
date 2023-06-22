@@ -12,10 +12,10 @@ async function bootstrap() {
       'http://localhost:3001',
 
       'https://popo.poapper.club',
-      'https://dev.popo.poapper.club',
+      'https://popo-dev.poapper.club',
 
       'https://admin.popo.poapper.club',
-      'https://admin.dev.popo.poapper.club',
+      'https://admin.popo-dev.poapper.club',
 
       'https://popo.postech.ac.kr',
     ],
