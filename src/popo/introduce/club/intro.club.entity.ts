@@ -49,6 +49,9 @@ export class IntroClub extends BaseEntity {
   @Column({ nullable: true })
   instagram_url: string;
 
+  @Column({ nullable: true })
+  youtube_url: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

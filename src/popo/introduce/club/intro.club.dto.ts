@@ -11,4 +11,5 @@ export class CreateIntroClubDto {
   readonly homepage_url: string;
   readonly facebook_url: string;
   readonly instagram_url: string;
+  readonly youtube_url: string;
 }
