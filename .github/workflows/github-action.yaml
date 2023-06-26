@@ -1,6 +1,5 @@
 on:
   push:
-    tags: ["*"]
 
 name: Deploy
 
@@ -10,7 +9,7 @@ env:
   CODEDEPLOY_APP_NAME: $ECR_REPOSITORY
 
 jobs:
-  docker-build-and-push:
+  docker_build_and_push:
     name: Docker build and push
     runs-on: ubuntu-20.04
     steps:
@@ -48,3 +47,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
+  
+  deploy_health_check:
+    name: Check Application Status
+    needs: docker_build_and_push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the deployed service URL
+        uses: jtalk/url-health-check-action@v3
+        with:
+          url: https://api.popo.poapper.club|https://api.popo-dev.poapper.club
+          follow-redirect: true
+          max-attempts: 3
+          retry-delay: 10s
