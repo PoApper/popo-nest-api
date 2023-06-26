@@ -38,5 +38,5 @@ services:
           - node.labels.application == popo
 
 secrets:
-  popo_nest_api_env:
+  popo_nest_api_dotenv:
     external: true
