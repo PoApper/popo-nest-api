@@ -12,40 +12,47 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import { EquipService } from './equip.service';
 import { EquipOwner } from './equip.meta';
-import { EquipmentDto } from './equip.dto';
+import { EquipmentDto, EquipmentImageDto } from './equip.dto';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { UserType } from '../user/user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { editFileName, imageFileFilter } from '../../utils/fileUpload';
+import { FileBody } from '../../file/file-body.decorator';
+import { FileService } from '../../file/file.service';
 
 @ApiTags('Equipment')
 @Controller('equip')
 @UseInterceptors(CacheInterceptor)
 export class EquipController {
-  constructor(private readonly equipService: EquipService) {}
+  constructor(
+    private readonly equipService: EquipService,
+    private readonly fileService: FileService,
+  ) {}
 
   @Post()
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/equip',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  async create(@Body() dto: EquipmentDto, @UploadedFile() file) {
-    const fileName = file ? file.filename : null;
-    return this.equipService.save(dto, fileName);
+  @ApiBody({ type: EquipmentDto })
+  async create(@Body() dto: EquipmentDto) {
+    return this.equipService.save(dto);
+  }
+
+  @Post('image/:equip_id')
+  @Roles(UserType.admin, UserType.association)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @FileBody('image')
+  async uploadImage(
+    @Param('equip_id') equip_id: string,
+    @Body() dto: EquipmentImageDto,
+  ) {
+    return this.fileService.uploadFile(`equip/${equip_id}`, dto.image);
   }
 
   @Get()

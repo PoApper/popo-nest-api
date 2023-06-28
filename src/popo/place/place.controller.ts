@@ -40,8 +40,8 @@ export class PlaceController {
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBody({ type: PlaceDto })
-  async create(@Body() createPlaceDto: PlaceDto) {
-    return this.placeService.save(createPlaceDto);
+  async create(@Body() dto: PlaceDto) {
+    return this.placeService.save(dto);
   }
 
   @Post('image/:place_id')

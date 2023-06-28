@@ -21,7 +21,7 @@ export class EquipService {
     private readonly equipRepo: Repository<Equip>,
   ) {}
 
-  async save(dto: EquipmentDto, fileName: string) {
+  async save(dto: EquipmentDto) {
     return this.equipRepo.save({
       name: dto.name,
       description: dto.description,
@@ -29,7 +29,6 @@ export class EquipService {
       equip_owner: dto.equip_owner,
       staff_email: dto.staff_email,
       max_minutes: dto.max_minutes,
-      imageName: fileName,
     });
   }
 
