@@ -8,13 +8,10 @@ import {
   Post,
   Put,
   Res,
-  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 import { EquipService } from './equip.service';
 import { EquipOwner } from './equip.meta';
@@ -23,7 +20,6 @@ import { Roles } from '../../auth/authroization/roles.decorator';
 import { UserType } from '../user/user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
-import { editFileName, imageFileFilter } from '../../utils/fileUpload';
 import { FileBody } from '../../file/file-body.decorator';
 import { FileService } from '../../file/file.service';
 
@@ -83,22 +79,8 @@ export class EquipController {
   @Put(':uuid')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/equip',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  async put(
-    @Param('uuid') uuid: string,
-    @Body() dto: EquipmentDto,
-    @UploadedFile() file,
-  ) {
-    const fileName = file ? file.filename : null;
-    return this.equipService.update(uuid, dto, fileName);
+  async put(@Param('uuid') uuid: string, @Body() dto: EquipmentDto) {
+    return this.equipService.update(uuid, dto);
   }
 
   @Delete(':uuid')

@@ -69,23 +69,13 @@ export class EquipService {
     });
   }
 
-  async update(uuid: string, dto: EquipmentDto, imageName: string | null) {
+  async update(uuid: string, dto: EquipmentDto) {
     const existEquip = await this.findOne({ uuid: uuid });
     if (!existEquip) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
 
-    let saveDto: object = Object.assign({}, dto);
-
-    // delete previous image
-    if (imageName) {
-      if (fs.existsSync(`./uploads/equip/${existEquip.imageName}`)) {
-        fs.unlinkSync(`./uploads/equip/${existEquip.imageName}`);
-      }
-      saveDto = Object.assign(saveDto, { imageName: imageName });
-    }
-
-    return this.equipRepo.update({ uuid: uuid }, saveDto);
+    return this.equipRepo.update({ uuid: uuid }, dto);
   }
 
   async updateReservationCountByDelta(uuid: string, delta: number) {
