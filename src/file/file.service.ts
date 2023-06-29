@@ -12,7 +12,7 @@ export class FileService {
     region: process.env.S3_REGION,
   });
   private readonly bucket: string = process.env.S3_BUCKET_NAME;
-  private readonly cfDistUrl: string = process.env.S3_CF_DIST_URL;
+  private readonly PopoCdnUrl: string = process.env.S3_CF_DIST_URL;
 
   constructor() {}
 
@@ -24,7 +24,7 @@ export class FileService {
         Body: text,
       }),
     );
-    return `${this.cfDistUrl}/${key}`;
+    return `${this.PopoCdnUrl}/${key}`;
   }
 
   async uploadFile(key: string, file: MemoryStoredFile) {
@@ -36,7 +36,7 @@ export class FileService {
         ContentType: file.mimetype,
       }),
     );
-    return `${this.cfDistUrl}/${key}`;
+    return `${this.PopoCdnUrl}/${key}`;
   }
 
   deleteFile(key: string) {
