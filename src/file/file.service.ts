@@ -32,7 +32,7 @@ export class FileService {
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
-        Key: `${key}-${moment().format('YYYY-MM-DD-HH:mm')}`,
+        Key: `${key}/${moment().format('YYYY-MM-DD/HH:mm')}`,
         Body: file.buffer,
         ContentType: file.mimetype,
       }),

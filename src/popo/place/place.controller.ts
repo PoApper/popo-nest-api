@@ -52,7 +52,8 @@ export class PlaceController {
       `place/${place_uuid}`,
       dto.image,
     );
-    return this.placeService.updateImageUrl(place_uuid, place_image_url);
+    await this.placeService.updateImageUrl(place_uuid, place_image_url);
+    return place_image_url;
   }
 
   @Get()

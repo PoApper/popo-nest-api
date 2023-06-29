@@ -52,7 +52,8 @@ export class EquipController {
       `equip/${equip_uuid}`,
       dto.image,
     );
-    return this.equipService.updateImageUrl(equip_uuid, equip_image_url);
+    await this.equipService.updateImageUrl(equip_uuid, equip_image_url);
+    return equip_image_url;
   }
 
   @Get()
