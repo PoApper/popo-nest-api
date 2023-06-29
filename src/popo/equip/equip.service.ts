@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Equip } from './equip.entity';
 import { EquipmentDto } from './equip.dto';
-import * as fs from 'fs';
 import { EquipOwner } from './equip.meta';
 
 const Message = {
@@ -30,6 +29,10 @@ export class EquipService {
       staff_email: dto.staff_email,
       max_minutes: dto.max_minutes,
     });
+  }
+
+  updateImageUrl(uuid: string, image_url: string) {
+    return this.equipRepo.update({ uuid: uuid }, { image_url: image_url });
   }
 
   find(findOptions?: object) {
