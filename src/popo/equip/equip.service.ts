@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Equip } from './equip.entity';
 import { EquipmentDto } from './equip.dto';
-import * as fs from 'fs';
 import { EquipOwner } from './equip.meta';
 
 const Message = {
@@ -21,7 +20,7 @@ export class EquipService {
     private readonly equipRepo: Repository<Equip>,
   ) {}
 
-  async save(dto: EquipmentDto, fileName: string) {
+  async save(dto: EquipmentDto) {
     return this.equipRepo.save({
       name: dto.name,
       description: dto.description,
@@ -29,8 +28,11 @@ export class EquipService {
       equip_owner: dto.equip_owner,
       staff_email: dto.staff_email,
       max_minutes: dto.max_minutes,
-      imageName: fileName,
     });
+  }
+
+  updateImageUrl(uuid: string, image_url: string) {
+    return this.equipRepo.update({ uuid: uuid }, { image_url: image_url });
   }
 
   find(findOptions?: object) {
@@ -70,23 +72,13 @@ export class EquipService {
     });
   }
 
-  async update(uuid: string, dto: EquipmentDto, imageName: string | null) {
+  async update(uuid: string, dto: EquipmentDto) {
     const existEquip = await this.findOne({ uuid: uuid });
     if (!existEquip) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
 
-    let saveDto: object = Object.assign({}, dto);
-
-    // delete previous image
-    if (imageName) {
-      if (fs.existsSync(`./uploads/equip/${existEquip.imageName}`)) {
-        fs.unlinkSync(`./uploads/equip/${existEquip.imageName}`);
-      }
-      saveDto = Object.assign(saveDto, { imageName: imageName });
-    }
-
-    return this.equipRepo.update({ uuid: uuid }, saveDto);
+    return this.equipRepo.update({ uuid: uuid }, dto);
   }
 
   async updateReservationCountByDelta(uuid: string, delta: number) {

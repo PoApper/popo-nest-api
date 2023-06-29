@@ -28,8 +28,12 @@ export class Equip extends BaseEntity {
   @Column({ nullable: true })
   staff_email: string;
 
+  // TODO: to be deleted
   @Column({ nullable: true })
   imageName: string;
+
+  @Column({ nullable: true })
+  image_url: string;
 
   @Column({ default: 24 * 60 })
   max_minutes: number;

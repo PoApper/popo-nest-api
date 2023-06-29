@@ -8,44 +8,52 @@ import {
   Post,
   Put,
   Res,
-  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
+
 import { PlaceService } from './place.service';
-import { PlaceDto } from './place.dto';
+import { PlaceDto, PlaceImageDto } from './place.dto';
 import { PlaceRegion } from './place.meta';
 import { UserType } from '../user/user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
-import { imageFileFilter, editFileName } from '../../utils/fileUpload';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { FileService } from '../../file/file.service';
+import { FileBody } from '../../file/file-body.decorator';
 
 @ApiTags('Place')
 @Controller('place')
 @UseInterceptors(CacheInterceptor)
 export class PlaceController {
-  constructor(private readonly placeService: PlaceService) {}
+  constructor(
+    private readonly placeService: PlaceService,
+    private readonly fileService: FileService,
+  ) {}
 
   @Post()
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBody({ type: PlaceDto })
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/place',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  async create(@Body() createPlaceDto: PlaceDto, @UploadedFile() file) {
-    const fileName = file ? file.filename : null;
-    return this.placeService.save(createPlaceDto, fileName);
+  async create(@Body() dto: PlaceDto) {
+    return this.placeService.save(dto);
+  }
+
+  @Post('image/:place_uuid')
+  @Roles(UserType.admin, UserType.association)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @FileBody('image')
+  async uploadImage(
+    @Param('place_uuid') place_uuid: string,
+    @Body() dto: PlaceImageDto,
+  ) {
+    const place_image_url = await this.fileService.uploadFile(
+      `place/${place_uuid}`,
+      dto.image,
+    );
+    await this.placeService.updateImageUrl(place_uuid, place_image_url);
+    return place_image_url;
   }
 
   @Get()
@@ -76,22 +84,8 @@ export class PlaceController {
   @Put(':uuid')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/place',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  async put(
-    @Param('uuid') uuid: string,
-    @Body() updatePlaceDto: PlaceDto,
-    @UploadedFile() file,
-  ) {
-    const fileName = file ? file.filename : null;
-    return this.placeService.update(uuid, updatePlaceDto, fileName);
+  async put(@Param('uuid') uuid: string, @Body() updatePlaceDto: PlaceDto) {
+    return this.placeService.update(uuid, updatePlaceDto);
   }
 
   @Delete(':uuid')

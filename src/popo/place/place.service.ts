@@ -21,7 +21,7 @@ export class PlaceService {
     private readonly placeRepo: Repository<Place>,
   ) {}
 
-  save(dto: PlaceDto, fileName: string) {
+  save(dto: PlaceDto) {
     const saveDto = {
       name: dto.name,
       location: dto.location,
@@ -30,9 +30,12 @@ export class PlaceService {
       staff_email: dto.staff_email,
       max_minutes: dto.max_minutes,
       opening_hours: dto.opening_hours,
-      imageName: fileName,
     };
     return this.placeRepo.save(saveDto);
+  }
+
+  updateImageUrl(uuid: string, image_url: string) {
+    return this.placeRepo.update({ uuid: uuid }, { image_url: image_url });
   }
 
   async find() {
@@ -66,23 +69,13 @@ export class PlaceService {
     });
   }
 
-  async update(uuid: string, dto: PlaceDto, imageName: string | null) {
+  async update(uuid: string, dto: PlaceDto) {
     const existPlace = await this.findOne(uuid);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    let saveDto: object = Object.assign({}, dto);
-
-    // delete previous image
-    if (imageName) {
-      if (fs.existsSync(`./uploads/place/${existPlace.imageName}`)) {
-        fs.unlinkSync(`./uploads/place/${existPlace.imageName}`);
-      }
-      saveDto = Object.assign(saveDto, { imageName: imageName });
-    }
-
-    return this.placeRepo.update({ uuid: uuid }, saveDto);
+    return this.placeRepo.update({ uuid: uuid }, dto);
   }
 
   // delta: +1 or -1

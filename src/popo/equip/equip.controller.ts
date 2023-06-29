@@ -8,44 +8,52 @@ import {
   Post,
   Put,
   Res,
-  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 
 import { EquipService } from './equip.service';
 import { EquipOwner } from './equip.meta';
-import { EquipmentDto } from './equip.dto';
+import { EquipmentDto, EquipmentImageDto } from './equip.dto';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { UserType } from '../user/user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
-import { editFileName, imageFileFilter } from '../../utils/fileUpload';
+import { FileBody } from '../../file/file-body.decorator';
+import { FileService } from '../../file/file.service';
 
 @ApiTags('Equipment')
 @Controller('equip')
 @UseInterceptors(CacheInterceptor)
 export class EquipController {
-  constructor(private readonly equipService: EquipService) {}
+  constructor(
+    private readonly equipService: EquipService,
+    private readonly fileService: FileService,
+  ) {}
 
   @Post()
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/equip',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  async create(@Body() dto: EquipmentDto, @UploadedFile() file) {
-    const fileName = file ? file.filename : null;
-    return this.equipService.save(dto, fileName);
+  @ApiBody({ type: EquipmentDto })
+  async create(@Body() dto: EquipmentDto) {
+    return this.equipService.save(dto);
+  }
+
+  @Post('image/:equip_uuid')
+  @Roles(UserType.admin, UserType.association)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @FileBody('image')
+  async uploadImage(
+    @Param('equip_uuid') equip_uuid: string,
+    @Body() dto: EquipmentImageDto,
+  ) {
+    const equip_image_url = await this.fileService.uploadFile(
+      `equip/${equip_uuid}`,
+      dto.image,
+    );
+    await this.equipService.updateImageUrl(equip_uuid, equip_image_url);
+    return equip_image_url;
   }
 
   @Get()
@@ -76,22 +84,8 @@ export class EquipController {
   @Put(':uuid')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/equip',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  async put(
-    @Param('uuid') uuid: string,
-    @Body() dto: EquipmentDto,
-    @UploadedFile() file,
-  ) {
-    const fileName = file ? file.filename : null;
-    return this.equipService.update(uuid, dto, fileName);
+  async put(@Param('uuid') uuid: string, @Body() dto: EquipmentDto) {
+    return this.equipService.update(uuid, dto);
   }
 
   @Delete(':uuid')
