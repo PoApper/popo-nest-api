@@ -5,6 +5,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
 import { MemoryStoredFile } from 'nestjs-form-data';
+import * as moment from 'moment';
 
 @Injectable()
 export class FileService {
@@ -31,7 +32,7 @@ export class FileService {
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
-        Key: key,
+        Key: `${key}-${moment().format('YYYY-MM-DD-HH:mm')}`,
         Body: file.buffer,
         ContentType: file.mimetype,
       }),
