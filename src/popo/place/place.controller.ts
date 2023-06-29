@@ -8,12 +8,9 @@ import {
   Post,
   Put,
   Res,
-  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 
 import { PlaceService } from './place.service';
@@ -23,7 +20,6 @@ import { UserType } from '../user/user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
-import { imageFileFilter, editFileName } from '../../utils/fileUpload';
 import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
 
@@ -44,15 +40,19 @@ export class PlaceController {
     return this.placeService.save(dto);
   }
 
-  @Post('image/:place_id')
+  @Post('image/:place_uuid')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @FileBody('image')
   async uploadImage(
-    @Param('place_id') place_id: string,
+    @Param('place_uuid') place_uuid: string,
     @Body() dto: PlaceImageDto,
   ) {
-    return this.fileService.uploadFile(`place/${place_id}`, dto.image);
+    const place_image_url = await this.fileService.uploadFile(
+      `place/${place_uuid}`,
+      dto.image,
+    );
+    return this.placeService.updateImageUrl(place_uuid, place_image_url);
   }
 
   @Get()
@@ -83,22 +83,8 @@ export class PlaceController {
   @Put(':uuid')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads/place',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  async put(
-    @Param('uuid') uuid: string,
-    @Body() updatePlaceDto: PlaceDto,
-    @UploadedFile() file,
-  ) {
-    const fileName = file ? file.filename : null;
-    return this.placeService.update(uuid, updatePlaceDto, fileName);
+  async put(@Param('uuid') uuid: string, @Body() updatePlaceDto: PlaceDto) {
+    return this.placeService.update(uuid, updatePlaceDto);
   }
 
   @Delete(':uuid')
