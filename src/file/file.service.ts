@@ -29,7 +29,7 @@ export class FileService {
   }
 
   async uploadFile(key: string, file: MemoryStoredFile) {
-    const actual_key = `${key}/${moment().format('YYYY-MM-DD/HH:mm')}`;
+    const actual_key = `${key}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`;
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
