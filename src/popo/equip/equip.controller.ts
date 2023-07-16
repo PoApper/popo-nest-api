@@ -40,20 +40,20 @@ export class EquipController {
     return this.equipService.save(dto);
   }
 
-  @Post('image/:equip_uuid')
+  @Post('image/:uuid')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @FileBody('image')
   async uploadImage(
-    @Param('equip_uuid') equip_uuid: string,
+    @Param('uuid') uuid: string,
     @Body() dto: EquipmentImageDto,
   ) {
-    const equip_image_url = await this.fileService.uploadFile(
-      `equip/${equip_uuid}`,
+    const image_url = await this.fileService.uploadFile(
+      `equip/${uuid}`,
       dto.image,
     );
-    await this.equipService.updateImageUrl(equip_uuid, equip_image_url);
-    return equip_image_url;
+    await this.equipService.updateImageUrl(uuid, image_url);
+    return image_url;
   }
 
   @Get()
