@@ -57,6 +57,11 @@ export class IntroAssociationController {
     return this.introAssociationService.find({ order: { name: 'ASC' } });
   }
 
+  @Get('uuid')
+  getOneByUuid(@Param('uuid') uuid: string) {
+    return this.introAssociationService.findOne({ uuid: uuid });
+  }
+
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
     const introAssociation = await this.introAssociationService.findOne({

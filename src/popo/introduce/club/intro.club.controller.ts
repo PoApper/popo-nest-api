@@ -65,6 +65,11 @@ export class IntroClubController {
     });
   }
 
+  @Get('uuid')
+  getOneByUuid(@Param('uuid') uuid: string) {
+    return this.introClubService.findOne({ uuid: uuid });
+  }
+
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
     const introClub = await this.introClubService.findOne({ name: name });
