@@ -9,43 +9,48 @@ import {
   Post,
   Put,
   Res,
-  UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { diskStorage } from 'multer';
+import { ApiTags } from '@nestjs/swagger';
+
 import { IntroClubService } from './intro.club.service';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { UserType } from '../../user/user.meta';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { editFileName, imageFileFilter } from '../../../utils/fileUpload';
-import { CreateIntroClubDto } from './intro.club.dto';
+import { ClubImageDto, CreateIntroClubDto } from './intro.club.dto';
 import { ClubType } from './intro.club.meta';
-import { ApiTags } from '@nestjs/swagger';
+import { FileService } from '../../../file/file.service';
+import { FileBody } from '../../../file/file-body.decorator';
 
 @ApiTags('Introduce Club')
 @Controller('introduce/club')
 @UseInterceptors(CacheInterceptor)
 export class IntroClubController {
-  constructor(private readonly introClubService: IntroClubService) {}
+  constructor(
+    private readonly introClubService: IntroClubService,
+    private readonly fileService: FileService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseInterceptors(
-    FileInterceptor('logo', {
-      storage: diskStorage({
-        destination: './uploads/intro/Club/logo',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  post(@Body() createIntroClubDto: CreateIntroClubDto, @UploadedFile() file) {
-    const fileName = file ? file.filename : null;
-    return this.introClubService.save(createIntroClubDto, fileName);
+  post(@Body() createIntroClubDto: CreateIntroClubDto) {
+    return this.introClubService.save(createIntroClubDto);
+  }
+
+  @Post('image/:uuid')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserType.admin, UserType.association)
+  @FileBody('image')
+  async uploadImage(@Param('uuid') uuid: string, @Body() dto: ClubImageDto) {
+    const image_url = await this.fileService.uploadFile(
+      `club/${uuid}`,
+      dto.image,
+    );
+    await this.introClubService.updateImageUrl(uuid, image_url);
+    return image_url;
   }
 
   @Get()
@@ -84,22 +89,11 @@ export class IntroClubController {
   @Put(':uuid')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseInterceptors(
-    FileInterceptor('logo', {
-      storage: diskStorage({
-        destination: './uploads/intro/Club/logo',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
   put(
     @Param('uuid') uuid: string,
     @Body() updateIntroClubDto: CreateIntroClubDto,
-    @UploadedFile() file,
   ) {
-    const fileName = file ? file.filename : null;
-    return this.introClubService.update(uuid, updateIntroClubDto, fileName);
+    return this.introClubService.update(uuid, updateIntroClubDto);
   }
 
   @Delete(':uuid')

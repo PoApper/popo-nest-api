@@ -1,4 +1,5 @@
 import { ClubType } from './intro.club.meta';
+import { IsFile, MaxFileSize, MemoryStoredFile } from 'nestjs-form-data';
 
 export class CreateIntroClubDto {
   readonly name: string;
@@ -12,4 +13,10 @@ export class CreateIntroClubDto {
   readonly facebook_url: string;
   readonly instagram_url: string;
   readonly youtube_url: string;
+}
+
+export class ClubImageDto {
+  @IsFile()
+  @MaxFileSize(10 * 1024 * 1024) // 10MB
+  readonly image: MemoryStoredFile;
 }

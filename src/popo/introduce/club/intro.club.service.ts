@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as fs from 'fs';
+
 import { IntroClub } from './intro.club.entity';
 import { CreateIntroClubDto } from './intro.club.dto';
 
@@ -16,10 +16,15 @@ export class IntroClubService {
     private readonly introClub_repository: Repository<IntroClub>,
   ) {}
 
-  async save(dto: CreateIntroClubDto, logoName: string) {
-    const newDto = Object.assign({}, dto, { logoName: logoName });
+  save(dto: CreateIntroClubDto) {
+    return this.introClub_repository.save(dto);
+  }
 
-    return this.introClub_repository.save(newDto);
+  updateImageUrl(uuid: string, image_url: string) {
+    return this.introClub_repository.update(
+      { uuid: uuid },
+      { image_url: image_url },
+    );
   }
 
   find(findOptions?: object) {
@@ -30,25 +35,16 @@ export class IntroClubService {
     return this.introClub_repository.findOne(findOptions, maybeOptions);
   }
 
-  async update(uuid: string, dto: CreateIntroClubDto, logoName: string) {
+  async update(uuid: string, dto: CreateIntroClubDto) {
     const existIntro = await this.findOne({ uuid: uuid });
 
     if (!existIntro) {
       throw new BadRequestException(Message.NOT_EXISTING_INTRO);
     }
 
-    // delete previous image
-    if (logoName && existIntro.logoName) {
-      fs.unlinkSync('./uploads/intro/Club/logo/' + existIntro.logoName);
-    }
-
-    const newDto = Object.assign({}, dto, {
-      logoName: logoName ? logoName : existIntro.logoName,
-    });
-
     return this.introClub_repository.update(
       { uuid: uuid, name: existIntro.name },
-      newDto,
+      dto,
     );
   }
 
