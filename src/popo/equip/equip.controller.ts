@@ -7,7 +7,6 @@ import {
   Param,
   Post,
   Put,
-  Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -69,11 +68,6 @@ export class EquipController {
   @Get('/name/:name')
   async getOneByName(@Param('name') name: string) {
     return this.equipService.findOneByName(name);
-  }
-
-  @Get('/image/:imageName')
-  getPlaceImage(@Param('imageName') imageName: string, @Res() res) {
-    res.sendFile(imageName, { root: './uploads/equip' });
   }
 
   @Get('/owner/:owner')

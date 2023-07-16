@@ -8,7 +8,6 @@ import {
   Param,
   Post,
   Put,
-  Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -73,11 +72,6 @@ export class IntroAssociationController {
     } else {
       throw new BadRequestException('Not Exist');
     }
-  }
-
-  @Get('/image/:imageName')
-  getIntroImage(@Param('imageName') imageName: string, @Res() res) {
-    res.sendFile(imageName, { root: './uploads/intro/association' });
   }
 
   @Put(':uuid')
