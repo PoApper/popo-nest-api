@@ -10,7 +10,9 @@ services:
       - source: popo_nest_api_env
         target: /usr/src/app/.env
     logging:
-      driver: none
+      driver: local
+      options:
+        max-size: 10m
     deploy:
       labels:
         swarmpit.service.deployment.autoredeploy: 'true'
@@ -28,7 +30,9 @@ services:
       - source: popo_nest_api_env
         target: /usr/src/app/.env
     logging:
-      driver: none
+      driver: local
+      options:
+        max-size: 10m
     deploy:
       labels:
         swarmpit.service.deployment.autoredeploy: 'true'
