@@ -7,7 +7,6 @@ import {
   Param,
   Post,
   Put,
-  Res,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -40,20 +39,17 @@ export class PlaceController {
     return this.placeService.save(dto);
   }
 
-  @Post('image/:place_uuid')
+  @Post('image/:uuid')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @FileBody('image')
-  async uploadImage(
-    @Param('place_uuid') place_uuid: string,
-    @Body() dto: PlaceImageDto,
-  ) {
-    const place_image_url = await this.fileService.uploadFile(
-      `place/${place_uuid}`,
+  async uploadImage(@Param('uuid') uuid: string, @Body() dto: PlaceImageDto) {
+    const image_url = await this.fileService.uploadFile(
+      `place/${uuid}`,
       dto.image,
     );
-    await this.placeService.updateImageUrl(place_uuid, place_image_url);
-    return place_image_url;
+    await this.placeService.updateImageUrl(uuid, image_url);
+    return image_url;
   }
 
   @Get()
@@ -69,11 +65,6 @@ export class PlaceController {
   @Get('/name/:name')
   async getOneByName(@Param('name') name: string) {
     return this.placeService.findOneByName(name);
-  }
-
-  @Get('/image/:imageName')
-  getPlaceImage(@Param('imageName') imageName: string, @Res() res) {
-    res.sendFile(imageName, { root: './uploads/place' });
   }
 
   @Get('/region/:region')

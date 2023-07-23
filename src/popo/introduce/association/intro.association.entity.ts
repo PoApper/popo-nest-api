@@ -28,8 +28,12 @@ export class IntroAssociation extends BaseEntity {
   @Column({ nullable: false })
   contact: string;
 
+  // TODO: to be deleted
   @Column({ nullable: true })
   logoName: string;
+
+  @Column({ nullable: true })
+  image_url: string;
 
   @Column({ default: 0 })
   views: number;
