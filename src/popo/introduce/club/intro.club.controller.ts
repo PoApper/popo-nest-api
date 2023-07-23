@@ -65,7 +65,7 @@ export class IntroClubController {
     });
   }
 
-  @Get('uuid')
+  @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
     return this.introClubService.findOne({ uuid: uuid });
   }

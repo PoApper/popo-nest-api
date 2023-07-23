@@ -57,7 +57,7 @@ export class IntroAssociationController {
     return this.introAssociationService.find({ order: { name: 'ASC' } });
   }
 
-  @Get('uuid')
+  @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
     return this.introAssociationService.findOne({ uuid: uuid });
   }
