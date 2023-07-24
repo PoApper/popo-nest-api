@@ -29,16 +29,16 @@ export class FileService {
   }
 
   async uploadFile(key: string, file: MemoryStoredFile) {
-    const actual_key = `${key}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`;
+    const save_key = `${key}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`;
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
-        Key: actual_key,
+        Key: save_key,
         Body: file.buffer,
         ContentType: file.mimetype,
       }),
     );
-    return `${this.PopoCdnUrl}/${actual_key}`;
+    return `${this.PopoCdnUrl}/${save_key}`;
   }
 
   deleteFile(key: string) {

@@ -45,7 +45,7 @@ export class IntroAssociationController {
   @FileBody('image')
   async uploadImage(@Param('uuid') uuid: string, @Body() dto: ClubImageDto) {
     const image_url = await this.fileService.uploadFile(
-      `club/${uuid}`,
+      `association/${uuid}`,
       dto.image,
     );
     await this.introAssociationService.updateImageUrl(uuid, image_url);
