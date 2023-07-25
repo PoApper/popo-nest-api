@@ -30,10 +30,6 @@ export class Place extends BaseEntity {
   @Column({ nullable: true })
   staff_email: string;
 
-  // TODO: to be deleted
-  @Column({ nullable: true })
-  imageName: string;
-
   @Column({ nullable: true })
   image_url: string;
 
