@@ -28,10 +28,6 @@ export class IntroAssociation extends BaseEntity {
   @Column({ nullable: false })
   contact: string;
 
-  // TODO: to be deleted
-  @Column({ nullable: true })
-  logoName: string;
-
   @Column({ nullable: true })
   image_url: string;
 
@@ -46,10 +42,6 @@ export class IntroAssociation extends BaseEntity {
 
   @Column({ nullable: true })
   instagram_url: string;
-
-  // 이미지 슬라이드 구현하면 사용할 Column
-  // @Column('simple-array', {nullable: true})
-  // contentImageNames: string[];
 
   @CreateDateColumn()
   createdAt: Date;

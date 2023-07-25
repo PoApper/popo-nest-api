@@ -34,10 +34,6 @@ export class IntroClub extends BaseEntity {
   @Column({ nullable: false })
   clubType: ClubType;
 
-  // TODO: to be deleted
-  @Column({ nullable: true })
-  logoName: string;
-
   @Column({ nullable: true })
   image_url: string;
 
