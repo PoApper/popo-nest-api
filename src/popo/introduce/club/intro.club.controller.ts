@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Body,
-  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -9,7 +8,6 @@ import {
   Post,
   Put,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
@@ -25,7 +23,6 @@ import { FileBody } from '../../../file/file-body.decorator';
 
 @ApiTags('Introduce Club')
 @Controller('introduce/club')
-@UseInterceptors(CacheInterceptor)
 export class IntroClubController {
   constructor(
     private readonly introClubService: IntroClubService,

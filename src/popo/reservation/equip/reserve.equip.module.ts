@@ -1,4 +1,4 @@
-import { CacheModule, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailModule } from '../../../mail/mail.module';
 import { UserModule } from '../../user/user.module';
@@ -10,7 +10,6 @@ import { ReserveEquipService } from './reserve.equip.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([ReserveEquip]),
-    CacheModule.register(),
     MailModule,
     UserModule,
     EquipModule,

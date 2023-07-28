@@ -1,7 +1,6 @@
 import { ApiTags } from '@nestjs/swagger';
 import {
   Body,
-  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -11,7 +10,6 @@ import {
   Put,
   Query,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { WhitebookService } from './whitebook.service';
 import { WhitebookDto } from './whitebook.dto';
@@ -19,7 +17,6 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('생활백서(Whitebook)')
 @Controller('whitebook')
-@UseInterceptors(CacheInterceptor)
 export class WhitebookController {
   constructor(private readonly whitebookService: WhitebookService) {}
 

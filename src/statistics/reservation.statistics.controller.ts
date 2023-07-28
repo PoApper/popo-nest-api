@@ -1,9 +1,7 @@
 import {
-  CacheInterceptor,
   Controller,
   Get,
   Query,
-  UseInterceptors,
 } from '@nestjs/common';
 import { Between } from 'typeorm';
 import * as moment from 'moment';
@@ -12,7 +10,6 @@ import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Statistics')
 @Controller('statistics/reservation')
-@UseInterceptors(CacheInterceptor)
 export class ReservationStatisticsController {
   constructor(private readonly reservePlaceService: ReservePlaceService) {}
 

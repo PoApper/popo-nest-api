@@ -1,4 +1,4 @@
-import { CacheModule, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MailModule } from '../../../mail/mail.module';
 import { ReservePlaceController } from './reserve.place.controller';
@@ -10,7 +10,6 @@ import { PlaceModule } from '../../place/place.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([ReservePlace]),
-    CacheModule.register(),
     MailModule,
     UserModule,
     PlaceModule,

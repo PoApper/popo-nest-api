@@ -1,6 +1,5 @@
 import {
   Body,
-  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -8,7 +7,6 @@ import {
   Post,
   Put,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 
@@ -24,7 +22,6 @@ import { FileService } from '../../file/file.service';
 
 @ApiTags('Equipment')
 @Controller('equip')
-@UseInterceptors(CacheInterceptor)
 export class EquipController {
   constructor(
     private readonly equipService: EquipService,
