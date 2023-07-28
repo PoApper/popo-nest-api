@@ -56,14 +56,12 @@ export class IntroAssociationController {
 
   @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
-    return this.introAssociationService.findOne({ uuid: uuid });
+    return this.introAssociationService.findOneByUuid(uuid);
   }
 
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
-    const introAssociation = await this.introAssociationService.findOne({
-      name: name,
-    });
+    const introAssociation = await this.introAssociationService.findOneByName(name);
 
     if (introAssociation) {
       await this.introAssociationService.updateViewCount(

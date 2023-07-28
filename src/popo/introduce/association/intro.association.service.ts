@@ -1,13 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { IntroAssociation } from './intro.association.entity';
 import { CreateIntroAssociationDto } from './intro.association.dto';
-
-const Message = {
-  NOT_EXISTING_INTRO: "There's no such introduction.",
-};
 
 @Injectable()
 export class IntroAssociationService {
@@ -31,21 +27,25 @@ export class IntroAssociationService {
     );
   }
 
-  findOne(findOptions: object, maybeOptions?: object) {
-    return this.introAssociation_repository.findOne(findOptions, maybeOptions);
+  findOneByUuid(uuid: string) {
+    return this.introAssociation_repository.findOneBy({ uuid: uuid});
+  }
+
+  findOneByUuidOrFail(uuid: string) {
+    return this.introAssociation_repository.findOneByOrFail({ uuid: uuid});
+  }
+
+  findOneByName(name: string) {
+    return this.introAssociation_repository.findOneBy({ name: name});
   }
 
   async update(uuid: string, dto: CreateIntroAssociationDto) {
-    const existIntro = await this.findOne({ uuid: uuid });
-
-    if (!existIntro) {
-      throw new BadRequestException(Message.NOT_EXISTING_INTRO);
-    }
-
+    await this.findOneByUuidOrFail(uuid);
     return this.introAssociation_repository.update({ uuid: uuid }, dto);
   }
 
-  remove(uuid: string) {
+  async remove(uuid: string) {
+    await this.findOneByUuidOrFail(uuid);
     return this.introAssociation_repository.delete({ uuid: uuid });
   }
 
