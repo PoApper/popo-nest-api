@@ -1,13 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { IntroClub } from './intro.club.entity';
 import { CreateIntroClubDto } from './intro.club.dto';
-
-const Message = {
-  NOT_EXISTING_INTRO: "There's no such introduction.",
-};
 
 @Injectable()
 export class IntroClubService {
@@ -31,24 +27,29 @@ export class IntroClubService {
     return this.introClub_repository.find(findOptions);
   }
 
-  findOne(findOptions: object, maybeOptions?: object) {
-    return this.introClub_repository.findOne(findOptions, maybeOptions);
+  findOneByUuid(uuid: string) {
+    return this.introClub_repository.findOneBy({ uuid: uuid});
+  }
+
+  findOneByUuidOrFail(uuid: string) {
+    return this.introClub_repository.findOneByOrFail({ uuid: uuid});
+  }
+
+  findOneByName(name: string) {
+    return this.introClub_repository.findOneBy({ name: name});
   }
 
   async update(uuid: string, dto: CreateIntroClubDto) {
-    const existIntro = await this.findOne({ uuid: uuid });
-
-    if (!existIntro) {
-      throw new BadRequestException(Message.NOT_EXISTING_INTRO);
-    }
+    await this.findOneByUuidOrFail(uuid);
 
     return this.introClub_repository.update(
-      { uuid: uuid, name: existIntro.name },
+      { uuid: uuid },
       dto,
     );
   }
 
-  remove(uuid: string) {
+  async remove(uuid: string) {
+    await this.findOneByUuidOrFail(uuid);
     return this.introClub_repository.delete({ uuid: uuid });
   }
 

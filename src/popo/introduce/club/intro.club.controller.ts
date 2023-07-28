@@ -64,12 +64,12 @@ export class IntroClubController {
 
   @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
-    return this.introClubService.findOne({ uuid: uuid });
+    return this.introClubService.findOneByUuid(uuid);
   }
 
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
-    const introClub = await this.introClubService.findOne({ name: name });
+    const introClub = await this.introClubService.findOneByName(name);
 
     if (introClub) {
       await this.introClubService.updateViewCount(
