@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as fs from 'fs';
 import { Place } from './place.entity';
 import { PlaceDto } from './place.dto';
 import { PlaceRegion } from './place.meta';
@@ -42,10 +41,6 @@ export class PlaceService {
     return this.placeRepo.find({ order: { updateAt: 'DESC' } });
   }
 
-  count(findOptions: object) {
-    return this.placeRepo.count(findOptions);
-  }
-
   findOne(uuid: string, findOptions?: any) {
     return this.placeRepo.findOne({ uuid: uuid }, findOptions);
   }
@@ -59,7 +54,7 @@ export class PlaceService {
   }
 
   findOneByName(name: string) {
-    return this.placeRepo.findOne({ name: name });
+    return this.placeRepo.findOneBy({ name: name });
   }
 
   async findAllByRegion(region: PlaceRegion) {
@@ -80,7 +75,7 @@ export class PlaceService {
 
   // delta: +1 or -1
   async updateReservationCountByDelta(uuid: string, delta: number) {
-    const place = await this.placeRepo.findOneOrFail(uuid);
+    const place = await this.placeRepo.findOneByOrFail({ uuid: uuid });
     return this.placeRepo.update(
       { uuid: uuid },
       { total_reservation_count: place.total_reservation_count + delta },

@@ -19,7 +19,7 @@ export class UserService {
   ) {}
 
   async save(dto: CreateUserDto) {
-    const existUser = await this.userRepo.findOne({ email: dto.email });
+    const existUser = await this.userRepo.findOneBy({ email: dto.email });
 
     if (existUser) {
       throw new BadRequestException(Message.EXISTING_EMAIL);
@@ -92,25 +92,16 @@ export class UserService {
     });
   }
 
-  findOneOrFail(findOptions: object, maybeOption?: object) {
-    const existUser = this.userRepo.findOne(findOptions, maybeOption);
-    if (existUser) {
-      return existUser;
-    } else {
-      throw new BadRequestException(Message.EXISTING_EMAIL);
-    }
-  }
-
   findOneByEmail(email: string) {
-    return this.userRepo.findOne({ email: email });
+    return this.userRepo.findOneBy({ email: email });
   }
 
   findOneById(id: string) {
-    return this.userRepo.findOne({ id: id });
+    return this.userRepo.findOneBy({ id: id });
   }
 
   findOneByUuid(uuid: string) {
-    return this.userRepo.findOne({ uuid: uuid });
+    return this.userRepo.findOneBy({ uuid: uuid });
   }
 
   async update(uuid: string, updateUserDto: UpdateUserDto) {

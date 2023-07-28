@@ -134,7 +134,7 @@ export class ReservePlaceService {
   }
 
   findOne(uuid: string) {
-    return this.reservePlaceRepo.findOne(uuid);
+    return this.reservePlaceRepo.findOneBy({uuid: uuid});
   }
 
   async findAllByPlaceName(placeName: string, startDate?: string) {
@@ -151,7 +151,7 @@ export class ReservePlaceService {
       findOption['date'] = MoreThanOrEqual(startDate);
     }
 
-    return this.reservePlaceRepo.find(findOption);
+    return this.reservePlaceRepo.findBy(findOption);
   }
 
   async findAllByPlaceNameAndDate(placeName: string, date: string) {
@@ -159,7 +159,7 @@ export class ReservePlaceService {
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
-    return this.reservePlaceRepo.find({
+    return this.reservePlaceRepo.findBy({
       place_id: existPlace.uuid,
       date: date,
     });

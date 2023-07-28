@@ -56,7 +56,7 @@ export class EquipService {
   }
 
   async findOneByName(name: string) {
-    const existEquip = await this.equipRepo.findOne({ name: name });
+    const existEquip = await this.equipRepo.findOneBy({ name: name });
 
     if (!existEquip) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
