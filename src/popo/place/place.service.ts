@@ -37,16 +37,16 @@ export class PlaceService {
     return this.placeRepo.update({ uuid: uuid }, { image_url: image_url });
   }
 
-  async find() {
+  find() {
     return this.placeRepo.find({ order: { updateAt: 'DESC' } });
   }
 
-  findOne(uuid: string, findOptions?: any) {
-    return this.placeRepo.findOne({ uuid: uuid }, findOptions);
+  findOneByUuid(uuid: string) {
+    return this.placeRepo.findOneBy({ uuid: uuid });
   }
 
-  findOneOrFail(uuid: string, findOptions?: any) {
-    const place = this.placeRepo.findOne({ uuid: uuid }, findOptions);
+  findOneByUuidOrFail(uuid: string) {
+    const place = this.findOneByUuid(uuid);
     if (!place) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
@@ -65,7 +65,7 @@ export class PlaceService {
   }
 
   async update(uuid: string, dto: PlaceDto) {
-    const existPlace = await this.findOne(uuid);
+    const existPlace = await this.findOneByUuid(uuid);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
@@ -90,7 +90,7 @@ export class PlaceService {
   }
 
   async remove(uuid: string) {
-    const existPlace = await this.findOne(uuid);
+    const existPlace = await this.findOneByUuid(uuid);
 
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);

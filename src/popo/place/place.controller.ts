@@ -56,7 +56,7 @@ export class PlaceController {
 
   @Get(':uuid')
   async getOne(@Param('uuid') uuid: string) {
-    return this.placeService.findOne(uuid);
+    return this.placeService.findOneByUuid(uuid);
   }
 
   @Get('/name/:name')

@@ -39,7 +39,7 @@ export class ReservePlaceController {
   @UseGuards(JwtAuthGuard)
   async createWithNameAndId(@Req() req, @Body() dto: CreateReservePlaceDto) {
     const user: any = req.user;
-    const existPlace = await this.placeService.findOneOrFail(dto.place_id);
+    const existPlace = await this.placeService.findOneByUuidOrFail(dto.place_id);
 
     const new_reservation = await this.reservePlaceService.save(
       Object.assign(dto, { booker_id: user.uuid }),

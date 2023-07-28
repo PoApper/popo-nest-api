@@ -63,7 +63,7 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
     }
 
-    const targetPlace = await this.placeService.findOneOrFail(place_id);
+    const targetPlace = await this.placeService.findOneByUuidOrFail(place_id);
 
     // Reservation Overlap Check
     const isReservationOverlap = await this.isReservationOverlap(
@@ -212,7 +212,7 @@ export class ReservePlaceService {
   async joinPlace(reservations) {
     const refinedReservations = [];
     for (const reservation of reservations) {
-      const place = await this.placeService.findOne(reservation.place_id);
+      const place = await this.placeService.findOneByUuid(reservation.place_id);
       if (place) {
         reservation.place = place;
         refinedReservations.push(reservation);
