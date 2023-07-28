@@ -191,7 +191,7 @@ export class ReserveEquipService {
     for (const reservation of reservations) {
       const equipments_list = [];
       for (const equip_uuid of reservation.equipments) {
-        const equipment = await this.equipService.findOne(equip_uuid);
+        const equipment = await this.equipService.findOneByUuid(equip_uuid);
         if (equipment) {
           equipments_list.push(equipment);
         }

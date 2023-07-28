@@ -59,7 +59,7 @@ export class EquipController {
 
   @Get('/:uuid')
   async getOne(@Param('uuid') uuid: string) {
-    return this.equipService.findOne({ uuid: uuid });
+    return this.equipService.findOneByUuid(uuid);
   }
 
   @Get('/name/:name')
