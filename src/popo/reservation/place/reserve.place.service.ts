@@ -183,9 +183,7 @@ export class ReservePlaceService {
       },
     );
 
-    const existUser = await this.userService.findOne({
-      uuid: existReserve.booker_id,
-    });
+    const existUser = await this.userService.findOneByUuid(existReserve.booker_id);
 
     return {
       userType: existUser.userType,

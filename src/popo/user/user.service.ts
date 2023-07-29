@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { User } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
+import { UserStatus } from './user.meta'
 
 const Message = {
   EXISTING_EMAIL: 'This email is already used.',
@@ -72,8 +73,20 @@ export class UserService {
     return this.userRepo.count(findOptions);
   }
 
-  findOne(findOptions: object, maybeOption?: object) {
-    return this.userRepo.findOne(findOptions, maybeOption);
+  findOneByUuid(uuid: string) {
+    return this.userRepo.findOneBy({ uuid: uuid });
+  }
+
+  findOneByUuidOrFail(uuid: string) {
+    return this.userRepo.findOneByOrFail({ uuid: uuid });
+  }
+
+  findOneById(id: string) {
+    return this.userRepo.findOneBy({ id: id });
+  }
+
+  findOneByEmail(email: string) {
+    return this.userRepo.findOneBy({ email: email });
   }
 
   findOneByUuidWithInfo(uuid: string) {
@@ -92,23 +105,8 @@ export class UserService {
     });
   }
 
-  findOneByEmail(email: string) {
-    return this.userRepo.findOneBy({ email: email });
-  }
-
-  findOneById(id: string) {
-    return this.userRepo.findOneBy({ id: id });
-  }
-
-  findOneByUuid(uuid: string) {
-    return this.userRepo.findOneBy({ uuid: uuid });
-  }
-
   async update(uuid: string, updateUserDto: UpdateUserDto) {
-    const existUser = await this.findOne({ uuid: uuid });
-    if (!existUser) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
-    }
+    const existUser = await this.findOneByUuidOrFail(uuid);
 
     if (existUser.email != updateUserDto.email) {
       const existEmailUser = await this.findOneByEmail(updateUserDto.email);
@@ -142,7 +140,7 @@ export class UserService {
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     } else {
-      this.userRepo.update(
+      return this.userRepo.update(
         { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
         {
           lastLoginAt: new Date(),
@@ -152,11 +150,7 @@ export class UserService {
   }
 
   async updatePasswordByUuid(uuid: string, password: string) {
-    const existUser = await this.findOneByUuid(uuid);
-
-    if (!existUser) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
-    }
+    const existUser = await this.findOneByUuidOrFail(uuid);
 
     const cryptoSalt = crypto.randomBytes(64).toString('base64');
     const encryptedPassword = this.encryptPassword(password, cryptoSalt);
@@ -189,11 +183,9 @@ export class UserService {
     );
   }
 
-  async updateUserStatus(uuid: string, status) {
-    const existUser = await this.findOne({ uuid: uuid });
-    if (!existUser) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
-    }
+  async updateUserStatus(uuid: string, status: UserStatus) {
+    const existUser = await this.findOneByUuidOrFail(uuid);
+
     return this.userRepo.update(
       { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
       {
@@ -203,11 +195,7 @@ export class UserService {
   }
 
   async remove(uuid: string) {
-    const existUser = await this.findOne({ uuid: uuid });
-
-    if (!existUser) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
-    }
+    await this.findOneByUuidOrFail(uuid);
 
     return this.userRepo.delete({ uuid: uuid });
   }
