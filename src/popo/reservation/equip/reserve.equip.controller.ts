@@ -150,13 +150,13 @@ export class ReserveEquipController {
 
   @Get(':uuid')
   getOne(@Param('uuid') uuid) {
-    return this.reserveEquipService.findOne(uuid);
+    return this.reserveEquipService.findOneByUuid(uuid);
   }
 
   @Delete(':uuid')
   @UseGuards(JwtAuthGuard)
   async delete(@Param('uuid') uuid: string, @Req() req) {
-    const reservation = await this.reserveEquipService.findOne(uuid);
+    const reservation = await this.reserveEquipService.findOneByUuid(uuid);
     const user = req.user;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {

@@ -138,8 +138,12 @@ export class ReserveEquipService {
     return this.reserveEquipRepo.find(findOptions);
   }
 
-  findOne(uuid: string, findOptions?: any) {
-    return this.reserveEquipRepo.findOne({ uuid: uuid }, findOptions);
+  findOneByUuid(uuid: string) {
+    return this.reserveEquipRepo.findOneBy({ uuid: uuid});
+  }
+
+  findOneByUuidOrFail(uuid: string) {
+    return this.reserveEquipRepo.findOneByOrFail({ uuid: uuid});
   }
 
   remove(uuid: string) {
@@ -147,11 +151,7 @@ export class ReserveEquipService {
   }
 
   async updateStatus(uuid: string, status: ReservationStatus) {
-    const existReserve = await this.findOne(uuid);
-
-    if (!existReserve) {
-      throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
-    }
+    const existReserve = await this.findOneByUuidOrFail(uuid);
 
     await this.reserveEquipRepo.update(
       { uuid: uuid },
