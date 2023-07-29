@@ -133,8 +133,12 @@ export class ReservePlaceService {
     return this.reservePlaceRepo.count(findOptions);
   }
 
-  findOne(uuid: string) {
-    return this.reservePlaceRepo.findOneBy({uuid: uuid});
+  findOneByUuid(uuid: string) {
+    return this.reservePlaceRepo.findOneBy({ uuid: uuid});
+  }
+
+  findOneByUuidOrFail(uuid: string) {
+    return this.reservePlaceRepo.findOneByOrFail({ uuid: uuid});
   }
 
   async findAllByPlaceName(placeName: string, startDate?: string) {
@@ -166,7 +170,7 @@ export class ReservePlaceService {
   }
 
   async updateStatus(uuid: string, status: ReservationStatus) {
-    const existReserve = await this.findOne(uuid);
+    const existReserve = await this.findOneByUuidOrFail(uuid);
 
     if (!existReserve) {
       throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
