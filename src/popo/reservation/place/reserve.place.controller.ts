@@ -1,6 +1,5 @@
 import {
   Body,
-  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -11,9 +10,8 @@ import {
   Req,
   UnauthorizedException,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { Request } from 'express';
 import { ReservePlaceService } from './reserve.place.service';
 import {
@@ -30,7 +28,6 @@ import { PlaceService } from '../../place/place.service';
 
 @ApiTags('Place Reservation')
 @Controller('reservation-place')
-@UseInterceptors(CacheInterceptor)
 export class ReservePlaceController {
   constructor(
     private readonly reservePlaceService: ReservePlaceService,
@@ -38,11 +35,23 @@ export class ReservePlaceController {
     private readonly mailService: MailService,
   ) {}
 
+  @Post('check_possible')
+  @ApiBody({
+    type: CreateReservePlaceDto,
+  })
+  async checkReservationPossible(
+    @Body() dto: CreateReservePlaceDto,
+  ) {
+    return this.reservePlaceService.checkReservationPossible(dto);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   async createWithNameAndId(@Req() req, @Body() dto: CreateReservePlaceDto) {
     const user: any = req.user;
-    const existPlace = await this.placeService.findOneOrFail(dto.place_id);
+    const existPlace = await this.placeService.findOneByUuidOrFail(dto.place_id);
+
+    await this.reservePlaceService.checkReservationPossible(dto);
 
     const new_reservation = await this.reservePlaceService.save(
       Object.assign(dto, { booker_id: user.uuid }),
@@ -231,7 +240,7 @@ export class ReservePlaceController {
   @Delete(':uuid')
   @UseGuards(JwtAuthGuard)
   async delete(@Param('uuid') uuid: string, @Req() req) {
-    const reservation = await this.reservePlaceService.findOne(uuid);
+    const reservation = await this.reservePlaceService.findOneByUuidOrFail(uuid);
     const user = req.user;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {

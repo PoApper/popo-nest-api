@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Body,
-  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -9,7 +8,6 @@ import {
   Post,
   Put,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
@@ -25,7 +23,6 @@ import { FileService } from '../../../file/file.service';
 
 @ApiTags('Introduce Association')
 @Controller('introduce/association')
-@UseInterceptors(CacheInterceptor)
 export class IntroAssociationController {
   constructor(
     private readonly introAssociationService: IntroAssociationService,
@@ -59,14 +56,12 @@ export class IntroAssociationController {
 
   @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
-    return this.introAssociationService.findOne({ uuid: uuid });
+    return this.introAssociationService.findOneByUuid(uuid);
   }
 
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
-    const introAssociation = await this.introAssociationService.findOne({
-      name: name,
-    });
+    const introAssociation = await this.introAssociationService.findOneByName(name);
 
     if (introAssociation) {
       await this.introAssociationService.updateViewCount(

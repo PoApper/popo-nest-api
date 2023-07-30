@@ -1,6 +1,5 @@
 import {
   Body,
-  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -8,7 +7,6 @@ import {
   Post,
   Put,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 
@@ -24,7 +22,6 @@ import { FileBody } from '../../file/file-body.decorator';
 
 @ApiTags('Place')
 @Controller('place')
-@UseInterceptors(CacheInterceptor)
 export class PlaceController {
   constructor(
     private readonly placeService: PlaceService,
@@ -59,7 +56,7 @@ export class PlaceController {
 
   @Get(':uuid')
   async getOne(@Param('uuid') uuid: string) {
-    return this.placeService.findOne(uuid);
+    return this.placeService.findOneByUuid(uuid);
   }
 
   @Get('/name/:name')

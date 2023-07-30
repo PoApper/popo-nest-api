@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
-import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import { In, LessThan, MoreThan, MoreThanOrEqual, Repository } from 'typeorm'
 import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
@@ -33,11 +33,15 @@ export class ReservePlaceService {
     date: string,
     start_time: string,
     end_time: string,
-  ): Promise<boolean> {
+  ): Promise<ReservePlace | null> {
     const booked_reservations = await this.find({
-      place_id: place_id,
-      date: date,
-      status: ReservationStatus.accept,
+      where: {
+        place_id: place_id,
+        date: date,
+        status: ReservationStatus.accept,
+        start_time: LessThan(end_time),
+        end_time: MoreThan(start_time),
+      }
     });
 
     for (const reservation of booked_reservations) {
@@ -45,13 +49,13 @@ export class ReservePlaceService {
         reservation.start_time < end_time && start_time < reservation.end_time;
 
       if (isOverlap) {
-        return true;
+        return reservation;
       }
     }
-    return false;
+    return null;
   }
 
-  async save(dto: CreateReservePlaceDto) {
+  async checkReservationPossible(dto: CreateReservePlaceDto) {
     const { place_id, date, start_time, end_time, booker_id } = dto;
 
     if (
@@ -63,7 +67,7 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
     }
 
-    const targetPlace = await this.placeService.findOneOrFail(place_id);
+    const targetPlace = await this.placeService.findOneByUuidOrFail(place_id);
 
     // Reservation Overlap Check
     const isReservationOverlap = await this.isReservationOverlap(
@@ -73,7 +77,9 @@ export class ReservePlaceService {
       end_time,
     );
     if (isReservationOverlap) {
-      throw new BadRequestException(Message.OVERLAP_RESERVATION);
+      throw new BadRequestException(
+        `${Message.OVERLAP_RESERVATION}: ${isReservationOverlap.date} ${isReservationOverlap.start_time} ~ ${isReservationOverlap.end_time}`
+      );
     }
 
     // Reservation Duration Check
@@ -89,6 +95,8 @@ export class ReservePlaceService {
         `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetPlace.max_minutes} mins, new ${newReservationMinutes} mins`,
       );
     }
+
+    await this.userService.findOneByUuidOrFail(booker_id);
 
     const reservationsOfDay = await this.reservePlaceRepo.find({
       where: {
@@ -116,6 +124,10 @@ export class ReservePlaceService {
         `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetPlace.max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
       );
     }
+  }
+
+  async save(dto: CreateReservePlaceDto) {
+    const targetPlace = await this.placeService.findOneByUuidOrFail(dto.place_id);
 
     let saveDto = Object.assign({}, dto);
     if (targetPlace.enable_auto_accept === PlaceEnableAutoAccept.active) {
@@ -129,12 +141,16 @@ export class ReservePlaceService {
     return this.reservePlaceRepo.find(findOptions);
   }
 
-  count(findOptions?: object) {
-    return this.reservePlaceRepo.count(findOptions);
+  count(whereOption?: object) {
+    return this.reservePlaceRepo.count({ where: whereOption });
   }
 
-  findOne(uuid: string) {
-    return this.reservePlaceRepo.findOne(uuid);
+  findOneByUuid(uuid: string) {
+    return this.reservePlaceRepo.findOneBy({ uuid: uuid});
+  }
+
+  findOneByUuidOrFail(uuid: string) {
+    return this.reservePlaceRepo.findOneByOrFail({ uuid: uuid});
   }
 
   async findAllByPlaceName(placeName: string, startDate?: string) {
@@ -151,7 +167,7 @@ export class ReservePlaceService {
       findOption['date'] = MoreThanOrEqual(startDate);
     }
 
-    return this.reservePlaceRepo.find(findOption);
+    return this.reservePlaceRepo.findBy(findOption);
   }
 
   async findAllByPlaceNameAndDate(placeName: string, date: string) {
@@ -159,14 +175,14 @@ export class ReservePlaceService {
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
-    return this.reservePlaceRepo.find({
+    return this.reservePlaceRepo.findBy({
       place_id: existPlace.uuid,
       date: date,
     });
   }
 
   async updateStatus(uuid: string, status: ReservationStatus) {
-    const existReserve = await this.findOne(uuid);
+    const existReserve = await this.findOneByUuidOrFail(uuid);
 
     if (!existReserve) {
       throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
@@ -179,9 +195,7 @@ export class ReservePlaceService {
       },
     );
 
-    const existUser = await this.userService.findOne({
-      uuid: existReserve.booker_id,
-    });
+    const existUser = await this.userService.findOneByUuid(existReserve.booker_id);
 
     return {
       userType: existUser.userType,
@@ -212,7 +226,7 @@ export class ReservePlaceService {
   async joinPlace(reservations) {
     const refinedReservations = [];
     for (const reservation of reservations) {
-      const place = await this.placeService.findOne(reservation.place_id);
+      const place = await this.placeService.findOneByUuid(reservation.place_id);
       if (place) {
         reservation.place = place;
         refinedReservations.push(reservation);

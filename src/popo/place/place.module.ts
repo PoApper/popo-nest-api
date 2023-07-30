@@ -1,4 +1,4 @@
-import { CacheModule, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NestjsFormDataModule } from 'nestjs-form-data';
 
@@ -10,7 +10,6 @@ import { FileModule } from '../../file/file.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Place]),
-    CacheModule.register(),
     NestjsFormDataModule,
     FileModule,
   ],

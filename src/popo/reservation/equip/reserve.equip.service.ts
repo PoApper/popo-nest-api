@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Like, Repository } from 'typeorm';
+import { In, LessThan, Like, MoreThan, Repository } from 'typeorm'
 import { ReserveEquip } from './reserve.equip.entity';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
@@ -36,8 +36,12 @@ export class ReserveEquipService {
     end_time: string,
   ): Promise<boolean> {
     const booked_reservations = await this.find({
-      date: date,
-      status: ReservationStatus.accept,
+      where: {
+        date: date,
+        status: ReservationStatus.accept,
+        start_time: LessThan(end_time),
+        end_time: MoreThan(start_time),
+      }
     });
 
     for (const reservation of booked_reservations) {
@@ -138,8 +142,12 @@ export class ReserveEquipService {
     return this.reserveEquipRepo.find(findOptions);
   }
 
-  findOne(uuid: string, findOptions?: any) {
-    return this.reserveEquipRepo.findOne({ uuid: uuid }, findOptions);
+  findOneByUuid(uuid: string) {
+    return this.reserveEquipRepo.findOneBy({ uuid: uuid});
+  }
+
+  findOneByUuidOrFail(uuid: string) {
+    return this.reserveEquipRepo.findOneByOrFail({ uuid: uuid});
   }
 
   remove(uuid: string) {
@@ -147,11 +155,7 @@ export class ReserveEquipService {
   }
 
   async updateStatus(uuid: string, status: ReservationStatus) {
-    const existReserve = await this.findOne(uuid);
-
-    if (!existReserve) {
-      throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
-    }
+    const existReserve = await this.findOneByUuidOrFail(uuid);
 
     await this.reserveEquipRepo.update(
       { uuid: uuid },
@@ -160,9 +164,7 @@ export class ReserveEquipService {
       },
     );
 
-    const existUser = await this.userService.findOne({
-      uuid: existReserve.booker_id,
-    });
+    const existUser = await this.userService.findOneByUuid(existReserve.booker_id);
 
     return {
       userType: existUser.userType,
@@ -191,7 +193,7 @@ export class ReserveEquipService {
     for (const reservation of reservations) {
       const equipments_list = [];
       for (const equip_uuid of reservation.equipments) {
-        const equipment = await this.equipService.findOne(equip_uuid);
+        const equipment = await this.equipService.findOneByUuid(equip_uuid);
         if (equipment) {
           equipments_list.push(equipment);
         }

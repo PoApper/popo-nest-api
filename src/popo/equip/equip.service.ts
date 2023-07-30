@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+
 import { Equip } from './equip.entity';
 import { EquipmentDto } from './equip.dto';
 import { EquipOwner } from './equip.meta';
@@ -39,24 +40,20 @@ export class EquipService {
     return this.equipRepo.find(findOptions);
   }
 
-  findByIds(ids: string[], findOptions?: object) {
-    return this.equipRepo.findByIds(ids, findOptions);
+  findByIds(ids: string[]) {
+    return this.equipRepo.findBy({ uuid: In(ids) });
   }
 
-  findOne(findOptions: object, maybeOptions?: object) {
-    return this.equipRepo.findOne(findOptions, maybeOptions);
+  findOneByUuid(uuid: string) {
+    return this.equipRepo.findOneBy({ uuid: uuid });
   }
 
-  async findOneOrFail(findOptions: object, maybeOptions?: object) {
-    const equip = await this.equipRepo.findOne(findOptions, maybeOptions);
-    if (!equip) {
-      throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
-    }
-    return equip;
+  findOneByUuidOrFail(uuid: string) {
+    return this.equipRepo.findOneByOrFail({ uuid: uuid });
   }
 
   async findOneByName(name: string) {
-    const existEquip = await this.equipRepo.findOne({ name: name });
+    const existEquip = await this.equipRepo.findOneBy({ name: name });
 
     if (!existEquip) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
@@ -73,19 +70,15 @@ export class EquipService {
   }
 
   async update(uuid: string, dto: EquipmentDto) {
-    const existEquip = await this.findOne({ uuid: uuid });
-    if (!existEquip) {
-      throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
-    }
-
+    await this.findOneByUuidOrFail(uuid);
     return this.equipRepo.update({ uuid: uuid }, dto);
   }
 
   async updateReservationCountByDelta(uuid: string, delta: number) {
-    const place = await this.equipRepo.findOneOrFail(uuid);
+    const equipment = await this.findOneByUuidOrFail(uuid);
     return this.equipRepo.update(
       { uuid: uuid },
-      { total_reservation_count: place.total_reservation_count + delta },
+      { total_reservation_count: equipment.total_reservation_count + delta },
     );
   }
 
@@ -97,12 +90,7 @@ export class EquipService {
   }
 
   async delete(uuid: string) {
-    const existEquip = await this.findOne({ uuid: uuid });
-
-    if (!existEquip) {
-      throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
-    }
-
+    await this.findOneByUuidOrFail(uuid);
     return this.equipRepo.delete(uuid);
   }
 }

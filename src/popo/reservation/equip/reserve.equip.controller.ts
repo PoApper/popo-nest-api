@@ -1,6 +1,5 @@
 import {
   Body,
-  CacheInterceptor,
   Controller,
   Delete,
   Get,
@@ -11,7 +10,6 @@ import {
   Req,
   UnauthorizedException,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -28,7 +26,6 @@ import { MoreThanOrEqual } from 'typeorm';
 
 @ApiTags('Equipment Reservation')
 @Controller('reservation-equip')
-@UseInterceptors(CacheInterceptor)
 export class ReserveEquipController {
   constructor(
     private readonly reserveEquipService: ReserveEquipService,
@@ -153,13 +150,13 @@ export class ReserveEquipController {
 
   @Get(':uuid')
   getOne(@Param('uuid') uuid) {
-    return this.reserveEquipService.findOne(uuid);
+    return this.reserveEquipService.findOneByUuid(uuid);
   }
 
   @Delete(':uuid')
   @UseGuards(JwtAuthGuard)
   async delete(@Param('uuid') uuid: string, @Req() req) {
-    const reservation = await this.reserveEquipService.findOne(uuid);
+    const reservation = await this.reserveEquipService.findOneByUuid(uuid);
     const user = req.user;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {

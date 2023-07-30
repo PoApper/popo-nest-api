@@ -26,11 +26,10 @@ export class WhitebookService {
     }
   }
 
-  addOneClickCount(uuid: string) {
-    this.whitebookRepo.findOne(uuid).then((whitebook) => {
-      return this.whitebookRepo.update(uuid, {
-        click_count: whitebook.click_count + 1,
-      });
+  async addOneClickCount(uuid: string) {
+    const whitebook = await this.whitebookRepo.findOneBy({ uuid: uuid });
+    return this.whitebookRepo.update(uuid, {
+      click_count: whitebook.click_count + 1,
     });
   }
 

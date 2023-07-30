@@ -58,7 +58,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getOwnReservations(@Req() req) {
     const user = req.user;
-    const existUser = await this.userService.findOne({ id: user.id });
+    const existUser = await this.userService.findOneById(user.id);
 
     const existPlaceReserve = await this.reservePlaceService.find({
       where: { user: existUser.uuid },

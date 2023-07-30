@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as fs from 'fs';
 import { Place } from './place.entity';
 import { PlaceDto } from './place.dto';
 import { PlaceRegion } from './place.meta';
@@ -38,20 +37,16 @@ export class PlaceService {
     return this.placeRepo.update({ uuid: uuid }, { image_url: image_url });
   }
 
-  async find() {
+  find() {
     return this.placeRepo.find({ order: { updateAt: 'DESC' } });
   }
 
-  count(findOptions: object) {
-    return this.placeRepo.count(findOptions);
+  findOneByUuid(uuid: string) {
+    return this.placeRepo.findOneBy({ uuid: uuid });
   }
 
-  findOne(uuid: string, findOptions?: any) {
-    return this.placeRepo.findOne({ uuid: uuid }, findOptions);
-  }
-
-  findOneOrFail(uuid: string, findOptions?: any) {
-    const place = this.placeRepo.findOne({ uuid: uuid }, findOptions);
+  findOneByUuidOrFail(uuid: string) {
+    const place = this.findOneByUuid(uuid);
     if (!place) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
@@ -59,7 +54,7 @@ export class PlaceService {
   }
 
   findOneByName(name: string) {
-    return this.placeRepo.findOne({ name: name });
+    return this.placeRepo.findOneBy({ name: name });
   }
 
   async findAllByRegion(region: PlaceRegion) {
@@ -70,7 +65,7 @@ export class PlaceService {
   }
 
   async update(uuid: string, dto: PlaceDto) {
-    const existPlace = await this.findOne(uuid);
+    const existPlace = await this.findOneByUuid(uuid);
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
@@ -80,7 +75,7 @@ export class PlaceService {
 
   // delta: +1 or -1
   async updateReservationCountByDelta(uuid: string, delta: number) {
-    const place = await this.placeRepo.findOneOrFail(uuid);
+    const place = await this.placeRepo.findOneByOrFail({ uuid: uuid });
     return this.placeRepo.update(
       { uuid: uuid },
       { total_reservation_count: place.total_reservation_count + delta },
@@ -95,7 +90,7 @@ export class PlaceService {
   }
 
   async remove(uuid: string) {
-    const existPlace = await this.findOne(uuid);
+    const existPlace = await this.findOneByUuid(uuid);
 
     if (!existPlace) {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);

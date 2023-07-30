@@ -44,7 +44,7 @@ export class MailService {
     reservation,
   ) {
     if (!EmailValidator.validate(recipient_email)) {
-      throw new BadRequestException('invalid booker email');
+      throw new BadRequestException(`invalid booker email: ${recipient_email}`);
     }
     await this.mailerService.sendMail({
       to: recipient_email,
@@ -108,7 +108,7 @@ export class MailService {
     reservation,
   ) {
     if (!EmailValidator.validate(recipient_email)) {
-      throw new BadRequestException('invalid booker email');
+      throw new BadRequestException(`invalid booker email: ${recipient_email}`);
     }
     await this.mailerService.sendMail({
       to: recipient_email,
