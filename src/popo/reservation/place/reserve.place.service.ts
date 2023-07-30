@@ -129,8 +129,8 @@ export class ReservePlaceService {
     return this.reservePlaceRepo.find(findOptions);
   }
 
-  count(findOptions?: object) {
-    return this.reservePlaceRepo.count(findOptions);
+  count(whereOption?: object) {
+    return this.reservePlaceRepo.count({ where: whereOption });
   }
 
   findOneByUuid(uuid: string) {

@@ -69,8 +69,8 @@ export class UserService {
       .getRawOne();
   }
 
-  count(findOptions?: object) {
-    return this.userRepo.count(findOptions);
+  count(whereOption?: object) {
+    return this.userRepo.count({ where: whereOption });
   }
 
   findOneByUuid(uuid: string) {
