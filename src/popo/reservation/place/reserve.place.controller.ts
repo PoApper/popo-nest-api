@@ -11,7 +11,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { Request } from 'express';
 import { ReservePlaceService } from './reserve.place.service';
 import {
@@ -35,11 +35,23 @@ export class ReservePlaceController {
     private readonly mailService: MailService,
   ) {}
 
+  @Post('check_possible')
+  @ApiBody({
+    type: CreateReservePlaceDto,
+  })
+  async checkReservationPossible(
+    @Body() dto: CreateReservePlaceDto,
+  ) {
+    return this.reservePlaceService.checkReservationPossible(dto);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   async createWithNameAndId(@Req() req, @Body() dto: CreateReservePlaceDto) {
     const user: any = req.user;
     const existPlace = await this.placeService.findOneByUuidOrFail(dto.place_id);
+
+    await this.reservePlaceService.checkReservationPossible(dto);
 
     const new_reservation = await this.reservePlaceService.save(
       Object.assign(dto, { booker_id: user.uuid }),

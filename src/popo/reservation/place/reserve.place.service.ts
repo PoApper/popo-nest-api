@@ -55,7 +55,7 @@ export class ReservePlaceService {
     return null;
   }
 
-  async save(dto: CreateReservePlaceDto) {
+  async checkReservationPossible(dto: CreateReservePlaceDto) {
     const { place_id, date, start_time, end_time, booker_id } = dto;
 
     if (
@@ -96,6 +96,8 @@ export class ReservePlaceService {
       );
     }
 
+    await this.userService.findOneByUuidOrFail(booker_id);
+
     const reservationsOfDay = await this.reservePlaceRepo.find({
       where: {
         booker_id: booker_id,
@@ -122,6 +124,10 @@ export class ReservePlaceService {
         `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetPlace.max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
       );
     }
+  }
+
+  async save(dto: CreateReservePlaceDto) {
+    const targetPlace = await this.placeService.findOneByUuidOrFail(dto.place_id);
 
     let saveDto = Object.assign({}, dto);
     if (targetPlace.enable_auto_accept === PlaceEnableAutoAccept.active) {
