@@ -33,7 +33,7 @@ export class ReservePlaceService {
     date: string,
     start_time: string,
     end_time: string,
-  ): Promise<boolean> {
+  ): Promise<ReservePlace | null> {
     const booked_reservations = await this.find({
       place_id: place_id,
       date: date,
@@ -45,10 +45,10 @@ export class ReservePlaceService {
         reservation.start_time < end_time && start_time < reservation.end_time;
 
       if (isOverlap) {
-        return true;
+        return reservation;
       }
     }
-    return false;
+    return null;
   }
 
   async save(dto: CreateReservePlaceDto) {
@@ -73,7 +73,9 @@ export class ReservePlaceService {
       end_time,
     );
     if (isReservationOverlap) {
-      throw new BadRequestException(Message.OVERLAP_RESERVATION);
+      throw new BadRequestException(
+        `${Message.OVERLAP_RESERVATION}: ${isReservationOverlap.date} ${isReservationOverlap.start_time} ~ ${isReservationOverlap.end_time}`
+      );
     }
 
     // Reservation Duration Check
