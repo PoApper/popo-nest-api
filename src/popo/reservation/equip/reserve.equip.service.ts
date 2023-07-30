@@ -36,8 +36,10 @@ export class ReserveEquipService {
     end_time: string,
   ): Promise<boolean> {
     const booked_reservations = await this.find({
-      date: date,
-      status: ReservationStatus.accept,
+      where: {
+        date: date,
+        status: ReservationStatus.accept,
+      }
     });
 
     for (const reservation of booked_reservations) {

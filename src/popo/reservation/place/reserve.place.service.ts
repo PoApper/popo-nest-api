@@ -35,9 +35,11 @@ export class ReservePlaceService {
     end_time: string,
   ): Promise<ReservePlace | null> {
     const booked_reservations = await this.find({
-      place_id: place_id,
-      date: date,
-      status: ReservationStatus.accept,
+      where: {
+        place_id: place_id,
+        date: date,
+        status: ReservationStatus.accept,
+      }
     });
 
     for (const reservation of booked_reservations) {
