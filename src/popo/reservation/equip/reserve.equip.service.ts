@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Like, Repository } from 'typeorm';
+import { In, LessThan, Like, MoreThan, Repository } from 'typeorm'
 import { ReserveEquip } from './reserve.equip.entity';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
@@ -39,6 +39,8 @@ export class ReserveEquipService {
       where: {
         date: date,
         status: ReservationStatus.accept,
+        start_time: LessThan(end_time),
+        end_time: MoreThan(start_time),
       }
     });
 

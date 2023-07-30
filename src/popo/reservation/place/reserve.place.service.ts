@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
-import { In, MoreThanOrEqual, Repository } from 'typeorm';
+import { In, LessThan, MoreThan, MoreThanOrEqual, Repository } from 'typeorm'
 import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
@@ -39,6 +39,8 @@ export class ReservePlaceService {
         place_id: place_id,
         date: date,
         status: ReservationStatus.accept,
+        start_time: LessThan(end_time),
+        end_time: MoreThan(start_time),
       }
     });
 
