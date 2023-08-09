@@ -8,6 +8,7 @@ import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
 import { PlaceEnableAutoAccept } from '../../place/place.meta';
 import { calculateReservationDurationMinutes } from '../../../utils/reservation-utils';
+import * as moment from 'moment';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -55,13 +56,12 @@ export class ReservePlaceService {
     return null;
   }
 
-  async checkReservationPossible(dto: CreateReservePlaceDto) {
-    const { place_id, date, start_time, end_time, booker_id } = dto;
+  async checkReservationPossible(dto: CreateReservePlaceDto, booker_id: string) {
+    const { place_id, date, start_time, end_time } = dto;
 
     if (
       dto.title === '' ||
       dto.phone === '' ||
-      dto.booker_id === '' ||
       dto.description === ''
     ) {
       throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
@@ -121,7 +121,10 @@ export class ReservePlaceService {
       targetPlace.max_minutes
     ) {
       throw new BadRequestException(
-        `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetPlace.max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
+        `${Message.OVER_MAX_RESERVATION_TIME}: `
+        + `최대 예약 가능 ${targetPlace.max_minutes}분 중에서 `
+        + `오늘(${date}) ${totalReservationMinutes}분을 이미 예약했습니다. `
+        + `신규로 ${newReservationMinutes}분 예약하는 것은 불가능합니다.`,
       );
     }
   }

@@ -58,8 +58,8 @@ export class ReserveEquipService {
     return false;
   }
 
-  async save(dto: CreateReserveEquipDto) {
-    const { equipments, date, start_time, end_time, booker_id, owner } = dto;
+  async save(dto: CreateReserveEquipDto, booker_id: string) {
+    const { equipments, date, start_time, end_time, owner } = dto;
 
     if (
       !dto.equipments.length ||
