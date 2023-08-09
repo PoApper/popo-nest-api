@@ -39,7 +39,7 @@ export class ReserveEquipController {
     const user: any = req.user;
 
     const saveDto = Object.assign(dto, { booker_id: user.uuid });
-    const new_reservation = await this.reserveEquipService.save(saveDto);
+    const new_reservation = await this.reserveEquipService.save(saveDto, user.uuid);
 
     const existEquips = await this.equipService.findByIds(dto.equipments);
 
