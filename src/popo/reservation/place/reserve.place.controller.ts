@@ -35,19 +35,18 @@ export class ReservePlaceController {
     private readonly mailService: MailService,
   ) {}
 
-  @Get('test')
-  test() {
-    this.reservePlaceService.testCalcuation();
-  }
-
   @Post('check_possible')
+  @UseGuards(JwtAuthGuard)
   @ApiBody({
     type: CreateReservePlaceDto,
   })
   async checkReservationPossible(
+    @Req() req,
     @Body() dto: CreateReservePlaceDto,
   ) {
-    return this.reservePlaceService.checkReservationPossible(dto);
+    const user: any = req.user;
+
+    return this.reservePlaceService.checkReservationPossible(dto, user.uuid);
   }
 
   @Post()
@@ -56,7 +55,7 @@ export class ReservePlaceController {
     const user: any = req.user;
     const existPlace = await this.placeService.findOneByUuidOrFail(dto.place_id);
 
-    await this.reservePlaceService.checkReservationPossible(dto);
+    await this.reservePlaceService.checkReservationPossible(dto, user.uuid);
 
     const new_reservation = await this.reservePlaceService.save(
       Object.assign(dto, { booker_id: user.uuid }),

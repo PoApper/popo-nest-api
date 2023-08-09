@@ -56,76 +56,12 @@ export class ReservePlaceService {
     return null;
   }
 
-  async testCalcuation() {
-    // Reservation Duration Check
-    const newReservationMinutes = calculateReservationDurationMinutes(
-      '0200',
-      '0400',
-    );
-
-    const max_minutes = 180;
-    if (
-      max_minutes &&
-      newReservationMinutes > max_minutes
-    ) {
-      throw new BadRequestException(
-        `${Message.OVER_MAX_RESERVATION_TIME}: max ${max_minutes} mins, new ${newReservationMinutes} mins`,
-      );
-    }
-
-    const booker_id = '57c266ea-7c2b-4e34-ac7a-d92febf4aa59';
-    const place_id = '0187ac4d-b1b3-4360-8460-84a87581d837';
-    const date = '20230810';
-
-    await this.userService.findOneByUuidOrFail(booker_id);
-
-    const reservationsOfDay = await this.reservePlaceRepo.find({
-      where: {
-        booker_id: booker_id,
-        place_id: place_id,
-        date: date,
-        status: In([ReservationStatus.accept, ReservationStatus.in_process]),
-      },
-    });
-
-    console.log(reservationsOfDay);
-
-
-    let totalReservationMinutes = 0;
-    for (const reservation of reservationsOfDay) {
-      const reservationDuration = calculateReservationDurationMinutes(
-        reservation.start_time,
-        reservation.end_time,
-      );
-      totalReservationMinutes += reservationDuration;
-    }
-
-    console.log(moment('1800', 'hhmm'));
-    console.log(moment('1830', 'HHmm'));
-
-
-    console.log(moment('1130', 'hhmm'));
-    console.log(moment('1130', 'HHmm'));
-
-    console.log(totalReservationMinutes);
-
-    if (
-      totalReservationMinutes + newReservationMinutes >
-      max_minutes
-    ) {
-      throw new BadRequestException(
-        `${Message.OVER_MAX_RESERVATION_TIME}: max ${max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
-      );
-    }
-  }
-
-  async checkReservationPossible(dto: CreateReservePlaceDto) {
-    const { place_id, date, start_time, end_time, booker_id } = dto;
+  async checkReservationPossible(dto: CreateReservePlaceDto, booker_id: string) {
+    const { place_id, date, start_time, end_time } = dto;
 
     if (
       dto.title === '' ||
       dto.phone === '' ||
-      dto.booker_id === '' ||
       dto.description === ''
     ) {
       throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
@@ -188,7 +124,10 @@ export class ReservePlaceService {
       targetPlace.max_minutes
     ) {
       throw new BadRequestException(
-        `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetPlace.max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
+        `${Message.OVER_MAX_RESERVATION_TIME}: `
+        + `최대 예약 가능 ${targetPlace.max_minutes}분 중에서 `
+        + `오늘(${date}) ${totalReservationMinutes}분을 이미 예약했습니다. `
+        + `신규로 ${newReservationMinutes}분 예약하는 것은 불가능합니다.`,
       );
     }
   }
