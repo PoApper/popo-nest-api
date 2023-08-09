@@ -8,6 +8,7 @@ import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
 import { PlaceEnableAutoAccept } from '../../place/place.meta';
 import { calculateReservationDurationMinutes } from '../../../utils/reservation-utils';
+import * as moment from 'moment';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -55,6 +56,69 @@ export class ReservePlaceService {
     return null;
   }
 
+  async testCalcuation() {
+    // Reservation Duration Check
+    const newReservationMinutes = calculateReservationDurationMinutes(
+      '0200',
+      '0400',
+    );
+
+    const max_minutes = 180;
+    if (
+      max_minutes &&
+      newReservationMinutes > max_minutes
+    ) {
+      throw new BadRequestException(
+        `${Message.OVER_MAX_RESERVATION_TIME}: max ${max_minutes} mins, new ${newReservationMinutes} mins`,
+      );
+    }
+
+    const booker_id = '57c266ea-7c2b-4e34-ac7a-d92febf4aa59';
+    const place_id = '0187ac4d-b1b3-4360-8460-84a87581d837';
+    const date = '20230810';
+
+    await this.userService.findOneByUuidOrFail(booker_id);
+
+    const reservationsOfDay = await this.reservePlaceRepo.find({
+      where: {
+        booker_id: booker_id,
+        place_id: place_id,
+        date: date,
+        status: In([ReservationStatus.accept, ReservationStatus.in_process]),
+      },
+    });
+
+    console.log(reservationsOfDay);
+
+
+    let totalReservationMinutes = 0;
+    for (const reservation of reservationsOfDay) {
+      const reservationDuration = calculateReservationDurationMinutes(
+        reservation.start_time,
+        reservation.end_time,
+      );
+      totalReservationMinutes += reservationDuration;
+    }
+
+    console.log(moment('1800', 'hhmm'));
+    console.log(moment('1830', 'HHmm'));
+
+
+    console.log(moment('1130', 'hhmm'));
+    console.log(moment('1130', 'HHmm'));
+
+    console.log(totalReservationMinutes);
+
+    if (
+      totalReservationMinutes + newReservationMinutes >
+      max_minutes
+    ) {
+      throw new BadRequestException(
+        `${Message.OVER_MAX_RESERVATION_TIME}: max ${max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
+      );
+    }
+  }
+
   async checkReservationPossible(dto: CreateReservePlaceDto) {
     const { place_id, date, start_time, end_time, booker_id } = dto;
 
@@ -68,6 +132,7 @@ export class ReservePlaceService {
     }
 
     const targetPlace = await this.placeService.findOneByUuidOrFail(place_id);
+    console.log('targetPlace', targetPlace);
 
     // Reservation Overlap Check
     const isReservationOverlap = await this.isReservationOverlap(
@@ -106,6 +171,7 @@ export class ReservePlaceService {
         status: In([ReservationStatus.accept, ReservationStatus.in_process]),
       },
     });
+    console.log('reservationsOfDay', reservationsOfDay);
 
     let totalReservationMinutes = 0;
     for (const reservation of reservationsOfDay) {
@@ -114,6 +180,7 @@ export class ReservePlaceService {
         reservation.end_time,
       );
       totalReservationMinutes += reservationDuration;
+      console.log('totalReservationMinutes', totalReservationMinutes);
     }
 
     if (

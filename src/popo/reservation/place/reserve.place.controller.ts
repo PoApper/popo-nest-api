@@ -35,6 +35,11 @@ export class ReservePlaceController {
     private readonly mailService: MailService,
   ) {}
 
+  @Get('test')
+  test() {
+    this.reservePlaceService.testCalcuation();
+  }
+
   @Post('check_possible')
   @ApiBody({
     type: CreateReservePlaceDto,
