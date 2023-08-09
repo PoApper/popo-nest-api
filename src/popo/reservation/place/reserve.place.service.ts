@@ -68,7 +68,6 @@ export class ReservePlaceService {
     }
 
     const targetPlace = await this.placeService.findOneByUuidOrFail(place_id);
-    console.log('targetPlace', targetPlace);
 
     // Reservation Overlap Check
     const isReservationOverlap = await this.isReservationOverlap(
@@ -107,7 +106,6 @@ export class ReservePlaceService {
         status: In([ReservationStatus.accept, ReservationStatus.in_process]),
       },
     });
-    console.log('reservationsOfDay', reservationsOfDay);
 
     let totalReservationMinutes = 0;
     for (const reservation of reservationsOfDay) {
@@ -116,7 +114,6 @@ export class ReservePlaceService {
         reservation.end_time,
       );
       totalReservationMinutes += reservationDuration;
-      console.log('totalReservationMinutes', totalReservationMinutes);
     }
 
     if (
