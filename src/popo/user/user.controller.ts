@@ -70,12 +70,6 @@ export class UserController {
     return this.userService.findOneByUuid(uuid);
   }
 
-  @Get('id/:id')
-  @UseGuards(JwtAuthGuard)
-  getOneById(@Param('id') id: string) {
-    return this.userService.findOneById(id);
-  }
-
   @Get('email/:email')
   async getOneByEmail(@Param('email') email: string) {
     return this.userService.findOneByEmail(email);

@@ -30,7 +30,6 @@ export class UserService {
 
       return this.userRepo.save({
         email: dto.email,
-        id: dto.id,
         password: encryptedPassword,
         cryptoSalt: cryptoSalt,
         name: dto.name,
@@ -115,19 +114,11 @@ export class UserService {
       }
     }
 
-    if (existUser.id != updateUserDto.id) {
-      const existIdUser = await this.findOneById(updateUserDto.id);
-      if (existIdUser) {
-        throw new BadRequestException(Message.EXISTING_EMAIL);
-      }
-    }
-
     return this.userRepo.update(
       { uuid: uuid, email: existUser.email, id: existUser.id },
       {
         uuid: uuid,
         email: updateUserDto.email,
-        id: updateUserDto.id,
         name: updateUserDto.name,
         userType: updateUserDto.userType,
         userStatus: updateUserDto.userStatus,
@@ -135,8 +126,8 @@ export class UserService {
     );
   }
 
-  async updateLoginById(id: string) {
-    const existUser = await this.findOneById(id);
+  async updateLogin(uuid: string) {
+    const existUser = await this.findOneByUuid(uuid);
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     } else {
@@ -164,8 +155,8 @@ export class UserService {
     );
   }
 
-  async updatePWByID(id: string, password: string) {
-    const existUser = await this.findOneById(id);
+  async updatePW(email: string, password: string) {
+    const existUser = await this.findOneByEmail(email);
 
     if (!existUser) {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
