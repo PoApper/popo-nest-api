@@ -25,6 +25,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { PlaceService } from '../../place/place.service';
+import {JwtPayload} from "../../../auth/strategies/jwt.payload";
 
 @ApiTags('Place Reservation')
 @Controller('reservation-place')
@@ -44,7 +45,7 @@ export class ReservePlaceController {
     @Req() req,
     @Body() dto: CreateReservePlaceDto,
   ) {
-    const user: any = req.user;
+    const user = req.user as JwtPayload;
 
     return this.reservePlaceService.checkReservationPossible(dto, user.uuid);
   }
@@ -52,7 +53,7 @@ export class ReservePlaceController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async createWithNameAndId(@Req() req, @Body() dto: CreateReservePlaceDto) {
-    const user: any = req.user;
+    const user = req.user as JwtPayload;
     const existPlace = await this.placeService.findOneByUuidOrFail(dto.place_id);
 
     await this.reservePlaceService.checkReservationPossible(dto, user.uuid);
@@ -121,7 +122,7 @@ export class ReservePlaceController {
   @Get('user')
   @UseGuards(JwtAuthGuard)
   async getMyReservation(@Req() req: Request) {
-    const user: any = req.user;
+    const user = req.user as JwtPayload;
 
     const reservations = await this.reservePlaceService.find({
       where: { booker_id: user.uuid },

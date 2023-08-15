@@ -12,7 +12,7 @@ import { ReserveEquip } from '../reservation/equip/reserve.equip.entity';
 import { ReservePlace } from '../reservation/place/reserve.place.entity';
 
 @Entity()
-@Unique(['email', 'id'])
+@Unique(['email'])
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
@@ -20,7 +20,8 @@ export class User extends BaseEntity {
   @Column({ nullable: false })
   email: string;
 
-  @Column({ nullable: false })
+  // TODO: will be deprecated
+  @Column({ nullable: true })
   id: string;
 
   @Column({ nullable: false })

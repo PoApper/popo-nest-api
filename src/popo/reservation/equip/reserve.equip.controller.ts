@@ -23,6 +23,7 @@ import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
 import { MoreThanOrEqual } from 'typeorm';
+import {JwtPayload} from "../../../auth/strategies/jwt.payload";
 
 @ApiTags('Equipment Reservation')
 @Controller('reservation-equip')
@@ -36,7 +37,7 @@ export class ReserveEquipController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async post(@Req() req, @Body() dto: CreateReserveEquipDto) {
-    const user: any = req.user;
+    const user = req.user as JwtPayload;
 
     const saveDto = Object.assign(dto, { booker_id: user.uuid });
     const new_reservation = await this.reserveEquipService.save(saveDto, user.uuid);
@@ -113,7 +114,7 @@ export class ReserveEquipController {
   @Get('user')
   @UseGuards(JwtAuthGuard)
   async getMyReservation(@Req() req) {
-    const user: any = req.user;
+    const user = req.user as JwtPayload;
 
     const reservations = await this.reserveEquipService.find({
       where: { booker_id: user.uuid },
@@ -157,7 +158,7 @@ export class ReserveEquipController {
   @UseGuards(JwtAuthGuard)
   async delete(@Param('uuid') uuid: string, @Req() req) {
     const reservation = await this.reserveEquipService.findOneByUuid(uuid);
-    const user = req.user;
+    const user = req.user as JwtPayload;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
       await this.reserveEquipService.remove(uuid);

@@ -15,32 +15,34 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async validateUser(id: string, password: string): Promise<any> {
-    const user = await this.usersService.findOneById(id);
-    if (user) {
-      const cryptoSalt = user.cryptoSalt;
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.usersService.findOneByEmail(email);
 
-      if (user.userStatus != UserStatus.activated) {
-        throw new UnauthorizedException('Not activated account.');
-      }
-
-      const encryptedPassword = this.encryptPassword(password, cryptoSalt);
-      if (user.password === encryptedPassword) {
-        const { password, ...result } = user;
-        return result;
-      }
+    if (!user) {
+      return null;
     }
 
-    return null;
+    const cryptoSalt = user.cryptoSalt;
+
+    if (user.userStatus != UserStatus.activated) {
+      throw new UnauthorizedException('Not activated account.');
+    }
+
+    const encryptedPassword = this.encryptPassword(password, cryptoSalt);
+    if (user.password === encryptedPassword) {
+      const { password, ...result } = user;
+      return result;
+    } else {
+      return null;
+    }
   }
 
   async generateJwtToken(user: any) {
     const payload = {
       uuid: user.uuid,
-      id: user.id,
+      email: user.email,
       name: user.name,
       userType: user.userType,
-      email: user.email,
     };
     return this.jwtService.sign(payload);
   }

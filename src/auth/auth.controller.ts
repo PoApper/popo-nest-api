@@ -22,6 +22,7 @@ import { MailService } from '../mail/mail.service';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
 import { ApiTags } from '@nestjs/swagger';
+import {JwtPayload} from "./strategies/jwt.payload";
 
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
@@ -44,21 +45,21 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async verifyToken(@Req() req: Request) {
     const path = req.path;
-    const user: any = req.user;
+    const user = req.user as JwtPayload;
     if (path.includes('admin')) {
       if (!requiredRoles.some((role) => user.userType?.includes(role))) {
         throw new UnauthorizedException();
       }
     }
-    this.userService.updateLoginById(user.id);
+    this.userService.updateLogin(user.uuid);
     return user;
   }
 
   @Get('me/reservation')
   @UseGuards(JwtAuthGuard)
   async getOwnReservations(@Req() req) {
-    const user = req.user;
-    const existUser = await this.userService.findOneById(user.id);
+    const user = req.user as JwtPayload;
+    const existUser = await this.userService.findOneByEmail(user.email);
 
     const existPlaceReserve = await this.reservePlaceService.find({
       where: { user: existUser.uuid },
@@ -79,7 +80,7 @@ export class AuthController {
   @Post(['login', 'login/admin'])
   async logIn(@Req() req: Request, @Res() res: Response) {
     const path = req.path;
-    const user: any = req.user;
+    const user = req.user as JwtPayload;
 
     if (path.includes('admin')) {
       if (!requiredRoles.some((role) => user.userType?.includes(role))) {
@@ -91,7 +92,7 @@ export class AuthController {
     res.setHeader('Set-Cookie', `Authentication=${token}; HttpOnly; Path=/;`);
 
     // update Login History
-    this.userService.updateLoginById(user.id);
+    this.userService.updateLogin(user.uuid);
 
     return res.send(user);
   }
@@ -99,8 +100,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('logout')
   async logOut(@Req() req: Request, @Res() res: Response) {
-    const user: any = req.user;
-    this.userService.updateLoginById(user.id);
+    const user = req.user as JwtPayload;
+    this.userService.updateLogin(user.uuid);
     res.setHeader('Set-Cookie', `Authentication=; HttpOnly; Path=/; Max-Age=0`);
     return res.sendStatus(200);
   }
@@ -131,17 +132,17 @@ export class AuthController {
   @Put('updatePW')
   @UseGuards(JwtAuthGuard)
   async updatePW(@Req() req: Request, @Body() body) {
-    const user: any = req.user;
+    const user = req.user as JwtPayload;
     const password = body['password'];
-    await this.userService.updatePWByID(user.id, password);
+    await this.userService.updatePW(user.email, password);
   }
 
   @Get('myInfo')
   @UseGuards(JwtAuthGuard)
   async getMyInfo(@Req() req: Request) {
-    const user: any = req.user;
+    const user = req.user as JwtPayload;
     const { password, cryptoSalt, ...UserInfo } =
-      await this.userService.findOneById(user.id);
+      await this.userService.findOneByUuid(user.uuid);
 
     return UserInfo;
   }
