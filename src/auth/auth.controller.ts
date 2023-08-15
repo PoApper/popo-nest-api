@@ -111,13 +111,14 @@ export class AuthController {
   async register(@Body() createUserDto: CreateUserDto) {
     const saveUser = await this.userService.save(createUserDto);
     console.log('유저 생성 성공!', saveUser.name, saveUser.email);
+
     try {
       await this.mailService.sendVerificationMail(
-        createUserDto.email,
-        saveUser.uuid,
+          createUserDto.email,
+          saveUser.uuid,
       );
     } catch (error) {
-      console.log('!! 유저 생성 실패 !!');
+      console.log('!! 유저 인증 메일 전송 실패 !!');
       await this.userService.remove(saveUser.uuid);
       console.log('잘못 생성된 유저 정보를 DB에서 삭제합니다.');
       throw new BadRequestException(Message.FAIL_VERIFICATION_EMAIL_SEND);
@@ -131,12 +132,20 @@ export class AuthController {
   }
 
   @Post('password/reset')
-  resetPassword(
+  async resetPassword(
     @Body() body: PasswordResetRequest,
   ) {
+    const existUser = await this.userService.findOneByEmail(body.email);
+
+    if (!existUser) {
+      throw new BadRequestException('해당 이메일로 가입한 유저가 존재하지 않습니다.');
+    }
+
     // generate 8-length random password
     const temp_password = 'poapper_' + Math.random().toString(36).slice(-8);
-    return this.userService.updatePasswordByEmail(body.email, temp_password);
+
+    await this.userService.updatePasswordByEmail(body.email, temp_password);
+    await this.mailService.sendPasswordResetMail(body.email, temp_password);
   }
 
   @Post('password/update')
