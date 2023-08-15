@@ -115,7 +115,7 @@ export class UserService {
     }
 
     return this.userRepo.update(
-      { uuid: uuid, email: existUser.email, id: existUser.id },
+      { uuid: uuid, email: existUser.email },
       {
         uuid: uuid,
         email: updateUserDto.email,
@@ -132,7 +132,7 @@ export class UserService {
       throw new BadRequestException(Message.NOT_EXISTING_USER);
     } else {
       return this.userRepo.update(
-        { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
+        { uuid: existUser.uuid, email: existUser.email },
         {
           lastLoginAt: new Date(),
         },
@@ -147,7 +147,7 @@ export class UserService {
     const encryptedPassword = this.encryptPassword(password, cryptoSalt);
 
     return this.userRepo.update(
-      { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
+      { uuid: existUser.uuid, email: existUser.email },
       {
         password: encryptedPassword,
         cryptoSalt: cryptoSalt,
@@ -166,7 +166,7 @@ export class UserService {
     const encryptedPassword = this.encryptPassword(password, cryptoSalt);
 
     return this.userRepo.update(
-      { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
+      { uuid: existUser.uuid, email: existUser.email },
       {
         password: encryptedPassword,
         cryptoSalt: cryptoSalt,
@@ -178,7 +178,7 @@ export class UserService {
     const existUser = await this.findOneByUuidOrFail(uuid);
 
     return this.userRepo.update(
-      { uuid: existUser.uuid, email: existUser.email, id: existUser.id },
+      { uuid: existUser.uuid, email: existUser.email },
       {
         userStatus: status,
       },
