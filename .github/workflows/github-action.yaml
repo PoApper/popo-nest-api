@@ -1,36 +1,17 @@
 on:
   push:
+  release:
+    types: [published]
 
-name: Deploy
+name: Docker Build and Push
 
 env:
   ECR_REGISTRY: 151345152001.dkr.ecr.ap-northeast-2.amazonaws.com
   ECR_REPOSITORY: popo-nest-api
-  CODEDEPLOY_APP_NAME: $ECR_REPOSITORY
 
 jobs:
-#  run-linters:
-#    name: Run linters
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Check out Git repository
-#        uses: actions/checkout@v2
-#      - name: Set up Node.js
-#        uses: actions/setup-node@v1
-#        with:
-#          node-version: 14
-#      # ESLint and Prettier must be in `package.json`
-#      - name: Install Node.js dependencies
-#        run: npm ci
-#      - name: Run linters
-#        uses: wearerequired/lint-action@v2
-#        with:
-#          eslint: true
-#          prettier: true
-
   docker_build_and_push:
     name: Docker build and push
-#    needs: [run-linters]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -51,12 +32,12 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
       - name: Determine Prod/Dev Stage
         run: |
-          if [[ ${{ github.ref }} == refs/tags/release-* ]]; then
+          if [[ ${{ github.event_name }} == 'release' ]]; then
             echo "PROD"
-            echo "IMAGE_TAG=prod" >> $GITHUB_ENV
+            echo "IMAGE_TAG=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
           else
             echo "DEV"
-            echo "IMAGE_TAG=dev" >> $GITHUB_ENV
+            echo "IMAGE_TAG=latest" >> $GITHUB_ENV
           fi
       - name: Build and Push
         uses: docker/build-push-action@v3
@@ -67,7 +48,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-  
+
   deploy_health_check:
     name: Check Application Status
     needs: docker_build_and_push
