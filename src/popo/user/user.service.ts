@@ -155,7 +155,7 @@ export class UserService {
     );
   }
 
-  async updatePW(email: string, password: string) {
+  async updatePasswordByEmail(email: string, password: string) {
     const existUser = await this.findOneByEmail(email);
 
     if (!existUser) {

@@ -37,6 +37,8 @@ export class AuthService {
     }
   }
 
+
+
   async generateJwtToken(user: any) {
     const payload = {
       uuid: user.uuid,
