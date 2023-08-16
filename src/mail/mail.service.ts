@@ -51,7 +51,7 @@ export class MailService {
         </head>
         <body>
           <h2>POPO 비밀번호 초기화</h2>
-          <p>비밀번호 초기화 요청에 따라 비밀번호를 초기화 해드립니다: ${temp_password}</p>
+          <p>비밀번호 초기화 요청에 따라 비밀번호를 초기화 해드립니다: "${temp_password}"</p>
           <p>로그인 후에 마이페이지에서 비밀번호를 새로 설정하시기 바랍니다.</p>
           <p>- <b>POPO, POstechian's POrtal</b> 드림 -</p>
           <p>😱본인이 시도한 초기화 요청이 아니라면, 즉시 POPO 관리팀에게 연락바랍니다.😱</p>
