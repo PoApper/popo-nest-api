@@ -23,6 +23,7 @@ import { ReservePlaceService } from '../popo/reservation/place/reserve.place.ser
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
 import { ApiTags } from '@nestjs/swagger';
 import {JwtPayload} from "./strategies/jwt.payload";
+import {PasswordResetRequest, PasswordUpdateRequest} from "./auth.dto";
 
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
@@ -110,13 +111,14 @@ export class AuthController {
   async register(@Body() createUserDto: CreateUserDto) {
     const saveUser = await this.userService.save(createUserDto);
     console.log('유저 생성 성공!', saveUser.name, saveUser.email);
+
     try {
       await this.mailService.sendVerificationMail(
-        createUserDto.email,
-        saveUser.uuid,
+          createUserDto.email,
+          saveUser.uuid,
       );
     } catch (error) {
-      console.log('!! 유저 생성 실패 !!');
+      console.log('!! 유저 인증 메일 전송 실패 !!');
       await this.userService.remove(saveUser.uuid);
       console.log('잘못 생성된 유저 정보를 DB에서 삭제합니다.');
       throw new BadRequestException(Message.FAIL_VERIFICATION_EMAIL_SEND);
@@ -124,17 +126,36 @@ export class AuthController {
     return saveUser;
   }
 
-  @Put('activate/:uuid')
-  activateUser(@Param('uuid') uuid: string) {
-    return this.userService.updateUserStatus(uuid, UserStatus.activated);
+  @Put('activate/:user_uuid')
+  activateUser(@Param('user_uuid') user_uuid: string) {
+    return this.userService.updateUserStatus(user_uuid, UserStatus.activated);
   }
 
-  @Put('updatePW')
+  @Post('password/reset')
+  async resetPassword(
+    @Body() body: PasswordResetRequest,
+  ) {
+    const existUser = await this.userService.findOneByEmail(body.email);
+
+    if (!existUser) {
+      throw new BadRequestException('해당 이메일로 가입한 유저가 존재하지 않습니다.');
+    }
+
+    // generate 8-length random password
+    const temp_password = 'poapper_' + Math.random().toString(36).slice(-8);
+
+    await this.userService.updatePasswordByEmail(body.email, temp_password);
+    await this.mailService.sendPasswordResetMail(body.email, temp_password);
+  }
+
+  @Post('password/update')
   @UseGuards(JwtAuthGuard)
-  async updatePW(@Req() req: Request, @Body() body) {
+  async updatePassword(
+    @Req() req: Request,
+    @Body() body: PasswordUpdateRequest,
+  ) {
     const user = req.user as JwtPayload;
-    const password = body['password'];
-    await this.userService.updatePW(user.email, password);
+    return this.userService.updatePasswordByEmail(user.email, body.password);
   }
 
   @Get('myInfo')
