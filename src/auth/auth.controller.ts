@@ -96,10 +96,6 @@ export class AuthController {
     const existUser = await this.userService.findOneByUuidOrFail(user.uuid);
     await this.userService.updateLogin(existUser.uuid);
     
-    if (existUser.userStatus === UserStatus.password_reset) {
-      await this.userService.updateUserStatus(existUser.uuid, UserStatus.activated);
-    }
-
     return res.send(user);
   }
 

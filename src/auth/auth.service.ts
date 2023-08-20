@@ -23,8 +23,10 @@ export class AuthService {
     }
 
     const cryptoSalt = user.cryptoSalt;
-
-    if (user.userStatus != UserStatus.activated) {
+    
+    if (user.userStatus == UserStatus.password_reset) {
+      await this.usersService.updateUserStatus(user.uuid, UserStatus.activated);
+    } else if (user.userStatus != UserStatus.activated) {
       throw new UnauthorizedException('Not activated account.');
     }
 
