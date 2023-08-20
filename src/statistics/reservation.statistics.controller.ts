@@ -53,6 +53,13 @@ export class ReservationStatisticsController {
   
   @Get('count')
   async countInfo() {
+    moment.updateLocale('en', {
+      week: {
+        dow : 1, // Monday is the first day of the week.
+      }
+    });
+    
+    
     const totalReservationCnt = await this.reservePlaceService.count();
     
     const todayReservationCnt = await this.reservePlaceService.count({

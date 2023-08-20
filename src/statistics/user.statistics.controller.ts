@@ -50,6 +50,12 @@ export class UserStatisticsController {
   
   @Get('count')
   async countInfo() {
+    moment.updateLocale('en', {
+      week: {
+        dow : 1, // Monday is the first day of the week.
+      }
+    });
+    
     const totalUserCnt = await this.userService.count();
     
     const todayRegisterUserCnt = await this.userService.count({
