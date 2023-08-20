@@ -10,6 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Between } from 'typeorm';
+import * as moment from 'moment';
 
 import { IntroAssociationService } from './intro.association.service';
 import { CreateIntroAssociationDto } from './intro.association.dto';
@@ -53,12 +55,16 @@ export class IntroAssociationController {
   get() {
     return this.introAssociationService.find({ order: { name: 'ASC' } });
   }
-
-  @Get(':uuid')
-  getOneByUuid(@Param('uuid') uuid: string) {
-    return this.introAssociationService.findOneByUuid(uuid);
+  
+  @Get('today')
+  getTodayVisited() {
+    return this.introAssociationService.find({
+      where: {
+        updateAt: Between(moment().startOf('day').toDate(), moment().endOf('day').toDate()),
+      }
+    });
   }
-
+  
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
     const introAssociation = await this.introAssociationService.findOneByName(name);
@@ -72,6 +78,11 @@ export class IntroAssociationController {
     } else {
       throw new BadRequestException('Not Exist');
     }
+  }
+
+  @Get(':uuid')
+  getOneByUuid(@Param('uuid') uuid: string) {
+    return this.introAssociationService.findOneByUuid(uuid);
   }
 
   @Put(':uuid')

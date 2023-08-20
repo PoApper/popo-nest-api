@@ -50,4 +50,30 @@ export class ReservationStatisticsController {
       data: data,
     };
   }
+  
+  @Get('count')
+  async countInfo() {
+    moment.updateLocale('en', {
+      week: {
+        dow : 1, // Monday is the first day of the week.
+      }
+    });
+    
+    
+    const totalReservationCnt = await this.reservePlaceService.count();
+    
+    const todayReservationCnt = await this.reservePlaceService.count({
+      created_at: Between(moment().startOf('day').toDate(), moment().endOf('day').toDate())
+    });
+    
+    const thisWeekReservationCnt = await this.reservePlaceService.count({
+      created_at: Between(moment().startOf('week').toDate(), moment().endOf('week').toDate())
+    });
+    
+    return {
+      totalReservationCnt,
+      todayReservationCnt,
+      thisWeekReservationCnt,
+    }
+  }
 }

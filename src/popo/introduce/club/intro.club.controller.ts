@@ -10,6 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Between } from 'typeorm';
+import * as moment from 'moment';
 
 import { IntroClubService } from './intro.club.service';
 import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
@@ -53,6 +55,15 @@ export class IntroClubController {
   get() {
     return this.introClubService.find({ order: { name: 'ASC' } });
   }
+  
+  @Get('today')
+  getTodayVisited() {
+    return this.introClubService.find({
+      where: {
+        updateAt: Between(moment().startOf('day').toDate(), moment().endOf('day').toDate()),
+      }
+    })
+  }
 
   @Get('clubType/:clubType')
   getByClubType(@Param('clubType') clubType: ClubType) {
@@ -60,11 +71,6 @@ export class IntroClubController {
       where: { clubType: clubType },
       order: { name: 'ASC' },
     });
-  }
-
-  @Get(':uuid')
-  getOneByUuid(@Param('uuid') uuid: string) {
-    return this.introClubService.findOneByUuid(uuid);
   }
 
   @Get('name/:name')
@@ -80,6 +86,11 @@ export class IntroClubController {
     } else {
       throw new BadRequestException('Not Exist');
     }
+  }
+  
+  @Get(':uuid')
+  getOneByUuid(@Param('uuid') uuid: string) {
+    return this.introClubService.findOneByUuid(uuid);
   }
 
   @Put(':uuid')
