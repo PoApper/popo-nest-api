@@ -10,6 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Between } from 'typeorm';
+import * as moment from 'moment';
 
 import { IntroAssociationService } from './intro.association.service';
 import { CreateIntroAssociationDto } from './intro.association.dto';
@@ -72,6 +74,15 @@ export class IntroAssociationController {
     } else {
       throw new BadRequestException('Not Exist');
     }
+  }
+  
+  @Get('today')
+  getTodayVisited() {
+    return this.introAssociationService.find({
+      where: {
+        updatedAt: Between(moment().startOf('day'), moment().endOf('day')),
+      }
+    });
   }
 
   @Put(':uuid')
