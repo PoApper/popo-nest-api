@@ -55,12 +55,16 @@ export class IntroAssociationController {
   get() {
     return this.introAssociationService.find({ order: { name: 'ASC' } });
   }
-
-  @Get(':uuid')
-  getOneByUuid(@Param('uuid') uuid: string) {
-    return this.introAssociationService.findOneByUuid(uuid);
+  
+  @Get('today')
+  getTodayVisited() {
+    return this.introAssociationService.find({
+      where: {
+        updateAt: Between(moment().startOf('day').toDate(), moment().endOf('day').toDate()),
+      }
+    });
   }
-
+  
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
     const introAssociation = await this.introAssociationService.findOneByName(name);
@@ -75,14 +79,10 @@ export class IntroAssociationController {
       throw new BadRequestException('Not Exist');
     }
   }
-  
-  @Get('today')
-  getTodayVisited() {
-    return this.introAssociationService.find({
-      where: {
-        updatedAt: Between(moment().startOf('day').toDate(), moment().endOf('day').toDate()),
-      }
-    });
+
+  @Get(':uuid')
+  getOneByUuid(@Param('uuid') uuid: string) {
+    return this.introAssociationService.findOneByUuid(uuid);
   }
 
   @Put(':uuid')

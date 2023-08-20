@@ -55,6 +55,15 @@ export class IntroClubController {
   get() {
     return this.introClubService.find({ order: { name: 'ASC' } });
   }
+  
+  @Get('today')
+  getTodayVisited() {
+    return this.introClubService.find({
+      where: {
+        updateAt: Between(moment().startOf('day').toDate(), moment().endOf('day').toDate()),
+      }
+    })
+  }
 
   @Get('clubType/:clubType')
   getByClubType(@Param('clubType') clubType: ClubType) {
@@ -62,11 +71,6 @@ export class IntroClubController {
       where: { clubType: clubType },
       order: { name: 'ASC' },
     });
-  }
-
-  @Get(':uuid')
-  getOneByUuid(@Param('uuid') uuid: string) {
-    return this.introClubService.findOneByUuid(uuid);
   }
 
   @Get('name/:name')
@@ -84,13 +88,9 @@ export class IntroClubController {
     }
   }
   
-  @Get('today')
-  getTodayVisited() {
-    return this.introClubService.find({
-      where: {
-        updatedAt: Between(moment().startOf('day').toDate(), moment().endOf('day').toDate()),
-      }
-    })
+  @Get(':uuid')
+  getOneByUuid(@Param('uuid') uuid: string) {
+    return this.introClubService.findOneByUuid(uuid);
   }
 
   @Put(':uuid')
