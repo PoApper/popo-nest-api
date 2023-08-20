@@ -93,7 +93,12 @@ export class AuthController {
     res.setHeader('Set-Cookie', `Authentication=${token}; HttpOnly; Path=/;`);
 
     // update Login History
-    this.userService.updateLogin(user.uuid);
+    const existUser = await this.userService.findOneByUuidOrFail(user.uuid);
+    await this.userService.updateLogin(existUser.uuid);
+    
+    if (existUser.userStatus === UserStatus.password_reset) {
+      await this.userService.updateUserStatus(existUser.uuid, UserStatus.activated);
+    }
 
     return res.send(user);
   }
@@ -140,12 +145,17 @@ export class AuthController {
     if (!existUser) {
       throw new BadRequestException('해당 이메일로 가입한 유저가 존재하지 않습니다.');
     }
+    
+    if (existUser.userStatus === UserStatus.password_reset) {
+      throw new BadRequestException('이미 비빌번호를 초기화 했습니다. 신규 비밀번호를 메일에서 확인해주세요.');
+    }
 
     // generate 8-length random password
     const temp_password = 'poapper_' + Math.random().toString(36).slice(-8);
 
-    await this.userService.updatePasswordByEmail(body.email, temp_password);
-    await this.mailService.sendPasswordResetMail(body.email, temp_password);
+    await this.userService.updatePasswordByEmail(existUser.email, temp_password);
+    await this.userService.updateUserStatus(existUser.uuid, UserStatus.password_reset);
+    await this.mailService.sendPasswordResetMail(existUser.email, temp_password);
   }
 
   @Post('password/update')
