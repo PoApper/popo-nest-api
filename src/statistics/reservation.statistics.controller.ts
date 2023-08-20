@@ -50,4 +50,23 @@ export class ReservationStatisticsController {
       data: data,
     };
   }
+  
+  @Get('count')
+  async countInfo() {
+    const totalReservationCnt = await this.reservePlaceService.count();
+    
+    const todayReservationCnt = await this.reservePlaceService.count({
+      created_at: Between(moment().startOf('day'), moment().endOf('day'))
+    });
+    
+    const thisWeekReservationCnt = await this.reservePlaceService.count({
+      created_at: Between(moment().startOf('week'), moment().endOf('week'))
+    });
+    
+    return {
+      totalReservationCnt,
+      todayReservationCnt,
+      thisWeekReservationCnt,
+    }
+  }
 }

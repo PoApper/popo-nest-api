@@ -47,4 +47,31 @@ export class UserStatisticsController {
       data: data,
     };
   }
+  
+  @Get('count')
+  async countInfo() {
+    const totalUserCnt = await this.userService.count();
+    
+    const todayRegisterUserCnt = await this.userService.count({
+      createdAt: Between(moment().startOf('day'), moment().endOf('day'))
+    });
+    const todayLoginUserCnt = await this.userService.count({
+      lastLoginAt: Between(moment().startOf('day'), moment().endOf('day'))
+    });
+    
+    const thisWeekRegisterUserCnt = await this.userService.count({
+      createdAt: Between(moment().startOf('week'), moment().endOf('week'))
+    });
+    const thisWeekLoginUserCnt = await this.userService.count({
+      lastLoginAt: Between(moment().startOf('week'), moment().endOf('week'))
+    });
+    
+    return {
+      totalUserCnt,
+      todayRegisterUserCnt,
+      todayLoginUserCnt,
+      thisWeekRegisterUserCnt,
+      thisWeekLoginUserCnt,
+    }
+  }
 }
