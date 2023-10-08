@@ -1,5 +1,5 @@
 import { ApiTags } from '@nestjs/swagger';
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { PopoSettingDto } from './setting.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from 'src/auth/authroization/roles.decorator';
@@ -11,6 +11,13 @@ import { FileService } from '../../file/file.service';
 @Controller('setting')
 export class SettingController {
   constructor(private readonly fileService: FileService) {}
+  
+  @Get()
+  async getSetting() {
+    const res = await this.fileService.getText('popo-setting.json');
+    return JSON.parse(res.Body.toString());
+  }
+  
 
   @Post()
   @Roles(UserType.admin, UserType.association)
