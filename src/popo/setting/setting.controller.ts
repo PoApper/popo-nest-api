@@ -14,8 +14,7 @@ export class SettingController {
   
   @Get()
   async getSetting() {
-    const res = await this.fileService.getText('popo-setting.json');
-    return JSON.parse(res.Body.toString());
+    return this.fileService.getText('popo-setting.json');
   }
   
 

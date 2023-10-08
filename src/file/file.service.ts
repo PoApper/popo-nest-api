@@ -19,12 +19,13 @@ export class FileService {
   constructor() {}
   
   async getText(key: string) {
-    return this.s3.send(
+    const res = await this.s3.send(
       new GetObjectCommand({
         Bucket: this.bucket,
         Key: key,
       })
     )
+    return res.Body.transformToString()
   }
 
   async uploadText(key: string, text: string) {
