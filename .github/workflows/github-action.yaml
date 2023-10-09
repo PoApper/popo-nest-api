@@ -30,6 +30,8 @@ jobs:
           aws-region: ap-northeast-2
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: 'true'
       - name: Determine Prod/Dev Stage
         run: |
           if [[ ${{ github.event_name }} == 'release' ]]; then

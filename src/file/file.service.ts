@@ -1,5 +1,6 @@
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -16,6 +17,16 @@ export class FileService {
   private readonly PopoCdnUrl: string = process.env.S3_CF_DIST_URL;
 
   constructor() {}
+  
+  async getText(key: string) {
+    const res = await this.s3.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      })
+    )
+    return res.Body.transformToString()
+  }
 
   async uploadText(key: string, text: string) {
     await this.s3.send(
