@@ -1,14 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
-import { In, LessThan, MoreThan, MoreThanOrEqual, Repository } from 'typeorm'
+import { DeepPartial, In, LessThan, MoreThan, MoreThanOrEqual, Repository } from 'typeorm'
 import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
 import { PlaceEnableAutoAccept } from '../../place/place.meta';
 import { calculateReservationDurationMinutes } from '../../../utils/reservation-utils';
-import * as moment from 'moment';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -56,7 +55,7 @@ export class ReservePlaceService {
     return null;
   }
 
-  async checkReservationPossible(dto: CreateReservePlaceDto, booker_id: string) {
+  async checkReservationPossible(dto: DeepPartial<CreateReservePlaceDto>, booker_id: string) {
     const { place_id, date, start_time, end_time } = dto;
 
     if (
@@ -84,8 +83,8 @@ export class ReservePlaceService {
 
     // Reservation Duration Check
     const newReservationMinutes = calculateReservationDurationMinutes(
-      dto.start_time,
-      dto.end_time,
+      start_time,
+      end_time,
     );
     if (
       targetPlace.max_minutes &&

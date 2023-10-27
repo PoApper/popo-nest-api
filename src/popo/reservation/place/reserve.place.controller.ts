@@ -197,6 +197,16 @@ export class ReservePlaceController {
     @Query('sendEmail') sendEmail?: string,
   ) {
     for (const reservation_uuid of body.uuid_list) {
+      const reservation = await this.reservePlaceService.findOneByUuidOrFail(reservation_uuid);
+      await this.reservePlaceService.checkReservationPossible(
+        {
+          place_id: reservation.place_id,
+          date: reservation.date,
+          start_time: reservation.start_time,
+          end_time: reservation.end_time,
+        },
+        reservation.booker_id,
+      )
       const response = await this.reservePlaceService.updateStatus(
         reservation_uuid,
         ReservationStatus.accept,
