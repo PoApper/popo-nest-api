@@ -48,7 +48,7 @@ jobs:
           platforms: linux/arm64 # support AWS EC2 t4g
           tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
           build-args: |
-            "POPO_VERSION=${{ env.IMAGE_TAG }}"
+            "POPO_VERSION=${{ github.event.release.tag_name || github.sha }}"
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
