@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Affiliate } from './affiliate.entity';
-import { AffilateController } from './affiliate.controller';
+import { AffiliateController } from './affiliate.controller';
 import { AffiliateService } from './affiliate.service';
 
 @Module({
@@ -10,6 +10,6 @@ import { AffiliateService } from './affiliate.service';
     TypeOrmModule.forFeature([Affiliate]),
   ],
   providers: [AffiliateService],
-  controllers: [AffilateController],
+  controllers: [AffiliateController],
 })
 export class AffiliateModule {}

@@ -10,37 +10,37 @@ import {
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 
 import { AffiliateService } from './affiliate.service';
-import { AffilateDto } from './affiliate.dto';
+import { AffiliateDto } from './affiliate.dto';
 
-@ApiTags('Benefit/Affilate')
-@Controller('benefit/affilate')
-export class AffilateController {
-  constructor(private readonly affilateService: AffiliateService) {}
+@ApiTags('Benefit/Affiliate')
+@Controller('benefit/affiliate')
+export class AffiliateController {
+  constructor(private readonly affiliateService: AffiliateService) {}
 
   @Post()
-  @ApiBody({ type: AffilateDto })
-  createAffilate(@Body() dto: AffilateDto) {
-    return this.affilateService.save(dto);
+  @ApiBody({ type: AffiliateDto })
+  createAffiliate(@Body() dto: AffiliateDto) {
+    return this.affiliateService.save(dto);
   }
 
   @Get()
-  getAllAffilates() {
-    return this.affilateService.findAll();
+  getAllAffiliates() {
+    return this.affiliateService.findAll();
   }
 
   @Get(':id')
-  getAffilateByUuid(@Param('id') id: number) {
-    return this.affilateService.findById(id);
+  getAffiliateByUuid(@Param('id') id: number) {
+    return this.affiliateService.findById(id);
   }
 
   @Put(':id')
-  @ApiBody({ type: AffilateDto })
-  updateAffilate(@Param('id') id: number, @Body() dto: AffilateDto) {
-    return this.affilateService.update(id, dto);
+  @ApiBody({ type: AffiliateDto })
+  updateAffiliate(@Param('id') id: number, @Body() dto: AffiliateDto) {
+    return this.affiliateService.update(id, dto);
   }
 
   @Delete(':id')
-  deleteAffilate(@Param('id') id: number) {
-    return this.affilateService.delete(id);
+  deleteAffiliate(@Param('id') id: number) {
+    return this.affiliateService.delete(id);
   }
 }

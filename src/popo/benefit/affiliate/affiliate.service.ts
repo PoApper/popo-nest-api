@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Affiliate } from './affiliate.entity';
-import { AffilateDto } from './affiliate.dto';
+import { AffiliateDto } from './affiliate.dto';
 
 @Injectable()
 export class AffiliateService {
@@ -12,7 +12,7 @@ export class AffiliateService {
     private readonly affiliateRepo: Repository<Affiliate>,
   ) {}
 
-  save(dto: AffilateDto) {
+  save(dto: AffiliateDto) {
     return this.affiliateRepo.save(dto);
   }
 
@@ -24,7 +24,7 @@ export class AffiliateService {
     return this.affiliateRepo.findOneBy({id: id });
   }
 
-  update(id: number, dto: AffilateDto) {
+  update(id: number, dto: AffiliateDto) {
     return this.affiliateRepo.update({ id: id }, dto);
   }
 
