@@ -1,21 +1,23 @@
 import { Module } from '@nestjs/common';
-import { UserModule } from './user/user.module';
-import { PlaceModule } from './place/place.module';
+import { BenefitModule } from './benefit/benefit.module';
 import { EquipModule } from './equip/equip.module';
-import { ReservationModule } from './reservation/reservation.module';
 import { IntroduceModule } from './introduce/introduce.module';
-import { WhitebookModule } from './whitebook/whitebook.module';
+import { PlaceModule } from './place/place.module';
+import { ReservationModule } from './reservation/reservation.module';
 import { SettingModule } from './setting/setting.module';
+import { UserModule } from './user/user.module';
+import { WhitebookModule } from './whitebook/whitebook.module';
 
 @Module({
   imports: [
-    UserModule,
+    BenefitModule,
     PlaceModule,
     EquipModule,
-    ReservationModule,
     IntroduceModule,
-    WhitebookModule,
+    ReservationModule,
     SettingModule,
+    UserModule,
+    WhitebookModule,
   ],
   controllers: [],
   providers: [],
