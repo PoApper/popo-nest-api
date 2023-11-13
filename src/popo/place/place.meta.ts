@@ -1,8 +1,9 @@
 export enum PlaceRegion {
   student_hall = 'STUDENT_HALL',
   jigok_center = 'JIGOK_CENTER',
-  others = 'OTHERS', // 생활관 외
+  others = 'OTHERS', // 기타
   community_center = 'COMMUNITY_CENTER',
+  rc = 'RC',
 }
 
 export enum PlaceEnableAutoAccept {
