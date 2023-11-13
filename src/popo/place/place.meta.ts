@@ -3,7 +3,7 @@ export enum PlaceRegion {
   jigok_center = 'JIGOK_CENTER',
   others = 'OTHERS', // 기타
   community_center = 'COMMUNITY_CENTER',
-  rc = 'RC',
+  residential_college = 'RESIDENTIAL_COLLEGE',
 }
 
 export enum PlaceEnableAutoAccept {
