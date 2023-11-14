@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Between } from 'typeorm';
+import { Between, Not } from 'typeorm';
 import * as moment from 'moment';
 
 import { IntroClubService } from './intro.club.service';
@@ -55,7 +55,20 @@ export class IntroClubController {
   get() {
     return this.introClubService.find({ order: { name: 'ASC' } });
   }
-  
+
+  @Get('recommend/:uuid')
+  async getRecommended(@Param('uuid') uuid: string) {
+    const club = await this.introClubService.findOneByUuid(uuid);
+
+    const clubType = club.clubType;
+    const clubs = await this.introClubService.find({
+      where: { clubType: clubType, uuid: Not(uuid) },
+    });
+
+    const shuffled = clubs.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  }
+
   @Get('today')
   getTodayVisited() {
     return this.introClubService.find({
@@ -87,7 +100,7 @@ export class IntroClubController {
       throw new BadRequestException('Not Exist');
     }
   }
-  
+
   @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
     return this.introClubService.findOneByUuid(uuid);
