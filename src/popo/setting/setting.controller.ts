@@ -27,7 +27,7 @@ export class SettingController {
     return this.fileService.uploadText(settingKey, JSON.stringify(dto));
   }
 
-  @Post()
+  @Post('rc-students-list')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @FileBody('csv_file')
