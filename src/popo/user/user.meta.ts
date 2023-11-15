@@ -1,5 +1,6 @@
 export enum UserType {
   student = 'STUDENT',
+  rc_student = 'RC_STUDENT',
   faculty = 'FACULTY', // 교직원
   association = 'ASSOCIATION', // 자치단체 계정
   club = 'CLUB', // 동아리 계정

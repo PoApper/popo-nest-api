@@ -59,6 +59,11 @@ export class UserController {
     return this.userService.find(findOption);
   }
 
+  @Get('count/:userType')
+  countByUserType(@Param('userType') userType: UserType) {
+    return this.userService.count({ userType: userType });
+  }
+
   @Get('count')
   countAll() {
     return this.userService.count();
