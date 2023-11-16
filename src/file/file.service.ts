@@ -3,6 +3,7 @@ import {
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
+  SelectObjectContentCommand,
 } from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
 import { MemoryStoredFile } from 'nestjs-form-data';
@@ -17,6 +18,47 @@ export class FileService {
   private readonly PopoCdnUrl: string = process.env.S3_CF_DIST_URL;
 
   constructor() {}
+
+
+
+  async queryOnS3(key: string, query: string) {
+    const res = await this.s3.send(
+      new SelectObjectContentCommand({
+        Bucket: this.bucket,
+        Key: key,
+        ExpressionType: 'SQL',
+        Expression: query,
+        InputSerialization: {
+          CSV: {
+            FileHeaderInfo: "USE",
+          },
+        },
+        OutputSerialization: {
+          JSON: {
+            RecordDelimiter: ',',
+          },
+        },
+      })
+    )
+
+    if (!res.Payload) {
+      throw new Error("No payload received from S3 SelectObjectContent");
+    }
+
+    const convertDataToJson = async (generator) => {
+      const chunks = [];
+      for await (const value of generator) {
+        if (value.Records) {
+          chunks.push(value.Records.Payload);
+        }
+      }
+      let payload = Buffer.concat(chunks).toString('utf8');
+      payload = payload.replace(/,$/, '');
+      return JSON.parse(`[${payload}]`);
+    };
+
+    return convertDataToJson(res.Payload);
+  }
 
   async getText(key: string) {
     const res = await this.s3.send(
