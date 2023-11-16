@@ -44,7 +44,7 @@ export class IntroAssociationController {
   @FileBody('image')
   async uploadImage(@Param('uuid') uuid: string, @Body() dto: ClubImageDto) {
     const image_url = await this.fileService.uploadFile(
-      `association/${uuid}`,
+      `association/${uuid}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
       dto.image,
     );
     await this.introAssociationService.updateImageUrl(uuid, image_url);
@@ -55,7 +55,7 @@ export class IntroAssociationController {
   get() {
     return this.introAssociationService.find({ order: { name: 'ASC' } });
   }
-  
+
   @Get('today')
   getTodayVisited() {
     return this.introAssociationService.find({
@@ -64,7 +64,7 @@ export class IntroAssociationController {
       }
     });
   }
-  
+
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
     const introAssociation = await this.introAssociationService.findOneByName(name);

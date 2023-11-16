@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
+import * as moment from 'moment';
 
 import { EquipService } from './equip.service';
 import { EquipOwner } from './equip.meta';
@@ -45,7 +46,7 @@ export class EquipController {
     @Body() dto: EquipmentImageDto,
   ) {
     const image_url = await this.fileService.uploadFile(
-      `equip/${uuid}`,
+      `equip/${uuid}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
       dto.image,
     );
     await this.equipService.updateImageUrl(uuid, image_url);

@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
+import * as moment from 'moment';
 
 import { PlaceService } from './place.service';
 import { PlaceDto, PlaceImageDto } from './place.dto';
@@ -42,7 +43,7 @@ export class PlaceController {
   @FileBody('image')
   async uploadImage(@Param('uuid') uuid: string, @Body() dto: PlaceImageDto) {
     const image_url = await this.fileService.uploadFile(
-      `place/${uuid}`,
+      `place/${uuid}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
       dto.image,
     );
     await this.placeService.updateImageUrl(uuid, image_url);

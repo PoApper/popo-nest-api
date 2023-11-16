@@ -1,5 +1,6 @@
 import { ApiTags } from '@nestjs/swagger';
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
+import { Response } from 'express';
 
 import { PopoSettingDto, RcStudentsListDto } from './setting.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -37,5 +38,15 @@ export class SettingController {
       dto.csv_file,
     );
     return csv_url;
+  }
+
+  @Get('rc-students-list')
+  @Roles(UserType.admin, UserType.association)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getRcStudentList(@Res() res: Response) {
+    const data = await this.fileService.getFile('popo-rc-students-list.csv');
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="rc-students-list.csv"`);
+    res.send(data);
   }
 }

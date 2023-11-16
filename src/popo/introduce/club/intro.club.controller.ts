@@ -44,7 +44,7 @@ export class IntroClubController {
   @FileBody('image')
   async uploadImage(@Param('uuid') uuid: string, @Body() dto: ClubImageDto) {
     const image_url = await this.fileService.uploadFile(
-      `club/${uuid}`,
+      `club/${uuid}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
       dto.image,
     );
     await this.introClubService.updateImageUrl(uuid, image_url);
@@ -55,7 +55,7 @@ export class IntroClubController {
   get() {
     return this.introClubService.find({ order: { name: 'ASC' } });
   }
-  
+
   @Get('today')
   getTodayVisited() {
     return this.introClubService.find({
@@ -87,7 +87,7 @@ export class IntroClubController {
       throw new BadRequestException('Not Exist');
     }
   }
-  
+
   @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
     return this.introClubService.findOneByUuid(uuid);
