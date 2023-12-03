@@ -1,13 +1,6 @@
-import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Readable } from 'stream';
 
 import { User } from '../user/user.entity';
 import { UserType } from '../user/user.meta';
@@ -29,7 +22,7 @@ export class SettingService {
     // Get email list from csv
     const queryRet = await this.fileService.queryOnS3('popo-rc-students-list.csv', 'SELECT * FROM S3Object s');
 
-    let updatedCnt = 0;
+    let updatedUserCnt = 0;
     for(const row of queryRet) {
       const email = row['email'];
       if (!email) continue;
@@ -37,13 +30,13 @@ export class SettingService {
       const user = await this.userRepo.findOneBy({email: email});
       if (!user) continue;
 
-      updatedCnt += 1;
+      updatedUserCnt += 1;
       await this.userRepo.update({email: email}, {userType: UserType.rc_student});
     }
 
     return {
-      'total_user_count': queryRet.length,
-      'updated_count': updatedCnt,
+      'total_rc_user_count': queryRet.length,
+      'updated_user_count': updatedUserCnt,
     }
   }
 }
