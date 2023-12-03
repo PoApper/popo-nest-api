@@ -5,7 +5,8 @@ import * as crypto from 'crypto';
 
 import { User } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
-import { UserStatus } from './user.meta'
+import { UserStatus, UserType } from './user.meta'
+import { SettingService } from '../setting/setting.service';
 
 const Message = {
   EXISTING_EMAIL: 'This email is already used.',
@@ -18,6 +19,7 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly settingService: SettingService,
   ) {}
 
   async save(dto: CreateUserDto) {
@@ -25,19 +27,21 @@ export class UserService {
 
     if (existUser) {
       throw new BadRequestException(Message.EXISTING_EMAIL);
-    } else {
-      const cryptoSalt = crypto.randomBytes(64).toString('base64');
-      const encryptedPassword = this.encryptPassword(dto.password, cryptoSalt);
-
-      return this.userRepo.save({
-        email: dto.email,
-        password: encryptedPassword,
-        cryptoSalt: cryptoSalt,
-        name: dto.name,
-        userType: dto.userType,
-        lastLoginAt: new Date(),
-      });
     }
+    
+    const cryptoSalt = crypto.randomBytes(64).toString('base64');
+    const encryptedPassword = this.encryptPassword(dto.password, cryptoSalt);
+
+    const isRcStudent = await this.settingService.checkRcStudent(dto.email);
+    
+    return this.userRepo.save({
+      email: dto.email,
+      password: encryptedPassword,
+      cryptoSalt: cryptoSalt,
+      name: dto.name,
+      userType: isRcStudent ? UserType.rc_student : dto.userType,
+      lastLoginAt: new Date(),
+    });
   }
 
   find(findOptions: object) {
