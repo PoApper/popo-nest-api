@@ -148,6 +148,11 @@ export class ReserveEquipController {
     }
     return `Sync Done: ${equipmentList.length} Equipments`;
   }
+  
+  @Get('count')
+  count() {
+    return this.reserveEquipService.count();
+  }
 
   @Get(':uuid')
   getOne(@Param('uuid') uuid) {

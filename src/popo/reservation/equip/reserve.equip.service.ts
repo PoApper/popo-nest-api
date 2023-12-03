@@ -141,6 +141,10 @@ export class ReserveEquipService {
   find(findOptions?: object) {
     return this.reserveEquipRepo.find(findOptions);
   }
+  
+  count(whereOption?: object) {
+    return this.reserveEquipRepo.count({ where: whereOption });
+  }
 
   findOneByUuid(uuid: string) {
     return this.reserveEquipRepo.findOneBy({ uuid: uuid});
