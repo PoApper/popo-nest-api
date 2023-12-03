@@ -47,17 +47,26 @@ export class SettingController {
     return csv_url;
   }
 
-  @Get('rc-students-list')
+  @Get('download-rc-students-list')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async getRcStudentList(@Res() res: Response) {
+  async downloadRcStudentList(@Res() res: Response) {
     const data = await this.fileService.getFile('popo-rc-students-list.csv');
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="rc-students-list.csv"`);
     res.send(data);
   }
+  
+  @Get('get-rc-student-list')
+  @Roles(UserType.admin, UserType.association)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getRcStudentList() {
+    return this.settingService.getRcStduentsList();
+  }
 
-  @Get('apply-rc-studentis-list')
+  @Get('sync-rc-studentis-list')
+  @Roles(UserType.admin, UserType.association)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async checkRc() {
     await this.settingService.resetRcStudentsUserType();
     return this.settingService.setRcStudentsUserTypeByCsv();
