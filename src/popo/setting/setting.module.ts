@@ -15,5 +15,6 @@ import { User } from '../user/user.entity';
   ],
   controllers: [SettingController],
   providers: [SettingService],
+  exports: [SettingService],
 })
 export class SettingModule {}
