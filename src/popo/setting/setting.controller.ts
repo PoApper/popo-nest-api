@@ -57,6 +57,13 @@ export class SettingController {
     res.send(data);
   }
   
+  @Get('count-rc-student-list')
+  @Roles(UserType.admin, UserType.association)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async countRcStudentList() {
+    return this.settingService.countRcStduentsList();
+  }
+  
   @Get('get-rc-student-list')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)

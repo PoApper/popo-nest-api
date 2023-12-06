@@ -18,12 +18,16 @@ export class SettingService {
     return this.userRepo.update({userType: UserType.rc_student}, {userType: UserType.student});
   }
   
+  countRcStduentsList() {
+    return this.fileService.queryOnS3('popo-rc-students-list.csv', 'SELECT COUNT(*) AS cnt FROM S3Object s');
+  }
+  
   getRcStduentsList() {
-    return this.fileService.queryOnS3('popo-rc-students-list.csv', 'SELECT * FROM S3Object s');
+    return this.fileService.queryOnS3('popo-rc-students-list.csv', 'SELECT email FROM S3Object s');
   }
   
   async checkRcStudent(email: string) {
-    const ret = await this.fileService.queryOnS3('popo-rc-students-list.csv', `SELECT * FROM S3Object s WHERE s.email = '${email}'`);
+    const ret = await this.fileService.queryOnS3('popo-rc-students-list.csv', `SELECT email FROM S3Object s WHERE s.email = '${email}'`);
     return ret.length > 0;
   }
 
