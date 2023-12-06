@@ -3,10 +3,11 @@ import {
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
+  SelectObjectContentCommand,
 } from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
 import { MemoryStoredFile } from 'nestjs-form-data';
-import * as moment from 'moment';
+import { Readable } from 'stream';
 
 @Injectable()
 export class FileService {
@@ -17,7 +18,48 @@ export class FileService {
   private readonly PopoCdnUrl: string = process.env.S3_CF_DIST_URL;
 
   constructor() {}
-  
+
+
+
+  async queryOnS3(key: string, query: string) {
+    const res = await this.s3.send(
+      new SelectObjectContentCommand({
+        Bucket: this.bucket,
+        Key: key,
+        ExpressionType: 'SQL',
+        Expression: query,
+        InputSerialization: {
+          CSV: {
+            FileHeaderInfo: "USE",
+          },
+        },
+        OutputSerialization: {
+          JSON: {
+            RecordDelimiter: ',',
+          },
+        },
+      })
+    )
+
+    if (!res.Payload) {
+      throw new Error("No payload received from S3 SelectObjectContent");
+    }
+
+    const convertDataToJson = async (generator) => {
+      const chunks = [];
+      for await (const value of generator) {
+        if (value.Records) {
+          chunks.push(value.Records.Payload);
+        }
+      }
+      let payload = Buffer.concat(chunks).toString('utf8');
+      payload = payload.replace(/,$/, '');
+      return JSON.parse(`[${payload}]`);
+    };
+
+    return convertDataToJson(res.Payload);
+  }
+
   async getText(key: string) {
     const res = await this.s3.send(
       new GetObjectCommand({
@@ -25,7 +67,19 @@ export class FileService {
         Key: key,
       })
     )
-    return res.Body.transformToString()
+    return res.Body.transformToString();
+  }
+
+  async getFile(key: string) {
+    const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    const response = await this.s3.send(command);
+    return new Promise<Buffer>((resolve, reject) => {
+      const chunks = [];
+      const stream = response.Body as Readable;
+      stream.on('data', (chunk) => chunks.push(chunk));
+      stream.once('end', () => resolve(Buffer.concat(chunks)));
+      stream.once('error', reject);
+    });
   }
 
   async uploadText(key: string, text: string) {
@@ -40,16 +94,15 @@ export class FileService {
   }
 
   async uploadFile(key: string, file: MemoryStoredFile) {
-    const save_key = `${key}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`;
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
-        Key: save_key,
+        Key: key,
         Body: file.buffer,
         ContentType: file.mimetype,
       }),
     );
-    return `${this.PopoCdnUrl}/${save_key}`;
+    return `${this.PopoCdnUrl}/${key}`;
   }
 
   deleteFile(key: string) {
