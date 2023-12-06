@@ -57,19 +57,19 @@ export class SettingController {
     res.send(data);
   }
   
-  @Get('count-rc-student-list')
+  @Get('count-rc-students-list')
   async countRcStudentList() {
     return this.settingService.countRcStduentsList();
   }
   
-  @Get('get-rc-student-list')
+  @Get('get-rc-students-list')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async getRcStudentList() {
     return this.settingService.getRcStduentsList();
   }
 
-  @Get('sync-rc-student-list')
+  @Get('sync-rc-students-list')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async checkRc() {
