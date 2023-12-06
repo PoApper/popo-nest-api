@@ -18,8 +18,9 @@ export class SettingService {
     return this.userRepo.update({userType: UserType.rc_student}, {userType: UserType.student});
   }
   
-  countRcStduentsList() {
-    return this.fileService.queryOnS3('popo-rc-students-list.csv', 'SELECT COUNT(*) AS cnt FROM S3Object s');
+  async countRcStduentsList() {
+    const ret = await this.fileService.queryOnS3('popo-rc-students-list.csv', 'SELECT COUNT(*) AS cnt FROM S3Object s');
+    return ret[0]['cnt'];
   }
   
   getRcStduentsList() {
