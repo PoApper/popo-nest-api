@@ -71,7 +71,7 @@ export class SettingController {
     return this.settingService.getRcStduentsList();
   }
 
-  @Get('sync-rc-studentis-list')
+  @Get('sync-rc-student-list')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async checkRc() {
