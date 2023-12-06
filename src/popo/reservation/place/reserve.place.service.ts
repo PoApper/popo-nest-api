@@ -6,8 +6,9 @@ import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
-import { PlaceEnableAutoAccept } from '../../place/place.meta';
+import { PlaceEnableAutoAccept, PlaceRegion } from '../../place/place.meta';
 import { calculateReservationDurationMinutes } from '../../../utils/reservation-utils';
+import { UserType } from 'src/popo/user/user.meta';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -95,7 +96,13 @@ export class ReservePlaceService {
       );
     }
 
-    await this.userService.findOneByUuidOrFail(booker_id);
+    const booker = await this.userService.findOneByUuidOrFail(booker_id);
+    
+    if (targetPlace.region === PlaceRegion.residential_college && booker.userType !== UserType.rc_student) {
+      throw new BadRequestException(
+        `This place is only available for RC students.`
+      )
+    }
 
     const reservationsOfDay = await this.reservePlaceRepo.find({
       where: {
