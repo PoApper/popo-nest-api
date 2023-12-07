@@ -98,7 +98,10 @@ export class ReservePlaceService {
 
     const booker = await this.userService.findOneByUuidOrFail(booker_id);
     
-    if (targetPlace.region === PlaceRegion.residential_college && booker.userType !== UserType.rc_student) {
+    if (
+      targetPlace.region === PlaceRegion.residential_college && 
+      !(booker.userType === UserType.rc_student || booker.userType === UserType.admin)
+    ) {
       throw new BadRequestException(
         `This place is only available for RC students.`
       )
