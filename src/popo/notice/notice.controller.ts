@@ -12,8 +12,8 @@ import {
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import * as moment from 'moment';
 
-import { AnnouncementService } from './announcement.service';
-import { AnnouncementDto, AnnouncementImageDto } from './announcement.dto';
+import { NoticeService } from './notice.service';
+import { NoticeDto, NoticeImageDto } from './notice.dto';
 import { UserType } from '../user/user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
@@ -21,61 +21,61 @@ import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
 
-@ApiTags('Announcement')
-@Controller('announcement')
-export class AnnouncementController {
+@ApiTags('Notice')
+@Controller('notice')
+export class NoticeController {
   constructor(
-    private readonly announcementService: AnnouncementService,
+    private readonly noticeService: NoticeService,
     private readonly fileService: FileService,
   ) {}
 
   @Post()
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBody({ type: AnnouncementDto })
-  async create(@Body() dto: AnnouncementDto) {
-    return this.announcementService.save(dto);
+  @ApiBody({ type: NoticeDto })
+  async create(@Body() dto: NoticeDto) {
+    return this.noticeService.save(dto);
   }
 
   @Post('image/:id')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @FileBody('image')
-  async uploadImage(@Param('id') id: number, @Body() dto: AnnouncementImageDto) {
+  async uploadImage(@Param('id') id: number, @Body() dto: NoticeImageDto) {
     const image_url = await this.fileService.uploadFile(
-      `announcement/${id}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
+      `notice/${id}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
       dto.image,
     );
-    await this.announcementService.updateImageUrl(id, image_url);
+    await this.noticeService.updateImageUrl(id, image_url);
     return image_url;
   }
 
   @Get()
   getAll() {
-    return this.announcementService.find();
+    return this.noticeService.find();
   }
 
   @Get(':id')
   async getOne(@Param('id') id: number) {
-    return this.announcementService.findOneById(id);
+    return this.noticeService.findOneById(id);
   }
   
   @Patch('click/:id')
   increaseClickCount(@Param('id') id: number) {
-    return this.announcementService.increaseClickCount(id);
+    return this.noticeService.increaseClickCount(id);
   }
 
   @Put(':id')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async put(@Param('id') id: number, @Body() updateAnnouncementDto: AnnouncementDto) {
-    return this.announcementService.update(id, updateAnnouncementDto);
+  async put(@Param('id') id: number, @Body() updateNoticeDto: NoticeDto) {
+    return this.noticeService.update(id, updateNoticeDto);
   }
 
   @Delete(':id')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async delete(@Param('id') id: number) {
-    this.announcementService.remove(id);
+    this.noticeService.remove(id);
   }
 }
