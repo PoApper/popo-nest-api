@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { Notice } from './notice.entity';
 import { NoticeDto } from './notice.dto';
-import moment from 'moment';
+import * as moment from 'moment';
 
 const Message = {
   NOT_EXISTING_REGION: "There's no such region.",
