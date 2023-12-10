@@ -33,7 +33,7 @@ export class NoticeService {
   }
 
   findActive() {
-    const now = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
+    const now = moment().format('YYYY-MM-DD HH:mm:ss');
     return this.noticeRepo.find({
       where: { start_datetime: LessThan(now), end_datetime: MoreThanOrEqual(now) } 
     });
