@@ -16,7 +16,7 @@ export class Notice extends BaseEntity {
   title: string;
 
   @Column('text', { nullable: true })
-  memo: string;
+  content: string;
   
   @Column({ nullable: true })
   image_url: string;
@@ -24,10 +24,10 @@ export class Notice extends BaseEntity {
   @Column({ nullable: true })
   link: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   start_datetime: string; // YYYY-MM-DD HH:mm:ss (KST)
   
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   end_datetime: string; // YYYY-MM-DD HH:mm:ss (KST)
   
   @Column({ default: 0})
