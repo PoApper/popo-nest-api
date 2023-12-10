@@ -1,8 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { Notice } from './notice.entity';
 import { NoticeDto } from './notice.dto';
+import moment from 'moment';
 
 const Message = {
   NOT_EXISTING_REGION: "There's no such region.",
@@ -29,6 +30,13 @@ export class NoticeService {
 
   find() {
     return this.noticeRepo.find({ order: { updateAt: 'DESC' } });
+  }
+
+  findActive() {
+    const now = moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
+    return this.noticeRepo.find({
+      where: { start_datetime: LessThan(now), end_datetime: MoreThanOrEqual(now) } 
+    });
   }
 
   findOneById(id: number) {

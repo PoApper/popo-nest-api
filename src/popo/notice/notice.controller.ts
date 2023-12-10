@@ -55,6 +55,11 @@ export class NoticeController {
     return this.noticeService.find();
   }
 
+  @Get('active')
+  getAllActive() {
+    return this.noticeService.findActive();
+  }
+
   @Get(':id')
   async getOne(@Param('id') id: number) {
     return this.noticeService.findOneById(id);
