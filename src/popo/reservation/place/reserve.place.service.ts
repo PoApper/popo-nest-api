@@ -145,13 +145,11 @@ export class ReservePlaceService {
     // }
 
     // Reservation Concurrent Check
-    if (targetPlace.max_concurrent_reservation > 1) {
-      const isConcurrentPossible = await this.isReservationConcurrent(place_id, targetPlace.max_concurrent_reservation, date, start_time, end_time);
-      if (!isConcurrentPossible) {
-        throw new BadRequestException(
-          `Place "${targetPlace.name}" can't be reserved on ${date} ${start_time} ~ ${end_time}, because there're ${targetPlace.max_concurrent_reservation} concurrent reservations for given range.`
-        )
-      }
+    const isConcurrentPossible = await this.isReservationConcurrent(place_id, targetPlace.max_concurrent_reservation, date, start_time, end_time);
+    if (!isConcurrentPossible) {
+      throw new BadRequestException(
+        `"${targetPlace.name}" 장소에 이미 ${targetPlace.max_concurrent_reservation}개 예약이 있어 ${date} ${start_time} ~ ${end_time}에는 예약이 불가능 합니다.`
+      )
     }
 
     // Reservation Duration Check
