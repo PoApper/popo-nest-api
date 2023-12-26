@@ -98,8 +98,11 @@ export class ReservePlaceService {
 
     // 3. check middle time reservation is possible: they should be less than max_concurrent_reservation
     for (const reservation of booked_reservations) {
+      // handled on case 1
       if (reservation.start_time < start_time)
         continue;
+
+      // handled on case 2
       if (reservation.end_time > end_time)
         continue;
 
@@ -129,16 +132,26 @@ export class ReservePlaceService {
     const targetPlace = await this.placeService.findOneByUuidOrFail(place_id);
 
     // Reservation Overlap Check
-    const isReservationOverlap = await this.isReservationOverlap(
-      place_id,
-      date,
-      start_time,
-      end_time,
-    );
-    if (isReservationOverlap) {
-      throw new BadRequestException(
-        `${Message.OVERLAP_RESERVATION}: ${isReservationOverlap.date} ${isReservationOverlap.start_time} ~ ${isReservationOverlap.end_time}`
-      );
+    // const isReservationOverlap = await this.isReservationOverlap(
+    //   place_id,
+    //   date,
+    //   start_time,
+    //   end_time,
+    // );
+    // if (isReservationOverlap) {
+    //   throw new BadRequestException(
+    //     `${Message.OVERLAP_RESERVATION}: ${isReservationOverlap.date} ${isReservationOverlap.start_time} ~ ${isReservationOverlap.end_time}`
+    //   );
+    // }
+
+    // Reservation Concurrent Check
+    if (targetPlace.max_concurrent_reservation > 1) {
+      const isConcurrentPossible = await this.isReservationConcurrent(place_id, targetPlace.max_concurrent_reservation, date, start_time, end_time);
+      if (!isConcurrentPossible) {
+        throw new BadRequestException(
+          `Place "${targetPlace.name}" can't be reserved on ${date} ${start_time} ~ ${end_time}, because there're ${targetPlace.max_concurrent_reservation} concurrent reservations for given range.`
+        )
+      }
     }
 
     // Reservation Duration Check
@@ -153,16 +166,6 @@ export class ReservePlaceService {
       throw new BadRequestException(
         `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetPlace.max_minutes} mins, new ${newReservationMinutes} mins`,
       );
-    }
-
-    // Reservation Concurrent Check
-    if (targetPlace.max_concurrent_reservation > 1) {
-      const isConcurrentPossible = await this.isReservationConcurrent(place_id, targetPlace.max_concurrent_reservation, date, start_time, end_time);
-      if (!isConcurrentPossible) {
-        throw new BadRequestException(
-          `This place can be reserved, because there're ${targetPlace.max_concurrent_reservation} concurrent reservations for given range.`
-        )
-      }
     }
 
     const booker = await this.userService.findOneByUuidOrFail(booker_id);
