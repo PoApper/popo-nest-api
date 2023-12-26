@@ -148,7 +148,7 @@ export class ReserveEquipController {
     }
     return `Sync Done: ${equipmentList.length} Equipments`;
   }
-  
+
   @Get('count')
   count() {
     return this.reserveEquipService.count();
@@ -186,13 +186,10 @@ export class ReserveEquipController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   async patchStatus(
     @Param('uuid') uuid: string,
-    @Param('status') status: string,
+    @Param('status') status: ReservationStatus,
     @Query('sendEmail') sendEmail?: boolean,
   ) {
-    const response = await this.reserveEquipService.updateStatus(
-      uuid,
-      ReservationStatus[status],
-    );
+    const response = await this.reserveEquipService.updateStatus(uuid, status);
 
     if (sendEmail) {
       // Send e-mail to client.
@@ -201,7 +198,7 @@ export class ReserveEquipController {
         await this.mailService.sendReservationPatchMail(
           response.email,
           response.title,
-          ReservationStatus[status],
+          status,
         );
       }
     }
