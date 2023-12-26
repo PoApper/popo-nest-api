@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
-import { DeepPartial, In, LessThan, MoreThan, MoreThanOrEqual, Repository } from 'typeorm'
+import { DeepPartial, In, LessThan, LessThanOrEqual, MoreThan, MoreThanOrEqual, Repository } from 'typeorm'
 import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
@@ -56,6 +56,65 @@ export class ReservePlaceService {
     return null;
   }
 
+  async isReservationConcurrent(
+    place_id: string,
+    max_concurrent_reservation: number,
+    date: string,
+    start_time: string,
+    end_time: string
+  ): Promise<boolean> {
+    const booked_reservations = await this.reservePlaceRepo.find({
+      where: {
+        place_id: place_id,
+        date: date,
+        status: ReservationStatus.accept,
+        start_time: LessThan(end_time),
+        end_time: MoreThan(start_time),
+      },
+      order: {
+        start_time: 'ASC',
+      }
+    });
+
+    function _get_concurrent_cnt_at_time(time: string) {
+      let cnt = 0;
+      for (const reservation of booked_reservations) {
+        if (reservation.start_time <= time && time <= reservation.end_time) {
+          cnt += 1;
+        }
+      }
+      return cnt;
+    }
+
+    // 1. check start time reservation is possible
+    if (_get_concurrent_cnt_at_time(start_time) >= max_concurrent_reservation) {
+      return false;
+    }
+
+    // 2. check end time reservation is possible
+    if (_get_concurrent_cnt_at_time(end_time) >= max_concurrent_reservation) {
+      return false;
+    }
+
+    // 3. check middle time reservation is possible: they should be less than max_concurrent_reservation
+    for (const reservation of booked_reservations) {
+      if (reservation.start_time < start_time)
+        continue;
+      if (reservation.end_time > end_time)
+        continue;
+
+      if (_get_concurrent_cnt_at_time(reservation.start_time) >= max_concurrent_reservation) {
+        return false;
+      }
+
+      if (_get_concurrent_cnt_at_time(reservation.end_time) >= max_concurrent_reservation) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   async checkReservationPossible(dto: DeepPartial<CreateReservePlaceDto>, booker_id: string) {
     const { place_id, date, start_time, end_time } = dto;
 
@@ -96,10 +155,20 @@ export class ReservePlaceService {
       );
     }
 
+    // Reservation Concurrent Check
+    if (targetPlace.max_concurrent_reservation > 1) {
+      const isConcurrentPossible = await this.isReservationConcurrent(place_id, targetPlace.max_concurrent_reservation, date, start_time, end_time);
+      if (!isConcurrentPossible) {
+        throw new BadRequestException(
+          `This place can be reserved, because there're ${targetPlace.max_concurrent_reservation} concurrent reservations for given range.`
+        )
+      }
+    }
+
     const booker = await this.userService.findOneByUuidOrFail(booker_id);
-    
+
     if (
-      targetPlace.region === PlaceRegion.residential_college && 
+      targetPlace.region === PlaceRegion.residential_college &&
       !(booker.userType === UserType.rc_student || booker.userType === UserType.admin)
     ) {
       throw new BadRequestException(
