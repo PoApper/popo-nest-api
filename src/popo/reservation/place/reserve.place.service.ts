@@ -162,7 +162,7 @@ export class ReservePlaceService {
       newReservationMinutes > targetPlace.max_minutes
     ) {
       throw new BadRequestException(
-        `${Message.OVER_MAX_RESERVATION_TIME}: max ${targetPlace.max_minutes} mins, new ${newReservationMinutes} mins`,
+        `${Message.OVER_MAX_RESERVATION_TIME}: "${targetPlace.name}" 장소는 하루 최대 ${targetPlace.max_minutes}분 동안 예약할 수 있습니다. 신규 예약은 ${newReservationMinutes}분으로 최대 예약 시간을 초과합니다.`,
       );
     }
 
@@ -173,7 +173,7 @@ export class ReservePlaceService {
       !(booker.userType === UserType.rc_student || booker.userType === UserType.admin)
     ) {
       throw new BadRequestException(
-        `This place is only available for RC students.`
+        `"${targetPlace.name}" 장소는 RC 학생만 예약할 수 있습니다.`
       )
     }
 
@@ -201,9 +201,9 @@ export class ReservePlaceService {
     ) {
       throw new BadRequestException(
         `${Message.OVER_MAX_RESERVATION_TIME}: `
-        + `최대 예약 가능 ${targetPlace.max_minutes}분 중에서 `
+        + `"${targetPlace.name}" 장소에 대해 하루 최대 예약 가능한 ${targetPlace.max_minutes}분 중에서 `
         + `오늘(${date}) ${totalReservationMinutes}분을 이미 예약했습니다. `
-        + `신규로 ${newReservationMinutes}분 예약하는 것은 불가능합니다.`,
+        + `신규로 ${newReservationMinutes}분을 예약하는 것은 불가능합니다.`,
       );
     }
   }
