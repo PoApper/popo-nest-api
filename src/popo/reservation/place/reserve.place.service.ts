@@ -29,6 +29,7 @@ export class ReservePlaceService {
     private readonly placeService: PlaceService,
   ) {}
 
+  // TODO: delete this code, after concurrent check logic is fully validated
   async isReservationOverlap(
     place_id: string,
     date: string,
@@ -131,6 +132,7 @@ export class ReservePlaceService {
 
     const targetPlace = await this.placeService.findOneByUuidOrFail(place_id);
 
+    // TODO: delete this code, after concurrent check logic is fully validated
     // Reservation Overlap Check
     // const isReservationOverlap = await this.isReservationOverlap(
     //   place_id,
@@ -148,7 +150,7 @@ export class ReservePlaceService {
     const isConcurrentPossible = await this.isReservationConcurrent(place_id, targetPlace.max_concurrent_reservation, date, start_time, end_time);
     if (!isConcurrentPossible) {
       throw new BadRequestException(
-        `"${targetPlace.name}" 장소에 이미 ${targetPlace.max_concurrent_reservation}개 예약이 있어 ${date} ${start_time} ~ ${end_time}에는 예약이 불가능 합니다.`
+        `"${targetPlace.name}" 장소에 이미 승인된 ${targetPlace.max_concurrent_reservation}개 예약이 있어 ${date} ${start_time} ~ ${end_time}에는 예약이 불가능 합니다.`
       )
     }
 
