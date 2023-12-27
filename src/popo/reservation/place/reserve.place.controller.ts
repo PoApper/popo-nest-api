@@ -26,6 +26,7 @@ import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { PlaceService } from '../../place/place.service';
 import {JwtPayload} from "../../../auth/strategies/jwt.payload";
+import { ReservePlace } from './reserve.place.entity';
 
 @ApiTags('Place Reservation')
 @Controller('reservation-place')
@@ -196,8 +197,16 @@ export class ReservePlaceController {
     @Body() body: AcceptPlaceReservationListDto,
     @Query('sendEmail') sendEmail?: string,
   ) {
+    const reservations: ReservePlace[]  = [];
     for (const reservation_uuid of body.uuid_list) {
       const reservation = await this.reservePlaceService.findOneByUuidOrFail(reservation_uuid);
+      reservations.push(reservation);
+    }
+
+    // early created reservation should be processed first
+    reservations.sort((a, b) => (a.created_at > b.created_at ? 1 : -1));
+
+    for (const reservation of reservations) {
       await this.reservePlaceService.checkReservationPossible(
         {
           place_id: reservation.place_id,
@@ -208,7 +217,7 @@ export class ReservePlaceController {
         reservation.booker_id,
       )
       const response = await this.reservePlaceService.updateStatus(
-        reservation_uuid,
+        reservation.uuid,
         ReservationStatus.accept,
       );
 

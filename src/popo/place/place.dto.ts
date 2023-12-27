@@ -8,6 +8,7 @@ export class PlaceDto {
   readonly region: PlaceRegion;
   readonly staff_email: string;
   readonly max_minutes: number;
+  readonly max_concurrent_reservation: number;
   readonly opening_hours: string;
   readonly enable_auto_accept: PlaceEnableAutoAccept;
 }
