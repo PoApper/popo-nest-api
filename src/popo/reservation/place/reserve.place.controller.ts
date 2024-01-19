@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -285,6 +286,9 @@ export class ReservePlaceController {
       await this.reservePlaceService.remove(uuid);
     } else {
       if (reservation.booker_id == user.uuid) {
+        if(reservation.start_time < new Date().toISOString()) {
+          throw new BadRequestException('Cannot delete past reservation');
+        }
         await this.reservePlaceService.remove(uuid);
       } else {
         throw new UnauthorizedException('Unauthorized delete action');
