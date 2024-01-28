@@ -48,7 +48,7 @@ export class ReservePlaceController {
   ) {
     const user = req.user as JwtPayload;
 
-    return this.reservePlaceService.checkReservationPossible(dto, user.uuid);
+    return this.reservePlaceService.checkReservationPossible(dto, user.uuid, false);
   }
 
   @Post()
@@ -57,7 +57,7 @@ export class ReservePlaceController {
     const user = req.user as JwtPayload;
     const existPlace = await this.placeService.findOneByUuidOrFail(dto.place_id);
 
-    await this.reservePlaceService.checkReservationPossible(dto, user.uuid);
+    await this.reservePlaceService.checkReservationPossible(dto, user.uuid, false);
 
     const new_reservation = await this.reservePlaceService.save(
       Object.assign(dto, { booker_id: user.uuid }),
@@ -215,6 +215,7 @@ export class ReservePlaceController {
           end_time: reservation.end_time,
         },
         reservation.booker_id,
+        true,
       )
       const response = await this.reservePlaceService.updateStatus(
         reservation.uuid,
@@ -254,6 +255,7 @@ export class ReservePlaceController {
           end_time: reservation.end_time,
         },
         reservation.booker_id,
+        true
       )
     }
 
