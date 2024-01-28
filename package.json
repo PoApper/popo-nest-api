@@ -1,6 +1,6 @@
 {
   "name": "popo-nest-api",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "POPO, POstechian's POrtal; API",
   "author": "bluehorn07",
   "private": true,
@@ -21,7 +21,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.478.0",
+    "@aws-sdk/client-s3": "^3.501.0",
     "@nestjs-modules/mailer": "^1.10.3",
     "@nestjs/common": "^10.1.3",
     "@nestjs/config": "^3.1.1",
@@ -29,13 +29,13 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.1.3",
-    "@nestjs/swagger": "^7.1.17",
+    "@nestjs/swagger": "^7.2.0",
     "@nestjs/typeorm": "^10.0.0",
     "cache-manager": "^5.2.3",
     "cookie-parser": "^1.4.6",
     "email-validator": "^2.0.4",
-    "moment": "^2.29.4",
-    "moment-timezone": "^0.5.43",
+    "moment": "^2.30.1",
+    "moment-timezone": "^0.5.44",
     "multer": "^1.4.2",
     "mysql": "^2.18.1",
     "nestjs-form-data": "1.9",
