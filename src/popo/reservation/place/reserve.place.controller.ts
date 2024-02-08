@@ -286,10 +286,14 @@ export class ReservePlaceController {
       await this.reservePlaceService.remove(uuid);
     } else {
       if (reservation.booker_id == user.uuid) {
-        if(reservation.start_time < new Date().toISOString()) {
+        // if reservation is in the past, deny delete
+        const reservation_time = reservation.date + reservation.start_time;
+        const current_time = new Date().toISOString().replace(/[-T:]/g, '').slice(0, 12);
+        if (reservation_time < current_time) {
           throw new BadRequestException('Cannot delete past reservation');
+        } else {
+          await this.reservePlaceService.remove(uuid);
         }
-        await this.reservePlaceService.remove(uuid);
       } else {
         throw new UnauthorizedException('Unauthorized delete action');
       }
