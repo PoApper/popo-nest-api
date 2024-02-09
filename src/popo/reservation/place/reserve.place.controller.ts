@@ -28,6 +28,7 @@ import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { PlaceService } from '../../place/place.service';
 import {JwtPayload} from "../../../auth/strategies/jwt.payload";
 import { ReservePlace } from './reserve.place.entity';
+import * as moment from 'moment-timezone';
 
 @ApiTags('Place Reservation')
 @Controller('reservation-place')
@@ -282,22 +283,19 @@ export class ReservePlaceController {
     const reservation = await this.reservePlaceService.findOneByUuidOrFail(uuid);
     const user = req.user;
 
-    if (user.userType == UserType.staff) {
+    if (user.userType == UserType.admin || user.userType == UserType.staff) {
       await this.reservePlaceService.remove(uuid);
     } else {
       if (reservation.booker_id == user.uuid) {
-        // if reservation is in the past, deny delete
-        const reservation_time = reservation.date + reservation.start_time;
-        const current_time = new Date().toISOString().replace(/[-T:]/g, '').slice(0, 12);
-        if (reservation_time < current_time) {
+        // if the reservation is in the past, deny delete
+        const reservation_start_time = reservation.date + reservation.start_time;
+        const current_time = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
+
+        if (reservation_start_time < current_time) {
           throw new BadRequestException('Cannot delete past reservation');
         } else {
           await this.reservePlaceService.remove(uuid);
         }
-        if(reservation.start_time < new Date().toISOString()) {
-          throw new BadRequestException('Cannot delete past reservation');
-        }
-        await this.reservePlaceService.remove(uuid);
       } else {
         throw new UnauthorizedException('Unauthorized delete action');
       }
