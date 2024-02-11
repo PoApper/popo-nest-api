@@ -172,10 +172,10 @@ export class ReserveEquipController {
     } else {
       if (reservation.booker_id == user.uuid) {
         // if the reservation is in the past, deny delete
-        const reservation_time = reservation.date + reservation.start_time;
+        const reservation_start_time = reservation.date + reservation.start_time;
         const current_time = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
         
-        if (reservation_time < current_time) {
+        if (reservation_start_time < current_time) {
           throw new BadRequestException('Cannot delete past reservation');
         } else {
           await this.reserveEquipService.remove(uuid);
