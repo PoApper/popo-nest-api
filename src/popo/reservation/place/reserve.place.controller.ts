@@ -283,7 +283,7 @@ export class ReservePlaceController {
     const reservation = await this.reservePlaceService.findOneByUuidOrFail(uuid);
     const user = req.user;
 
-    if (user.userType == UserType.admin || user.userType == UserType.staff) {
+    if (false) {
       await this.reservePlaceService.remove(uuid);
     } else {
       if (reservation.booker_id == user.uuid) {
