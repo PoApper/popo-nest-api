@@ -281,7 +281,7 @@ export class ReservePlaceController {
   @UseGuards(JwtAuthGuard)
   async delete(@Param('uuid') uuid: string, @Req() req) {
     const reservation = await this.reservePlaceService.findOneByUuidOrFail(uuid);
-    const user = req.user;
+    const user = req.user as JwtPayload;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
       await this.reservePlaceService.remove(uuid);
