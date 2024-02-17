@@ -39,7 +39,7 @@
     "multer": "^1.4.2",
     "mysql": "^2.18.1",
     "nestjs-form-data": "1.9",
-    "nodemailer": "^6.9.7",
+    "nodemailer": "^6.9.9",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
