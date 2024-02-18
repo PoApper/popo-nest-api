@@ -56,17 +56,17 @@ export class SettingController {
     res.setHeader('Content-Disposition', `attachment; filename="rc-students-list.csv"`);
     res.send(data);
   }
-  
+
   @Get('count-rc-students-list')
   async countRcStudentList() {
     return this.settingService.countRcStduentsList();
   }
-  
-  @Get('get-rc-students-list')
+
+  @Get('get-rc-students-status')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async getRcStudentList() {
-    return this.settingService.getRcStduentsList();
+  async getRcStudentStatus() {
+    return this.settingService.getRcStduentsStatus();
   }
 
   @Get('sync-rc-students-list')

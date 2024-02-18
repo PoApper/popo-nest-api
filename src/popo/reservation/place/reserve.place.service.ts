@@ -119,7 +119,7 @@ export class ReservePlaceService {
     return true;
   }
 
-  async checkReservationPossible(dto: DeepPartial<CreateReservePlaceDto>, booker_id: string) {
+  async checkReservationPossible(dto: DeepPartial<CreateReservePlaceDto>, booker_id: string, isPatch: boolean = true) {
     const { place_id, date, start_time, end_time } = dto;
 
     if (
@@ -179,12 +179,13 @@ export class ReservePlaceService {
       )
     }
 
+
     const reservationsOfDay = await this.reservePlaceRepo.find({
       where: {
         booker_id: booker_id,
         place_id: place_id,
         date: date,
-        status: In([ReservationStatus.accept, ReservationStatus.in_process]),
+        status: In(isPatch ? [ReservationStatus.accept] : [ReservationStatus.accept, ReservationStatus.in_process]),
       },
     });
 
