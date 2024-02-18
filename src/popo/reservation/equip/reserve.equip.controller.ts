@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -24,6 +25,7 @@ import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
 import { MoreThanOrEqual } from 'typeorm';
 import {JwtPayload} from "../../../auth/strategies/jwt.payload";
+import * as moment from 'moment-timezone';
 
 @ApiTags('Equipment Reservation')
 @Controller('reservation-equip')
@@ -169,7 +171,15 @@ export class ReserveEquipController {
       await this.reserveEquipService.remove(uuid);
     } else {
       if (reservation.booker_id == user.uuid) {
-        await this.reserveEquipService.remove(uuid);
+        // if the reservation is in the past, deny delete
+        const reservation_start_time = reservation.date + reservation.start_time;
+        const current_time = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
+        
+        if (reservation_start_time < current_time) {
+          throw new BadRequestException('Cannot delete past reservation');
+        } else {
+          await this.reserveEquipService.remove(uuid);
+        }
       } else {
         throw new UnauthorizedException('Unauthorized delete action');
       }
