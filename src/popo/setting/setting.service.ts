@@ -43,7 +43,7 @@ export class SettingService {
   }
 
   async checkRcStudent(email: string) {
-    const ret = await this.fileService.queryOnS3('popo-rc-students-list.csv', `SELECT TRIM(TRAILING '\r' FROM email) AS email FROM S3Object s WHERE s.email = '${email}'`);
+    const ret = await this.fileService.queryOnS3('popo-rc-students-list.csv', `SELECT email FROM S3Object s WHERE TRIM(TRAILING '\r' FROM s.email) = '${email}'`);
     return ret.length > 0;
   }
 
