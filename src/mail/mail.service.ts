@@ -102,28 +102,30 @@ export class MailService {
   ) {
     recipient_email = EmailValidator.validate(recipient_email)
       ? recipient_email
-      : process.env.ADMIN_EMAIL;
-    await this.mailerService.sendMail({
-      to: recipient_email,
-      from: process.env.POPO_MAIL_ADDRESS,
-      subject: `[POPO] 장소 예약이 생성되었습니다.`,
-      html: `
-      <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-            </style>
-        </head>
-        <body>
-          <h2>[POPO] 장소 예약이 생성되었습니다</h2>
-          <p>장소 ${place.name}에 대한 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가 생성 되었습니다.</p>
-          <p>장소 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
-        </body>
-      </html>`,
-    });
-    console.log(
-      `장소 예약 생성 메일 (담당자): success to mailing: ${recipient_email}`,
-    );
+      : null;
+    if (recipient_email) {
+      await this.mailerService.sendMail({
+        to: recipient_email,
+        from: process.env.POPO_MAIL_ADDRESS,
+        subject: `[POPO] 장소 예약이 생성되었습니다.`,
+        html: `
+        <html>
+          <head>
+              <meta charset="utf-8">
+              <style>
+              </style>
+          </head>
+          <body>
+            <h2>[POPO] 장소 예약이 생성되었습니다</h2>
+            <p>장소 ${place.name}에 대한 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가 생성 되었습니다.</p>
+            <p>장소 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
+          </body>
+        </html>`,
+      });
+      console.log(
+        `장소 예약 생성 메일 (담당자): success to mailing: ${recipient_email}`,
+      );
+    }
   }
 
   // TODO: refactor date and time format
