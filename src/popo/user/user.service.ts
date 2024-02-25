@@ -10,7 +10,6 @@ import { SettingService } from '../setting/setting.service';
 
 const Message = {
   EXISTING_EMAIL: 'This email is already used.',
-  EXISTING_ID: 'This id is already used.',
   NOT_EXISTING_USER: "There's no such user.",
 };
 
@@ -28,12 +27,12 @@ export class UserService {
     if (existUser) {
       throw new BadRequestException(Message.EXISTING_EMAIL);
     }
-    
+
     const cryptoSalt = crypto.randomBytes(64).toString('base64');
     const encryptedPassword = this.encryptPassword(dto.password, cryptoSalt);
 
     const isRcStudent = await this.settingService.checkRcStudent(dto.email);
-    
+
     return this.userRepo.save({
       email: dto.email,
       password: encryptedPassword,
@@ -55,7 +54,7 @@ export class UserService {
       .select('*')
       .where(`LOWER(name) LIKE '%${keyword}%'`)
       .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
-      .orWhere(`LOWER(id) LIKE '%${keyword}%'`)
+      .orWhere(`LOWER(userType) LIKE '%${keyword}%'`)
       .orderBy('lastLoginAt', 'DESC')
       .skip(skip)
       .take(take)
@@ -68,7 +67,7 @@ export class UserService {
       .select('COUNT(*) AS count')
       .where(`LOWER(name) LIKE '%${keyword}%'`)
       .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
-      .orWhere(`LOWER(id) LIKE '%${keyword}%'`)
+      .orWhere(`LOWER(userType) LIKE '%${keyword}%'`)
       .orderBy('lastLoginAt', 'DESC')
       .getRawOne();
   }
@@ -85,10 +84,6 @@ export class UserService {
     return this.userRepo.findOneByOrFail({ uuid: uuid });
   }
 
-  findOneById(id: string) {
-    return this.userRepo.findOneBy({ id: id });
-  }
-
   findOneByEmail(email: string) {
     return this.userRepo.findOneBy({ email: email });
   }
@@ -98,7 +93,6 @@ export class UserService {
       where: { uuid: uuid },
       select: [
         'uuid',
-        'id',
         'email',
         'name',
         'userType',
