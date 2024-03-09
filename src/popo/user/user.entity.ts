@@ -20,10 +20,6 @@ export class User extends BaseEntity {
   @Column({ nullable: false })
   email: string;
 
-  // TODO: will be deprecated
-  @Column({ nullable: true })
-  id: string;
-
   @Column({ nullable: false })
   password: string;
 
