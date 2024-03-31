@@ -22,11 +22,13 @@ export class MailService {
         </head>
         <body>
           <h2>POPO 가입 인증</h2>
+          <div align="center">
+            <img src="https://raw.githubusercontent.com/PoApper/POPO-nest-api/master/assets/popo.svg"/>
+          </div>
           <p>POPO를 통해 POSTECH 총학생회에서 제공하는 여러 서비스를 이용해보실 수 있습니다 😊</p>
-          <p>- <b>POPO, POstechian's POrtal</b> 드림 -</p>
           <br/>
-          <div style="padding: 2px; background-color: crimson; color: white; text-align: center;">
-             <a href="https://popo.poapper.club/auth/activate-account/${uuid}" style="text-decoration: inherit;">
+          <div style="padding: 2px; background-color: crimson; text-align: center;">
+             <a href="https://popo.poapper.club/auth/activate-account/${uuid}" style="text-decoration: none; color: white">
               계정 활성하기
              </a>
           </div>
