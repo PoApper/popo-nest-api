@@ -21,8 +21,7 @@ export class MailService {
             </style>
         </head>
         <body>
-          <h2>POPO 가입 인증</h2>
-          <div align="center">
+          <div>
             <img src="cid:popoLogo"/>
           </div>
           <p>POPO를 통해 POSTECH 총학생회에서 제공하는 여러 서비스를 이용해보실 수 있습니다 😊</p>
@@ -59,13 +58,22 @@ export class MailService {
             </style>
         </head>
         <body>
-          <h2>POPO 비밀번호 초기화</h2>
+          <div>
+            <img src="cid:popoLogo"/>
+          </div>
           <p>비밀번호 초기화 요청에 따라 비밀번호를 초기화 해드립니다: "${temp_password}"</p>
           <p>로그인 후에 마이페이지에서 비밀번호를 새로 설정하시기 바랍니다.</p>
           <p>- <b>POPO, POstechian's POrtal</b> 드림 -</p>
           <p>😱본인이 시도한 초기화 요청이 아니라면, 즉시 POPO 관리팀에게 연락바랍니다.😱</p>
         </body>
       </html>`,
+      attachments: [
+        {
+          filename: 'popo.png',
+          path: './assets/popo.png',
+          cid: 'popoLogo'
+        }
+      ],
     });
     console.log(`success to mailing: ${recipient_email}`);
   }
@@ -91,7 +99,7 @@ export class MailService {
             </style>
         </head>
         <body>
-          <div align="center">
+          <div>
             <img src="cid:popoLogo"/>
           </div>
           <p>
@@ -139,7 +147,7 @@ export class MailService {
               </style>
           </head>
           <body>
-            <div align="center">
+            <div>
               <img src="cid:popoLogo"/>
             </div>
             <p>
@@ -185,12 +193,22 @@ export class MailService {
             </style>
         </head>
         <body>
+          <div>
+            <img src="cid:popoLogo"/>
+          </div>
           <p>장비 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가 생성 되었습니다.</p>
           <p>예약한 장비의 예약비를 확인해주세요.</p>
           <p>- <b>POPO, POstechian's Portal</b> 드림 -</p>
           <p>😱본인의 예약 아니라면, 즉시 POPO 관리팀에게 연락바랍니다.😱</p>
         </body>
       </html>`,
+      attachments: [
+        {
+          filename: 'popo.png',
+          path: './assets/popo.png',
+          cid: 'popoLogo'
+        }
+      ],
     });
     console.log(
       `장비 예약 생성 메일 (예약자): success to mailing: ${recipient_email}`,
@@ -218,6 +236,9 @@ export class MailService {
             </style>
         </head>
         <body>
+          <div>
+            <img src="cid:popoLogo"/>
+          </div>
           <p>장비 ${equipments
             .map((equip) => equip.name)
             .join(', ')}에 대한 예약 "<strong>${reservation.title}</strong>"(${
@@ -228,6 +249,13 @@ export class MailService {
           <p>장비 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
         </body>
       </html>`,
+      attachments: [
+        {
+          filename: 'popo.png',
+          path: './assets/popo.png',
+          cid: 'popoLogo'
+        }
+      ],
     });
     console.log(
       `장비 예약 생성 메일 (담당자): success to mailing: ${recipient_email}`,
@@ -238,7 +266,7 @@ export class MailService {
     await this.mailerService.sendMail({
       to: email,
       from: process.env.POPO_MAIL_ADDRESS,
-      subject: `[POPO] 예약이 ${status} 되었습니다!`,
+      subject: `[POPO] ${title} 예약이 ${status} 되었습니다!`,
       html: `
       <html>
         <head>
@@ -247,13 +275,22 @@ export class MailService {
             </style>
         </head>
         <body>
-          <h2>[POPO] 예약 ${status}</h2>
+          <div>
+            <img src="cid:popoLogo"/>
+          </div>
           <p>예약 "<strong>${title}</strong>"이/가 ${status} 되었습니다.</p>
           <p>- <b>POPO, POstechian's Portal</b> 드림 -</p>
           <br/>
           <p>😱본인의 예약 아니라면, 즉시 POPO 관리팀에게 연락바랍니다.😱</p>
         </body>
       </html>`,
+      attachments: [
+        {
+          filename: 'popo.png',
+          path: './assets/popo.png',
+          cid: 'popoLogo'
+        }
+      ],
     });
     console.log(`success to mailing: ${email}`);
   }
