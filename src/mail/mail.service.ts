@@ -84,8 +84,16 @@ export class MailService {
             </style>
         </head>
         <body>
-          <h2>[POPO] 장소 예약이 생성되었습니다</h2>
-          <p>장소 ${place.name}에 대한 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가 생성 되었습니다.</p>
+          <h2>[POPO] ${place.name}에 대한 장소 예약이 생성되었습니다</h2>
+          <div align="center">
+            <img src="https://raw.githubusercontent.com/PoApper/POPO-nest-api/master/assets/popo.svg"/>
+          </div>
+          <p>
+            장소 ${place.name}에 대한 예약
+            "<strong>${reservation.title}</strong>"
+            (${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가
+            생성 되었습니다.
+          </p>
           <p>- <b>POPO, POstechian's Portal</b> 드림 -</p>
           <p>😱본인의 예약 아니라면, 즉시 POPO 관리팀에게 연락바랍니다.😱</p>
         </body>
@@ -118,8 +126,16 @@ export class MailService {
               </style>
           </head>
           <body>
-            <h2>[POPO] 장소 예약이 생성되었습니다</h2>
-            <p>장소 ${place.name}에 대한 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가 생성 되었습니다.</p>
+            <h2>[POPO] ${place.name}에 대한 장소 예약이 생성되었습니다 (담당자용)</h2>
+            <div align="center">
+              <img src="https://raw.githubusercontent.com/PoApper/POPO-nest-api/master/assets/popo.svg"/>
+            </div>
+            <p>
+              장소 ${place.name}에 대한 예약
+              "<strong>${reservation.title}</strong>"
+              (${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가
+              생성 되었습니다.
+            </p>
             <p>장소 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
           </body>
         </html>`,
