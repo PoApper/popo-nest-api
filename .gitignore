@@ -36,6 +36,7 @@ lerna-debug.log*
 *.jpeg
 *.jpg
 *.png
+!assets/**
 
 .env
 .env*
