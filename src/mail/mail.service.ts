@@ -37,8 +37,8 @@ export class MailService {
       </html>`,
       attachments: [
         {
-          filename: 'popo.svg',
-          path: './assets/popo.svg',
+          filename: 'popo.png',
+          path: './assets/popo.png',
           cid: 'popoLogo'
         }
       ],
@@ -106,8 +106,8 @@ export class MailService {
       </html>`,
       attachments: [
         {
-          filename: 'popo.svg',
-          path: './assets/popo.svg',
+          filename: 'popo.png',
+          path: './assets/popo.png',
           cid: 'popoLogo'
         }
       ],
@@ -153,8 +153,8 @@ export class MailService {
         </html>`,
         attachments: [
           {
-            filename: 'popo.svg',
-            path: './assets/popo.svg',
+            filename: 'popo.png',
+            path: './assets/popo.png',
             cid: 'popoLogo'
           }
         ],
