@@ -23,7 +23,7 @@ export class MailService {
         <body>
           <h2>POPO 가입 인증</h2>
           <div align="center">
-            <img src="https://raw.githubusercontent.com/PoApper/POPO-nest-api/master/assets/popo.svg"/>
+            <img src="cid:popoLogo"/>
           </div>
           <p>POPO를 통해 POSTECH 총학생회에서 제공하는 여러 서비스를 이용해보실 수 있습니다 😊</p>
           <br/>
@@ -35,6 +35,13 @@ export class MailService {
           <p>😱본인이 시도한 회원가입이 아니라면, 즉시 POPO 관리팀에게 연락바랍니다.😱</p>
         </body>
       </html>`,
+      attachments: [
+        {
+          filename: 'popo.svg',
+          path: './assets/popo.svg',
+          cid: 'popoLogo'
+        }
+      ],
     });
     console.log(`success to mailing: ${recipient_email}`);
   }
@@ -75,7 +82,7 @@ export class MailService {
     await this.mailerService.sendMail({
       to: recipient_email,
       from: process.env.POPO_MAIL_ADDRESS,
-      subject: `[POPO] 장소 예약이 생성되었습니다.`,
+      subject: `[POPO] ${place.name}에 대한 장소 예약이 생성되었습니다.`,
       html: `
       <html>
         <head>
@@ -84,9 +91,8 @@ export class MailService {
             </style>
         </head>
         <body>
-          <h2>[POPO] ${place.name}에 대한 장소 예약이 생성되었습니다</h2>
           <div align="center">
-            <img src="https://raw.githubusercontent.com/PoApper/POPO-nest-api/master/assets/popo.svg"/>
+            <img src="cid:popoLogo"/>
           </div>
           <p>
             장소 ${place.name}에 대한 예약
@@ -98,6 +104,13 @@ export class MailService {
           <p>😱본인의 예약 아니라면, 즉시 POPO 관리팀에게 연락바랍니다.😱</p>
         </body>
       </html>`,
+      attachments: [
+        {
+          filename: 'popo.svg',
+          path: './assets/popo.svg',
+          cid: 'popoLogo'
+        }
+      ],
     });
     console.log(
       `장소 예약 생성 메일 (예약자): success to mailing: ${recipient_email}`,
@@ -117,7 +130,7 @@ export class MailService {
       await this.mailerService.sendMail({
         to: recipient_email,
         from: process.env.POPO_MAIL_ADDRESS,
-        subject: `[POPO] 장소 예약이 생성되었습니다.`,
+        subject: `[POPO] ${place.name}에 대한 장소 예약이 생성되었습니다. (담당자용)`,
         html: `
         <html>
           <head>
@@ -126,9 +139,8 @@ export class MailService {
               </style>
           </head>
           <body>
-            <h2>[POPO] ${place.name}에 대한 장소 예약이 생성되었습니다 (담당자용)</h2>
             <div align="center">
-              <img src="https://raw.githubusercontent.com/PoApper/POPO-nest-api/master/assets/popo.svg"/>
+              <img src="cid:popoLogo"/>
             </div>
             <p>
               장소 ${place.name}에 대한 예약
@@ -139,6 +151,13 @@ export class MailService {
             <p>장소 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
           </body>
         </html>`,
+        attachments: [
+          {
+            filename: 'popo.svg',
+            path: './assets/popo.svg',
+            cid: 'popoLogo'
+          }
+        ],
       });
       console.log(
         `장소 예약 생성 메일 (담당자): success to mailing: ${recipient_email}`,
@@ -166,7 +185,6 @@ export class MailService {
             </style>
         </head>
         <body>
-          <h2>[POPO] 장비 예약이 생성되었습니다</h2>
           <p>장비 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가 생성 되었습니다.</p>
           <p>예약한 장비의 예약비를 확인해주세요.</p>
           <p>- <b>POPO, POstechian's Portal</b> 드림 -</p>
@@ -191,7 +209,7 @@ export class MailService {
     await this.mailerService.sendMail({
       to: recipient_email,
       from: process.env.POPO_MAIL_ADDRESS,
-      subject: `[POPO] 장비 예약이 생성되었습니다.`,
+      subject: `[POPO] 장비 예약이 생성되었습니다. (담당자용)`,
       html: `
       <html>
         <head>
@@ -200,7 +218,6 @@ export class MailService {
             </style>
         </head>
         <body>
-          <h2>[POPO] 장비 예약이 생성되었습니다</h2>
           <p>장비 ${equipments
             .map((equip) => equip.name)
             .join(', ')}에 대한 예약 "<strong>${reservation.title}</strong>"(${
