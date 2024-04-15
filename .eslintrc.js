@@ -11,6 +11,7 @@ module.exports = {
     'plugin:prettier/recommended',
   ],
   rules: {
-    "prettier/prettier": ["error", { "endOfLine": "auto" }],
+    'prettier/prettier': ['error', { 'endOfLine': 'auto' }],
+    '@typescript-eslint/no-explicit-any': 'warn',
   },
 };
