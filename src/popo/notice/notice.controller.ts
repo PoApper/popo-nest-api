@@ -64,7 +64,7 @@ export class NoticeController {
   async getOne(@Param('id') id: number) {
     return this.noticeService.findOneById(id);
   }
-  
+
   @Patch('click/:id')
   increaseClickCount(@Param('id') id: number) {
     return this.noticeService.increaseClickCount(id);

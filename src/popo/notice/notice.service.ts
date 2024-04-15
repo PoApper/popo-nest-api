@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, MoreThanOrEqual, Repository } from 'typeorm';
-import * as moment from "moment-timezone";
+import * as moment from 'moment-timezone';
 
 import { Notice } from './notice.entity';
 import { NoticeDto } from './notice.dto';
@@ -34,9 +34,12 @@ export class NoticeService {
   }
 
   findActive() {
-    const now = moment().tz("Asia/Seoul").format('YYYY-MM-DD HH:mm:ss');
+    const now = moment().tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss');
     return this.noticeRepo.find({
-      where: { start_datetime: LessThan(now), end_datetime: MoreThanOrEqual(now) } 
+      where: {
+        start_datetime: LessThan(now),
+        end_datetime: MoreThanOrEqual(now),
+      },
     });
   }
 
@@ -60,7 +63,7 @@ export class NoticeService {
 
     return this.noticeRepo.update({ id: id }, dto);
   }
-  
+
   async increaseClickCount(id: number) {
     const notice = await this.noticeRepo.findOneByOrFail({ id: id });
     return this.noticeRepo.update(

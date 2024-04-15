@@ -13,5 +13,5 @@ export enum UserStatus {
   activated = 'ACTIVATED',
   deactivated = 'DEACTIVATED',
   password_reset = 'PASSWORD_RESET',
-  banned = 'BANNED'
+  banned = 'BANNED',
 }

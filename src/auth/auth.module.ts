@@ -1,15 +1,15 @@
-import {Module} from '@nestjs/common';
-import {JwtModule} from '@nestjs/jwt';
-import {PassportModule} from '@nestjs/passport';
-import {AuthService} from './auth.service';
-import {jwtConstants} from './constants';
-import {JwtStrategy} from './strategies/jwt.strategy';
-import {LocalStrategy} from './strategies/local.strategy';
-import {UserModule} from "../popo/user/user.module";
-import {AuthController} from './auth.controller';
-import {MailModule} from "../mail/mail.module";
-import {ReservePlaceModule} from "../popo/reservation/place/reserve.place.module";
-import { ReserveEquipModule } from "../popo/reservation/equip/reserve.equip.module";
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { AuthService } from './auth.service';
+import { jwtConstants } from './constants';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { LocalStrategy } from './strategies/local.strategy';
+import { UserModule } from '../popo/user/user.module';
+import { AuthController } from './auth.controller';
+import { MailModule } from '../mail/mail.module';
+import { ReservePlaceModule } from '../popo/reservation/place/reserve.place.module';
+import { ReserveEquipModule } from '../popo/reservation/equip/reserve.equip.module';
 
 @Module({
   imports: [
@@ -20,12 +20,11 @@ import { ReserveEquipModule } from "../popo/reservation/equip/reserve.equip.modu
     PassportModule,
     JwtModule.register({
       secret: jwtConstants.secret,
-      signOptions: {expiresIn: '360000s'},
+      signOptions: { expiresIn: '360000s' },
     }),
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService],
   controllers: [AuthController],
 })
-export class AuthModule {
-}
+export class AuthModule {}

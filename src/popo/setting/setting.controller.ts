@@ -1,5 +1,13 @@
 import { ApiTags } from '@nestjs/swagger';
-import { BadRequestException, Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { Response } from 'express';
 
 import { PopoSettingDto, RcStudentsListDto } from './setting.dto';
@@ -53,7 +61,10 @@ export class SettingController {
   async downloadRcStudentList(@Res() res: Response) {
     const data = await this.fileService.getFile('popo-rc-students-list.csv');
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="rc-students-list.csv"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="rc-students-list.csv"`,
+    );
     res.send(data);
   }
 

@@ -5,7 +5,7 @@ import * as crypto from 'crypto';
 
 import { User } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
-import { UserStatus, UserType } from './user.meta'
+import { UserStatus, UserType } from './user.meta';
 import { SettingService } from '../setting/setting.service';
 
 const Message = {
@@ -28,12 +28,12 @@ export class UserService {
     if (existUser) {
       throw new BadRequestException(Message.EXISTING_EMAIL);
     }
-    
+
     const cryptoSalt = crypto.randomBytes(64).toString('base64');
     const encryptedPassword = this.encryptPassword(dto.password, cryptoSalt);
 
     const isRcStudent = await this.settingService.checkRcStudent(dto.email);
-    
+
     return this.userRepo.save({
       email: dto.email,
       password: encryptedPassword,

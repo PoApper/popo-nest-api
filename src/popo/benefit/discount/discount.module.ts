@@ -6,9 +6,7 @@ import { DiscountController } from './discount.controller';
 import { DiscountService } from './discount.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Discount]),
-  ],
+  imports: [TypeOrmModule.forFeature([Discount])],
   providers: [DiscountService],
   controllers: [DiscountController],
 })

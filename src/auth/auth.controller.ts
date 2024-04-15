@@ -22,8 +22,8 @@ import { MailService } from '../mail/mail.service';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
 import { ApiTags } from '@nestjs/swagger';
-import {JwtPayload} from "./strategies/jwt.payload";
-import {PasswordResetRequest, PasswordUpdateRequest} from "./auth.dto";
+import { JwtPayload } from './strategies/jwt.payload';
+import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
 
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
@@ -95,7 +95,7 @@ export class AuthController {
     // update Login History
     const existUser = await this.userService.findOneByUuidOrFail(user.uuid);
     await this.userService.updateLogin(existUser.uuid);
-    
+
     return res.send(user);
   }
 
@@ -115,8 +115,8 @@ export class AuthController {
 
     try {
       await this.mailService.sendVerificationMail(
-          createUserDto.email,
-          saveUser.uuid,
+        createUserDto.email,
+        saveUser.uuid,
       );
     } catch (error) {
       console.log('!! 유저 인증 메일 전송 실패 !!');
@@ -133,25 +133,36 @@ export class AuthController {
   }
 
   @Post('password/reset')
-  async resetPassword(
-    @Body() body: PasswordResetRequest,
-  ) {
+  async resetPassword(@Body() body: PasswordResetRequest) {
     const existUser = await this.userService.findOneByEmail(body.email);
 
     if (!existUser) {
-      throw new BadRequestException('해당 이메일로 가입한 유저가 존재하지 않습니다.');
+      throw new BadRequestException(
+        '해당 이메일로 가입한 유저가 존재하지 않습니다.',
+      );
     }
-    
+
     if (existUser.userStatus === UserStatus.password_reset) {
-      throw new BadRequestException('이미 비빌번호를 초기화 했습니다. 신규 비밀번호를 메일에서 확인해주세요.');
+      throw new BadRequestException(
+        '이미 비빌번호를 초기화 했습니다. 신규 비밀번호를 메일에서 확인해주세요.',
+      );
     }
 
     // generate 8-length random password
     const temp_password = 'poapper_' + Math.random().toString(36).slice(-8);
 
-    await this.userService.updatePasswordByEmail(existUser.email, temp_password);
-    await this.userService.updateUserStatus(existUser.uuid, UserStatus.password_reset);
-    await this.mailService.sendPasswordResetMail(existUser.email, temp_password);
+    await this.userService.updatePasswordByEmail(
+      existUser.email,
+      temp_password,
+    );
+    await this.userService.updateUserStatus(
+      existUser.uuid,
+      UserStatus.password_reset,
+    );
+    await this.mailService.sendPasswordResetMail(
+      existUser.email,
+      temp_password,
+    );
   }
 
   @Post('password/update')

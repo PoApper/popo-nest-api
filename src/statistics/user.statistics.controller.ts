@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { Between } from 'typeorm';
 import * as moment from 'moment';
-import { ApiQuery, ApiTags } from '@nestjs/swagger'
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { UserService } from '../popo/user/user.service';
 
@@ -47,37 +47,49 @@ export class UserStatisticsController {
       data: data,
     };
   }
-  
+
   @Get('count')
   async countInfo() {
     moment.updateLocale('en', {
       week: {
-        dow : 1, // Monday is the first day of the week.
-      }
+        dow: 1, // Monday is the first day of the week.
+      },
     });
-    
+
     const totalUserCnt = await this.userService.count();
-    
+
     const todayRegisterUserCnt = await this.userService.count({
-      createdAt: Between(moment().startOf('day').toDate(), moment().endOf('day').toDate())
+      createdAt: Between(
+        moment().startOf('day').toDate(),
+        moment().endOf('day').toDate(),
+      ),
     });
     const todayLoginUserCnt = await this.userService.count({
-      lastLoginAt: Between(moment().startOf('day').toDate(), moment().endOf('day').toDate())
+      lastLoginAt: Between(
+        moment().startOf('day').toDate(),
+        moment().endOf('day').toDate(),
+      ),
     });
-    
+
     const thisWeekRegisterUserCnt = await this.userService.count({
-      createdAt: Between(moment().startOf('week').toDate(), moment().endOf('week').toDate())
+      createdAt: Between(
+        moment().startOf('week').toDate(),
+        moment().endOf('week').toDate(),
+      ),
     });
     const thisWeekLoginUserCnt = await this.userService.count({
-      lastLoginAt: Between(moment().startOf('week').toDate(), moment().endOf('week').toDate())
+      lastLoginAt: Between(
+        moment().startOf('week').toDate(),
+        moment().endOf('week').toDate(),
+      ),
     });
-    
+
     return {
       totalUserCnt,
       todayRegisterUserCnt,
       todayLoginUserCnt,
       thisWeekRegisterUserCnt,
       thisWeekLoginUserCnt,
-    }
+    };
   }
 }

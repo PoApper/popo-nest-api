@@ -184,10 +184,10 @@ export class MailService {
           <p>장비 ${equipments
             .map((equip) => equip.name)
             .join(', ')}에 대한 예약 "<strong>${reservation.title}</strong>"(${
-        reservation.date
-      } - ${reservation.start_time} ~ ${
-        reservation.end_time
-      })이/가 생성 되었습니다.</p>
+            reservation.date
+          } - ${reservation.start_time} ~ ${
+            reservation.end_time
+          })이/가 생성 되었습니다.</p>
           <p>장비 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
         </body>
       </html>`,

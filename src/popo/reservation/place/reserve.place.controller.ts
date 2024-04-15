@@ -12,7 +12,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger'
+import { ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ReservePlaceService } from './reserve.place.service';
 import {
@@ -26,7 +26,7 @@ import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { PlaceService } from '../../place/place.service';
-import {JwtPayload} from "../../../auth/strategies/jwt.payload";
+import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import { ReservePlace } from './reserve.place.entity';
 import * as moment from 'moment-timezone';
 
@@ -50,16 +50,26 @@ export class ReservePlaceController {
   ) {
     const user = req.user as JwtPayload;
 
-    return this.reservePlaceService.checkReservationPossible(dto, user.uuid, false);
+    return this.reservePlaceService.checkReservationPossible(
+      dto,
+      user.uuid,
+      false,
+    );
   }
 
   @Post()
   @UseGuards(JwtAuthGuard)
   async createWithNameAndId(@Req() req, @Body() dto: CreateReservePlaceDto) {
     const user = req.user as JwtPayload;
-    const existPlace = await this.placeService.findOneByUuidOrFail(dto.place_id);
+    const existPlace = await this.placeService.findOneByUuidOrFail(
+      dto.place_id,
+    );
 
-    await this.reservePlaceService.checkReservationPossible(dto, user.uuid, false);
+    await this.reservePlaceService.checkReservationPossible(
+      dto,
+      user.uuid,
+      false,
+    );
 
     const new_reservation = await this.reservePlaceService.save(
       Object.assign(dto, { booker_id: user.uuid }),
@@ -199,9 +209,10 @@ export class ReservePlaceController {
     @Body() body: AcceptPlaceReservationListDto,
     @Query('sendEmail') sendEmail?: string,
   ) {
-    const reservations: ReservePlace[]  = [];
+    const reservations: ReservePlace[] = [];
     for (const reservation_uuid of body.uuid_list) {
-      const reservation = await this.reservePlaceService.findOneByUuidOrFail(reservation_uuid);
+      const reservation =
+        await this.reservePlaceService.findOneByUuidOrFail(reservation_uuid);
       reservations.push(reservation);
     }
 
@@ -218,7 +229,7 @@ export class ReservePlaceController {
         },
         reservation.booker_id,
         true,
-      )
+      );
       const response = await this.reservePlaceService.updateStatus(
         reservation.uuid,
         ReservationStatus.accept,
@@ -246,7 +257,8 @@ export class ReservePlaceController {
     @Param('status') status: ReservationStatus,
     @Query('sendEmail') sendEmail?: string,
   ) {
-    const reservation = await this.reservePlaceService.findOneByUuidOrFail(uuid);
+    const reservation =
+      await this.reservePlaceService.findOneByUuidOrFail(uuid);
 
     if (status == ReservationStatus.accept) {
       await this.reservePlaceService.checkReservationPossible(
@@ -257,14 +269,11 @@ export class ReservePlaceController {
           end_time: reservation.end_time,
         },
         reservation.booker_id,
-        true
-      )
+        true,
+      );
     }
 
-    const response = await this.reservePlaceService.updateStatus(
-      uuid,
-      status,
-    );
+    const response = await this.reservePlaceService.updateStatus(uuid, status);
 
     if (sendEmail === 'true') {
       // Send e-mail to client.
@@ -282,7 +291,8 @@ export class ReservePlaceController {
   @Delete(':uuid')
   @UseGuards(JwtAuthGuard)
   async delete(@Param('uuid') uuid: string, @Req() req) {
-    const reservation = await this.reservePlaceService.findOneByUuidOrFail(uuid);
+    const reservation =
+      await this.reservePlaceService.findOneByUuidOrFail(uuid);
     const user = req.user as JwtPayload;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
@@ -290,7 +300,8 @@ export class ReservePlaceController {
     } else {
       if (reservation.booker_id == user.uuid) {
         // if the reservation is in the past, deny delete
-        const reservation_start_time = reservation.date + reservation.start_time;
+        const reservation_start_time =
+          reservation.date + reservation.start_time;
         const current_time = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
 
         if (reservation_start_time < current_time) {
