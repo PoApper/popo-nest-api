@@ -10,8 +10,26 @@ env:
   ECR_REPOSITORY: popo-nest-api
 
 jobs:
+  lint:
+    name: Prettier and ESLint check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install
+      - name: Run Prettier
+        run: npx prettier --check .
+      - name: Run ESLint
+        run: npx eslint .
+
   docker_build_and_push:
     name: Docker build and push
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -59,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check the deployed service URL
-        uses: jtalk/url-health-check-action@v3
+        uses: jtalk/url-health-check-action@v4
         with:
           url: https://api.popo.poapper.club|https://api.popo-dev.poapper.club
           follow-redirect: true
