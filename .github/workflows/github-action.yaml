@@ -25,7 +25,7 @@ jobs:
       - name: Run Prettier
         run: npx prettier --check **/*.ts
       - name: Run ESLint
-        run: npx eslint .
+        run: npx eslint . --ext .ts --ignore-pattern dist/
 
   docker_build_and_push:
     name: Docker build and push
