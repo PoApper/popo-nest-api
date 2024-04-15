@@ -5,7 +5,6 @@ import {
   DeepPartial,
   In,
   LessThan,
-  LessThanOrEqual,
   MoreThan,
   MoreThanOrEqual,
   Repository,

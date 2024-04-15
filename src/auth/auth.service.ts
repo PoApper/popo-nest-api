@@ -32,7 +32,7 @@ export class AuthService {
 
     const encryptedPassword = this.encryptPassword(password, cryptoSalt);
     if (user.password === encryptedPassword) {
-      const { password, ...result } = user;
+      const { ...result } = user;
       return result;
     } else {
       return null;

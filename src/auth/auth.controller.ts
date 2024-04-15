@@ -179,8 +179,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getMyInfo(@Req() req: Request) {
     const user = req.user as JwtPayload;
-    const { password, cryptoSalt, ...UserInfo } =
-      await this.userService.findOneByUuid(user.uuid);
+    const { ...UserInfo } = await this.userService.findOneByUuid(user.uuid);
 
     return UserInfo;
   }
