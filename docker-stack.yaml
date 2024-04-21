@@ -1,42 +1,30 @@
-version: '3.3'
+version: 3
 services:
-  dev:
+  popo-nest-dev:
     image: 151345152001.dkr.ecr.ap-northeast-2.amazonaws.com/popo-nest-api:latest
     ports:
       - 6000:4000
     secrets:
-      - source: popo_nest_api_env
+      - source: poapper_popo_dotenv_1
         target: /usr/src/app/.env
-    logging:
-      driver: local
-      options:
-        max-size: 10m
     deploy:
-      labels:
-        swarmpit.service.deployment.autoredeploy: 'true'
       placement:
         constraints:
-          - node.role != manager
-          - node.labels.application == popo
-  prod:
+          # deploy to manager node
+          - node.role == manager
+  popo-nest-prod:
     image: 151345152001.dkr.ecr.ap-northeast-2.amazonaws.com/popo-nest-api:vX.X.X
     ports:
       - 4000:4000
     secrets:
-      - source: popo_nest_api_env
+      - source: poapper_popo_dotenv_1
         target: /usr/src/app/.env
-    logging:
-      driver: local
-      options:
-        max-size: 10m
     deploy:
-      labels:
-        swarmpit.service.deployment.autoredeploy: 'true'
       placement:
         constraints:
-          - node.role != manager
-          - node.labels.application == popo
+          # deploy to manager node
+          - node.role == manager
 
 secrets:
-  popo_nest_api_dotenv:
+  poapper_popo_dotenv_1:
     external: true
