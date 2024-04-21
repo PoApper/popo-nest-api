@@ -1,4 +1,4 @@
-version: 3
+version: "3"
 services:
   popo-nest-dev:
     image: 151345152001.dkr.ecr.ap-northeast-2.amazonaws.com/popo-nest-api:latest
