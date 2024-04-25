@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThan, Like, MoreThan, Repository } from 'typeorm'
+import { In, LessThan, Like, MoreThan, Repository } from 'typeorm';
 import { ReserveEquip } from './reserve.equip.entity';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
@@ -41,7 +41,7 @@ export class ReserveEquipService {
         status: ReservationStatus.accept,
         start_time: LessThan(end_time),
         end_time: MoreThan(start_time),
-      }
+      },
     });
 
     for (const reservation of booked_reservations) {
@@ -141,17 +141,17 @@ export class ReserveEquipService {
   find(findOptions?: object) {
     return this.reserveEquipRepo.find(findOptions);
   }
-  
+
   count(whereOption?: object) {
     return this.reserveEquipRepo.count({ where: whereOption });
   }
 
   findOneByUuid(uuid: string) {
-    return this.reserveEquipRepo.findOneBy({ uuid: uuid});
+    return this.reserveEquipRepo.findOneBy({ uuid: uuid });
   }
 
   findOneByUuidOrFail(uuid: string) {
-    return this.reserveEquipRepo.findOneByOrFail({ uuid: uuid});
+    return this.reserveEquipRepo.findOneByOrFail({ uuid: uuid });
   }
 
   remove(uuid: string) {
@@ -168,7 +168,9 @@ export class ReserveEquipService {
       },
     );
 
-    const existUser = await this.userService.findOneByUuid(existReserve.booker_id);
+    const existUser = await this.userService.findOneByUuid(
+      existReserve.booker_id,
+    );
 
     return {
       userType: existUser.userType,

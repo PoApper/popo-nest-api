@@ -5,7 +5,7 @@ import * as crypto from 'crypto';
 
 import { User } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
-import { UserStatus, UserType } from './user.meta'
+import { UserStatus, UserType } from './user.meta';
 import { SettingService } from '../setting/setting.service';
 
 const Message = {

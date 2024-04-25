@@ -60,14 +60,18 @@ export class IntroAssociationController {
   getTodayVisited() {
     return this.introAssociationService.find({
       where: {
-        updateAt: Between(moment().startOf('day').toDate(), moment().endOf('day').toDate()),
-      }
+        updateAt: Between(
+          moment().startOf('day').toDate(),
+          moment().endOf('day').toDate(),
+        ),
+      },
     });
   }
 
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
-    const introAssociation = await this.introAssociationService.findOneByName(name);
+    const introAssociation =
+      await this.introAssociationService.findOneByName(name);
 
     if (introAssociation) {
       await this.introAssociationService.updateViewCount(

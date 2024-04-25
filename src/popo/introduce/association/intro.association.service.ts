@@ -28,15 +28,15 @@ export class IntroAssociationService {
   }
 
   findOneByUuid(uuid: string) {
-    return this.introAssociation_repository.findOneBy({ uuid: uuid});
+    return this.introAssociation_repository.findOneBy({ uuid: uuid });
   }
 
   findOneByUuidOrFail(uuid: string) {
-    return this.introAssociation_repository.findOneByOrFail({ uuid: uuid});
+    return this.introAssociation_repository.findOneByOrFail({ uuid: uuid });
   }
 
   findOneByName(name: string) {
-    return this.introAssociation_repository.findOneBy({ name: name});
+    return this.introAssociation_repository.findOneBy({ name: name });
   }
 
   async update(uuid: string, dto: CreateIntroAssociationDto) {

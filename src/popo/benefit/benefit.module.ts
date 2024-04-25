@@ -3,9 +3,6 @@ import { AffiliateModule } from './affiliate/affiliate.module';
 import { DiscountModule } from './discount/discount.module';
 
 @Module({
-  imports: [
-    AffiliateModule,
-    DiscountModule,
-  ]
+  imports: [AffiliateModule, DiscountModule],
 })
 export class BenefitModule {}

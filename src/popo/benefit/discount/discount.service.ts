@@ -21,7 +21,7 @@ export class DiscountService {
   }
 
   findById(id: number) {
-    return this.discountRepo.findOneBy({id: id });
+    return this.discountRepo.findOneBy({ id: id });
   }
 
   update(id: number, dto: DiscountDto) {

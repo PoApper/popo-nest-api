@@ -23,7 +23,7 @@ export class AuthService {
     }
 
     const cryptoSalt = user.cryptoSalt;
-    
+
     if (user.userStatus == UserStatus.password_reset) {
       await this.usersService.updateUserStatus(user.uuid, UserStatus.activated);
     } else if (user.userStatus != UserStatus.activated) {
@@ -32,14 +32,12 @@ export class AuthService {
 
     const encryptedPassword = this.encryptPassword(password, cryptoSalt);
     if (user.password === encryptedPassword) {
-      const { password, ...result } = user;
+      const { ...result } = user;
       return result;
     } else {
       return null;
     }
   }
-
-
 
   async generateJwtToken(user: any) {
     const payload = {
