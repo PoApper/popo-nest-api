@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from "@nestjs/typeorm";
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { NestjsFormDataModule } from 'nestjs-form-data';
 
 import { SettingController } from './setting.controller';
@@ -8,11 +8,7 @@ import { SettingService } from './setting.service';
 import { User } from '../user/user.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User]),
-    NestjsFormDataModule,
-    FileModule,
-  ],
+  imports: [TypeOrmModule.forFeature([User]), NestjsFormDataModule, FileModule],
   controllers: [SettingController],
   providers: [SettingService],
   exports: [SettingService],

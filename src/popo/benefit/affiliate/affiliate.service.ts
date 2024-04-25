@@ -21,7 +21,7 @@ export class AffiliateService {
   }
 
   findById(id: number) {
-    return this.affiliateRepo.findOneBy({id: id });
+    return this.affiliateRepo.findOneBy({ id: id });
   }
 
   update(id: number, dto: AffiliateDto) {

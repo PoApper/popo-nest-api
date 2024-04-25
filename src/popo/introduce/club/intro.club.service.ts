@@ -28,24 +28,21 @@ export class IntroClubService {
   }
 
   findOneByUuid(uuid: string) {
-    return this.introClub_repository.findOneBy({ uuid: uuid});
+    return this.introClub_repository.findOneBy({ uuid: uuid });
   }
 
   findOneByUuidOrFail(uuid: string) {
-    return this.introClub_repository.findOneByOrFail({ uuid: uuid});
+    return this.introClub_repository.findOneByOrFail({ uuid: uuid });
   }
 
   findOneByName(name: string) {
-    return this.introClub_repository.findOneBy({ name: name});
+    return this.introClub_repository.findOneBy({ name: name });
   }
 
   async update(uuid: string, dto: CreateIntroClubDto) {
     await this.findOneByUuidOrFail(uuid);
 
-    return this.introClub_repository.update(
-      { uuid: uuid },
-      dto,
-    );
+    return this.introClub_repository.update({ uuid: uuid }, dto);
   }
 
   async remove(uuid: string) {

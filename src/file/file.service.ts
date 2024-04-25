@@ -19,8 +19,6 @@ export class FileService {
 
   constructor() {}
 
-
-
   async queryOnS3(key: string, query: string) {
     const res = await this.s3.send(
       new SelectObjectContentCommand({
@@ -30,7 +28,7 @@ export class FileService {
         Expression: query,
         InputSerialization: {
           CSV: {
-            FileHeaderInfo: "USE",
+            FileHeaderInfo: 'USE',
           },
         },
         OutputSerialization: {
@@ -38,11 +36,11 @@ export class FileService {
             RecordDelimiter: ',',
           },
         },
-      })
-    )
+      }),
+    );
 
     if (!res.Payload) {
-      throw new Error("No payload received from S3 SelectObjectContent");
+      throw new Error('No payload received from S3 SelectObjectContent');
     }
 
     const convertDataToJson = async (generator) => {
@@ -65,8 +63,8 @@ export class FileService {
       new GetObjectCommand({
         Bucket: this.bucket,
         Key: key,
-      })
-    )
+      }),
+    );
     return res.Body.transformToString();
   }
 

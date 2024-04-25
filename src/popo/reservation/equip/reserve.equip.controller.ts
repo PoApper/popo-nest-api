@@ -24,7 +24,7 @@ import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
 import { MoreThanOrEqual } from 'typeorm';
-import {JwtPayload} from "../../../auth/strategies/jwt.payload";
+import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import * as moment from 'moment-timezone';
 
 @ApiTags('Equipment Reservation')
@@ -42,7 +42,10 @@ export class ReserveEquipController {
     const user = req.user as JwtPayload;
 
     const saveDto = Object.assign(dto, { booker_id: user.uuid });
-    const new_reservation = await this.reserveEquipService.save(saveDto, user.uuid);
+    const new_reservation = await this.reserveEquipService.save(
+      saveDto,
+      user.uuid,
+    );
 
     const existEquips = await this.equipService.findByIds(dto.equipments);
 
@@ -172,9 +175,10 @@ export class ReserveEquipController {
     } else {
       if (reservation.booker_id == user.uuid) {
         // if the reservation is in the past, deny delete
-        const reservation_start_time = reservation.date + reservation.start_time;
+        const reservation_start_time =
+          reservation.date + reservation.start_time;
         const current_time = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
-        
+
         if (reservation_start_time < current_time) {
           throw new BadRequestException('Cannot delete past reservation');
         } else {
