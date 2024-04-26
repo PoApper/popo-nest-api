@@ -71,6 +71,14 @@ jobs:
           cache-to: type=gha,mode=max
           push: true
 
+  redeploy_dev_service:
+    name: Redeploy Dev Service
+    needs: docker_build_and_push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Redeploy Dev Service
+        run: curl -X POST ${{ secrets.PORTAINER_DEV_SERVICE_WEBHOOK }}
+
   deploy_health_check:
     name: Check Application Status
     needs: docker_build_and_push

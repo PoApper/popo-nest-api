@@ -38,8 +38,8 @@ export class MailService {
         {
           filename: 'popo.png',
           path: './assets/popo.png',
-          cid: 'popoLogo'
-        }
+          cid: 'popoLogo',
+        },
       ],
     });
     console.log(`success to mailing: ${recipient_email}`);
@@ -71,8 +71,8 @@ export class MailService {
         {
           filename: 'popo.png',
           path: './assets/popo.png',
-          cid: 'popoLogo'
-        }
+          cid: 'popoLogo',
+        },
       ],
     });
     console.log(`success to mailing: ${recipient_email}`);
@@ -116,8 +116,8 @@ export class MailService {
         {
           filename: 'popo.png',
           path: './assets/popo.png',
-          cid: 'popoLogo'
-        }
+          cid: 'popoLogo',
+        },
       ],
     });
     console.log(
@@ -163,8 +163,8 @@ export class MailService {
           {
             filename: 'popo.png',
             path: './assets/popo.png',
-            cid: 'popoLogo'
-          }
+            cid: 'popoLogo',
+          },
         ],
       });
       console.log(
@@ -206,8 +206,8 @@ export class MailService {
         {
           filename: 'popo.png',
           path: './assets/popo.png',
-          cid: 'popoLogo'
-        }
+          cid: 'popoLogo',
+        },
       ],
     });
     console.log(
@@ -253,8 +253,8 @@ export class MailService {
         {
           filename: 'popo.png',
           path: './assets/popo.png',
-          cid: 'popoLogo'
-        }
+          cid: 'popoLogo',
+        },
       ],
     });
     console.log(
@@ -288,8 +288,8 @@ export class MailService {
         {
           filename: 'popo.png',
           path: './assets/popo.png',
-          cid: 'popoLogo'
-        }
+          cid: 'popoLogo',
+        },
       ],
     });
     console.log(`success to mailing: ${email}`);
