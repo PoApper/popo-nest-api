@@ -27,9 +27,25 @@ jobs:
       - name: Run ESLint
         run: npx eslint . --ext .ts --ignore-pattern dist/
 
+  test:
+    name: Run tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm run test
+
   docker_build_and_push:
     name: Docker build and push
-    needs: lint
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
