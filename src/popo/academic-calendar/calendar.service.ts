@@ -17,7 +17,7 @@ export class CalendarService {
   }
 
   findAll() {
-    return this.calendarRepo.find();
+    return this.calendarRepo.find({ order: { createdAt: 'DESC' }});
   }
 
   findById(id: number) {
