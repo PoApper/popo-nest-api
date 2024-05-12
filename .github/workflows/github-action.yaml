@@ -23,9 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Run Prettier
-        run: npx prettier --check **/*.ts
+        run: npm format:check
       - name: Run ESLint
-        run: npx eslint . --ext .ts --ignore-pattern dist/
+        run: npm lint
 
   docker_build_and_push:
     name: Docker build and push
