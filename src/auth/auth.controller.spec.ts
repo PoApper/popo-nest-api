@@ -5,11 +5,6 @@ import { UserService } from '../popo/user/user.service';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
 import { MailService } from 'src/mail/mail.service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { CreateUserDto } from '../popo/user/user.dto';
-import { use } from 'passport';
-import { Request } from 'express';
 import { createMock, DeepMocked } from '@golevelup/ts-jest';
 
 describe('AuthController', () => {
@@ -57,15 +52,10 @@ describe('AuthController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    expect(authService).toBeDefined();
+    expect(userService).toBeDefined();
+    expect(reservePlaceService).toBeDefined();
+    expect(reserveEquipService).toBeDefined();
+    expect(mailService).toBeDefined();
   });
-
-  //   describe('verifyToken', () => {
-  //     it('should verify token and return user information', async () => {
-  //       const req = mocks.createRequest(); // Mock request object
-  //       jest.spyOn(userService, 'updateLogin').mockResolvedValueOnce(undefined);
-  //       const result = await controller.verifyToken(req);
-  //       expect(result).toBeDefined();
-  //       // Add your assertions here
-  //     });
-  //   });
 });
