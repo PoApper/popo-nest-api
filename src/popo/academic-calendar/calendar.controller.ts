@@ -16,6 +16,7 @@ import { Roles } from 'src/auth/authroization/roles.decorator';
 import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { UserType } from 'src/popo/user/user.meta';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import * as moment from 'moment';
 
 @ApiTags('Calendar')
 @Controller('calendar')
@@ -33,6 +34,13 @@ export class CalendarController {
   @Get()
   getAllCalendars() {
     return this.calendarService.findAll();
+  }
+
+  @Get('get-next-event')
+  async getNextEvent() {
+    const today = moment().format('YYYY-MM-DD');
+    const events = await this.calendarService.findEventAfter(today);
+    return events[0];
   }
 
   @Get(':id')

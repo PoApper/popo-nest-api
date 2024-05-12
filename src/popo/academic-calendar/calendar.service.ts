@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 
 import { Calendar } from './calendar.entity';
 import { CalendarDto } from './calendar.dto';
@@ -17,11 +17,24 @@ export class CalendarService {
   }
 
   findAll() {
-    return this.calendarRepo.find({ order: { createdAt: 'DESC' }});
+    return this.calendarRepo.find({
+      order: { createdAt: 'DESC' },
+    });
   }
 
   findById(id: number) {
     return this.calendarRepo.findOneBy({ id: id });
+  }
+
+  findEventAfter(after_date: string) {
+    return this.calendarRepo.find({
+      where: {
+        start_date: MoreThanOrEqual(after_date),
+      },
+      order: {
+        createdAt: 'ASC',
+      },
+    });
   }
 
   update(id: number, dto: CalendarDto) {
