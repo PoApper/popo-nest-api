@@ -16,10 +16,7 @@ export class Calendar extends BaseEntity {
   title: string;
 
   @Column({ nullable: false })
-  start_date: string; // YYYY-MM-DD
-
-  @Column({ nullable: false })
-  end_date: string; // YYYY-MM-DD, 만약 하루짜리 이벤트라면 start_date와 같은 값
+  event_date: string; // YYYY-MM-DD
 
   @CreateDateColumn()
   createdAt: Date;
