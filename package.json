@@ -87,7 +87,7 @@
       "ts"
     ],
     "roots": [
-      "<rootDir>", "src"
+      "src", "<rootDir>"
     ],
     "modulePaths": [
       "<rootDir>"
