@@ -173,7 +173,7 @@ describe('AuthController', () => {
     await expect(controller.resetPassword(req as any)).resolves.not.toThrow();
   });
 
-  it('should return user informatio', async () => {
+  it('should return user information', async () => {
     const req = {
       user: {
         uuid: '1',
