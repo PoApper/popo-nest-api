@@ -86,6 +86,9 @@
       "json",
       "ts"
     ],
+    "roots": [
+      "<rootDir>", "src"
+    ],
     "modulePaths": [
       "<rootDir>"
     ],
