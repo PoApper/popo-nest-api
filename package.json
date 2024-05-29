@@ -13,6 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "format": "prettier --w **/*.ts",
+    "format:check": "prettier --c **/*.ts",
     "lint": "eslint . --ext .ts --ignore-pattern dist/",
     "test": "jest",
     "test:watch": "jest --watch",

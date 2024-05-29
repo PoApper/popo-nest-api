@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { BenefitModule } from './benefit/benefit.module';
+import { CalendarModule } from './academic-calendar/calendar.module';
 import { EquipModule } from './equip/equip.module';
 import { IntroduceModule } from './introduce/introduce.module';
 import { NoticeModule } from './notice/notice.module';
@@ -13,6 +14,7 @@ import { WhitebookModule } from './whitebook/whitebook.module';
 @Module({
   imports: [
     BenefitModule,
+    CalendarModule,
     NoticeModule,
     PlaceModule,
     EquipModule,
