@@ -123,7 +123,7 @@ export class ReserveEquipController {
 
     const reservations = await this.reserveEquipService.find({
       where: { booker_id: user.uuid },
-      order: { created_at: 'DESC' },
+      order: { date: 'DESC', start_time: 'DESC' },
     });
     return this.reserveEquipService.joinEquips(reservations);
   }
@@ -133,7 +133,7 @@ export class ReserveEquipController {
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
       where: { booker_id: uuid },
-      order: { created_at: 'DESC' },
+      order: { date: 'DESC', start_time: 'DESC' },
     });
     return this.reserveEquipService.joinEquips(reservations);
   }

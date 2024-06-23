@@ -149,7 +149,7 @@ export class ReservePlaceController {
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reservePlaceService.find({
       where: { booker_id: uuid },
-      order: { created_at: 'DESC' },
+      order: { date: 'DESC', start_time: 'DESC' },
     });
     return this.reservePlaceService.joinPlace(reservations);
   }
@@ -160,7 +160,7 @@ export class ReservePlaceController {
   async getByPlace(@Param('place_uuid') place_uuid: string) {
     return this.reservePlaceService.find({
       where: { place: place_uuid },
-      order: { created_at: 'DESC' },
+      order: { date: 'DESC', start_time: 'DESC' },
     });
   }
 
