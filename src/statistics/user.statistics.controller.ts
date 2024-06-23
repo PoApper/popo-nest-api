@@ -11,7 +11,8 @@ export class UserStatisticsController {
   constructor(private readonly userService: UserService) {}
 
   /**
-   * format: GET statistics/user?start=YYYYMMDD&end=YYYYMMDD&format={YYYY | YYYYMM | YYYYMMDD}
+   * format: GET statistics/user?start=YYYYMMDD&end=YYYYMMDD
+   * return daily user register counts between start and end date
    */
   @Get()
   @ApiQuery({
@@ -19,9 +20,6 @@ export class UserStatisticsController {
   })
   @ApiQuery({
     name: 'end',
-  })
-  @ApiQuery({
-    name: 'format',
   })
   async getUserRegisterStatistics(@Query() query) {
     const query_start = moment(query.start);
@@ -48,6 +46,7 @@ export class UserStatisticsController {
     };
   }
 
+  // 전체 유저 수, 오늘 가입 유저 수, 이번주 가입 유저 수, 오늘 로그인 유저 수, 이번주 로그인 유저 수
   @Get('count')
   async countInfo() {
     moment.updateLocale('en', {
