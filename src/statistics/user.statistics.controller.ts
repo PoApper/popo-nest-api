@@ -48,6 +48,7 @@ export class UserStatisticsController {
     };
   }
 
+  // 전체 유저 수, 오늘 가입 유저 수, 이번주 가입 유저 수, 오늘 로그인 유저 수, 이번주 로그인 유저 수
   @Get('count')
   async countInfo() {
     moment.updateLocale('en', {

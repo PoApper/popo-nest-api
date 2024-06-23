@@ -6,8 +6,8 @@ import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 
 @ApiTags('Statistics')
-@Controller('statistics/reservation')
-export class ReservationStatisticsController {
+@Controller('statistics/reservation/place')
+export class ReservationPlaceStatisticsController {
   constructor(private readonly reservePlaceService: ReservePlaceService) {}
 
   // Place Reservation에 대한 통계 기능만 구현함.
@@ -24,7 +24,7 @@ export class ReservationStatisticsController {
   @ApiQuery({
     name: 'format',
   })
-  async getPlaceCounts(@Query() query) {
+  async getPlaceReservationCounts(@Query() query) {
     const query_start = moment(query.start);
     const query_end = moment(query.end);
 
@@ -47,6 +47,7 @@ export class ReservationStatisticsController {
     };
   }
 
+  // 전체 예약 수, 오늘 예약 수, 이번주 예약 수
   @Get('count')
   async countInfo() {
     moment.updateLocale('en', {
