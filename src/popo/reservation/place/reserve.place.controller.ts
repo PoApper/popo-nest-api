@@ -139,7 +139,7 @@ export class ReservePlaceController {
 
     const reservations = await this.reservePlaceService.find({
       where: { booker_id: user.uuid },
-      order: { created_at: 'DESC' },
+      order: { date: 'DESC', start_time: 'DESC' },
     });
     return this.reservePlaceService.joinPlace(reservations);
   }
