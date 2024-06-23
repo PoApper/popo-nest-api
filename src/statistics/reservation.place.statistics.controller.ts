@@ -12,7 +12,8 @@ export class ReservationPlaceStatisticsController {
 
   // Place Reservation에 대한 통계 기능만 구현함.
   /**
-   * format: GET statistics/place?start=YYYYMMDD&end=YYYYMMDD&format={YYYY | YYYYMM | YYYYMMDD}
+   * format: GET statistics/place?start=YYYYMMDD&end=YYYYMMDD
+   * return daily reservation counts between start and end date
    */
   @Get()
   @ApiQuery({
@@ -20,9 +21,6 @@ export class ReservationPlaceStatisticsController {
   })
   @ApiQuery({
     name: 'end',
-  })
-  @ApiQuery({
-    name: 'format',
   })
   async getPlaceReservationCounts(@Query() query) {
     const query_start = moment(query.start);

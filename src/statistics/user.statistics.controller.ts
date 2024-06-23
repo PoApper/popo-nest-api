@@ -11,7 +11,8 @@ export class UserStatisticsController {
   constructor(private readonly userService: UserService) {}
 
   /**
-   * format: GET statistics/user?start=YYYYMMDD&end=YYYYMMDD&format={YYYY | YYYYMM | YYYYMMDD}
+   * format: GET statistics/user?start=YYYYMMDD&end=YYYYMMDD
+   * return daily user register counts between start and end date
    */
   @Get()
   @ApiQuery({
@@ -19,9 +20,6 @@ export class UserStatisticsController {
   })
   @ApiQuery({
     name: 'end',
-  })
-  @ApiQuery({
-    name: 'format',
   })
   async getUserRegisterStatistics(@Query() query) {
     const query_start = moment(query.start);
