@@ -3,16 +3,17 @@ import { Between } from 'typeorm';
 import * as moment from 'moment';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
-import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
+import { ReserveEquipService } from 'src/popo/reservation/equip/reserve.equip.service';
 
 @ApiTags('Statistics')
-@Controller('statistics/reservation')
-export class ReservationStatisticsController {
-  constructor(private readonly reservePlaceService: ReservePlaceService) {}
+@Controller('statistics/reservation/equipment')
+export class ReservationEquipmentStatisticsController {
+  constructor(private readonly reserveEquipService: ReserveEquipService) {}
 
   // Place Reservation에 대한 통계 기능만 구현함.
   /**
-   * format: GET statistics/place?start=YYYYMMDD&end=YYYYMMDD&format={YYYY | YYYYMM | YYYYMMDD}
+   * format: GET statistics/place?start=YYYYMMDD&end=YYYYMMDD
+   * return daily reservation counts between start and end date
    */
   @Get()
   @ApiQuery({
@@ -21,10 +22,7 @@ export class ReservationStatisticsController {
   @ApiQuery({
     name: 'end',
   })
-  @ApiQuery({
-    name: 'format',
-  })
-  async getPlaceCounts(@Query() query) {
+  async getEquipReservationCounts(@Query() query) {
     const query_start = moment(query.start);
     const query_end = moment(query.end);
 
@@ -36,17 +34,18 @@ export class ReservationStatisticsController {
       const target_start_date = query_idx.format('YYYY-MM-DD');
       const target_end_date = query_idx.add(1, 'M').format('YYYY-MM-DD');
 
-      data[target_month] = await this.reservePlaceService.count({
+      data[target_month] = await this.reserveEquipService.count({
         created_at: Between(target_start_date, target_end_date),
       });
     }
 
     return {
-      label: 'place',
+      label: 'equipment',
       data: data,
     };
   }
 
+  // 전체 예약 수, 오늘 예약 수, 이번주 예약 수
   @Get('count')
   async countInfo() {
     moment.updateLocale('en', {
@@ -55,16 +54,16 @@ export class ReservationStatisticsController {
       },
     });
 
-    const totalReservationCnt = await this.reservePlaceService.count();
+    const totalReservationCnt = await this.reserveEquipService.count();
 
-    const todayReservationCnt = await this.reservePlaceService.count({
+    const todayReservationCnt = await this.reserveEquipService.count({
       created_at: Between(
         moment().startOf('day').toDate(),
         moment().endOf('day').toDate(),
       ),
     });
 
-    const thisWeekReservationCnt = await this.reservePlaceService.count({
+    const thisWeekReservationCnt = await this.reserveEquipService.count({
       created_at: Between(
         moment().startOf('week').toDate(),
         moment().endOf('week').toDate(),
