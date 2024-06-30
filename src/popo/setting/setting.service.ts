@@ -21,7 +21,7 @@ export class SettingService {
     );
   }
 
-  async countRcStduentsList() {
+  async countRcStudentsList() {
     const ret = await this.fileService.queryOnS3(
       'popo-rc-students-list.csv',
       'SELECT COUNT(*) AS cnt FROM S3Object s',
@@ -29,7 +29,7 @@ export class SettingService {
     return ret[0]['cnt'];
   }
 
-  async getRcStduentsStatus() {
+  async getRcStudentsStatus() {
     const rc_list = await this.fileService.queryOnS3(
       'popo-rc-students-list.csv',
       "SELECT name, TRIM(TRAILING '\r' FROM email) AS email FROM S3Object s",
