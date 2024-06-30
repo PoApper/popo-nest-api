@@ -70,14 +70,14 @@ export class SettingController {
 
   @Get('count-rc-students-list')
   async countRcStudentList() {
-    return this.settingService.countRcStduentsList();
+    return this.settingService.countRcStudentsList();
   }
 
   @Get('get-rc-students-status')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async getRcStudentStatus() {
-    return this.settingService.getRcStduentsStatus();
+    return this.settingService.getRcStudentsStatus();
   }
 
   @Get('sync-rc-students-list')
