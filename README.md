@@ -25,7 +25,7 @@ POPO는 PoApper에서 개발하고, POSTECH 총학생회에서 운영하는 포�
 
 ## How to Deploy
 
-POPO 어플리케이션은 Docker Container로 실행되고 있으며, [Swarmpit](https://swarmpit.io/)을 통해 오케스트레이션 되고 있다.
+POPO 어플리케이션은 Docker Container로 실행되고 있으며, [Portainer](https://www.portainer.io/)를 통해 오케스트레이션 되고 있다.
 Dev-Prod의 two-stage 배포 정책을 가지고 있으며, 각 stage에 배포하기 위한 조건은 아래와 같다.
 
 - Dev Stage
@@ -42,3 +42,4 @@ Dev-Prod의 two-stage 배포 정책을 가지고 있으며, 각 stage에 배포�
 - Seokyun Ha ([@bluehorn07](https://github.com/BlueHorn07))
 - Jeongwon Choi ([@jjeongone](https://github.com/jjeongone))
 - Hyojeong Yun ([@hodori314](https://github.com/hodori314))
+- Gwanho Kim ([@khkim6040](https://github.com/khkim6040/))
