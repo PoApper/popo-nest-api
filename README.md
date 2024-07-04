@@ -41,5 +41,5 @@ Dev-Prod의 two-stage 배포 정책을 가지고 있으며, 각 stage에 배포�
 
 - Seokyun Ha ([@bluehorn07](https://github.com/BlueHorn07))
 - Jeongwon Choi ([@jjeongone](https://github.com/jjeongone))
-- Hyojeong Yun ([@hodori314](https://github.com/hodori314))
+- Hyojeong Yun ([@hyojeongyunn](https://github.com/hyojeongyunn))
 - Gwanho Kim ([@khkim6040](https://github.com/khkim6040/))
