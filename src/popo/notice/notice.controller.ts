@@ -70,16 +70,6 @@ export class NoticeController {
     return this.noticeService.increaseClickCount(id);
   }
 
-  @Patch('like/:id')
-  increaseLikeCount(@Param('id') id: number) {
-    return this.noticeService.increaseLikeCount(id);
-  }
-
-  @Patch('unlike/:id')
-  decreaseLikeCount(@Param('id') id: number) {
-    return this.noticeService.decreaseLikeCount(id);
-  }
-
   @Put(':id')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)

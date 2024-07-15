@@ -72,22 +72,6 @@ export class NoticeService {
     );
   }
 
-  async increaseLikeCount(id: number) {
-    const notice = await this.noticeRepo.findOneByOrFail({ id: id });
-    return this.noticeRepo.update(
-      { id: id },
-      { like_count: notice.like_count + 1 },
-    );
-  }
-
-  async decreaseLikeCount(id: number) {
-    const notice = await this.noticeRepo.findOneByOrFail({ id: id });
-    return this.noticeRepo.update(
-      { id: id },
-      { like_count: notice.like_count - 1 },
-    );
-  }
-
   async remove(id: number) {
     const existNotice = await this.findOneById(id);
 

@@ -33,9 +33,6 @@ export class Notice extends BaseEntity {
   @Column({ default: 0 })
   click_count: number;
 
-  @Column({ default: 0 })
-  like_count: number;
-
   @CreateDateColumn()
   createdAt: Date;
 
