@@ -7,7 +7,8 @@ import { FavoriteDto } from './favorite.dto';
 
 const Message = {
   NOT_EXISTING_FAVORITE: "There's no such favorite.",
-  NOT_EXISTING_USER: "There's no such user.",
+  EMPTY_FAVORITE: "There's no favorite selected by the user.",
+  MAX_FAVORITES_REACHED: 'A user can only have up to 3 favorite places.',
 };
 
 @Injectable()
@@ -17,7 +18,15 @@ export class FavoriteService {
     private readonly favoriteRepo: Repository<Favorite>,
   ) {}
 
-  save(dto: FavoriteDto) {
+  async save(dto: FavoriteDto) {
+    const existingFavorites = await this.favoriteRepo.find({
+      where: { user_id: dto.user_id },
+    });
+
+    if (existingFavorites.length >= 3) {
+      throw new BadRequestException(Message.MAX_FAVORITES_REACHED);
+    }
+
     return this.favoriteRepo.save(dto);
   }
 
@@ -29,12 +38,14 @@ export class FavoriteService {
     return this.favoriteRepo.findOneBy({ uuid: uuid });
   }
 
-  findOnebyUserId(user_id: string) {
-    const existUserFavorite = this.favoriteRepo.findOneBy({ user_id: user_id });
-    if (!existUserFavorite) {
-      throw new BadRequestException(Message.NOT_EXISTING_USER);
+  async findAllByUserId(user_id: string) {
+    const userFavorites = await this.favoriteRepo.find({
+      where: { user_id: user_id },
+    });
+    if (!userFavorites || userFavorites.length === 0) {
+      throw new BadRequestException(Message.EMPTY_FAVORITE);
     }
-    return existUserFavorite;
+    return userFavorites;
   }
 
   async remove(uuid: string) {

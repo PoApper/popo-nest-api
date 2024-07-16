@@ -16,7 +16,7 @@ export class Favorite extends BaseEntity {
   user_id: string;
 
   @Column({ nullable: false })
-  place_ids: string[];
+  place_id: string;
 
   @CreateDateColumn()
   createdAt: Date;

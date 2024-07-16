@@ -26,8 +26,8 @@ export class FavoriteController {
   }
 
   @Get('/user_id/:user_id')
-  async getOneByName(@Param('user_id') user_id: string) {
-    return this.favoriteService.findOnebyUserId(user_id);
+  async getAllByUserID(@Param('user_id') user_id: string) {
+    return this.favoriteService.findAllByUserId(user_id);
   }
 
   @Delete(':uuid')
