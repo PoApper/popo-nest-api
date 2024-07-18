@@ -14,6 +14,10 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { LikeDto } from './like.dto';
 import { LikeService } from './like.service';
 
+const Message = {
+  FAIL_LIKE_DELETION_NEVER_LIKED: 'There is no record of liking the post.',
+};
+
 @ApiTags('Like')
 @Controller('like')
 export class LikeController {
@@ -22,20 +26,20 @@ export class LikeController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBody({ type: LikeDto })
-  createCalendar(@Body() dto: LikeDto) {
+  async create(@Body() dto: LikeDto): Promise<LikeDto> {
     return this.likeService.save(dto);
   }
 
   @Get('count')
-  async getLikeCount(@Query('notice_id') notice_id: string): Promise<number> {
-    return (await this.likeService.findAllByNoticeId(notice_id)).length;
+  countLikes(@Query('notice_id') notice_id: string): Promise<number> {
+    return this.likeService.countLikes(notice_id);
   }
 
   @Get('status')
-  async getLikeStatus(
+  getStatus(
     @Query('user_id') user_id: string,
     @Query('notice_id') notice_id: string,
-  ): Promise<boolean> {
+  ): boolean {
     return this.likeService.findByUserIdAndNoticeId(user_id, notice_id)
       ? true
       : false;
@@ -43,14 +47,12 @@ export class LikeController {
 
   @Delete()
   @UseGuards(JwtAuthGuard)
-  deleteCalendar(
+  async delete(
     @Query('user_id') user_id: string,
     @Query('notice_id') notice_id: string,
   ) {
     if (!this.likeService.findByUserIdAndNoticeId(user_id, notice_id)) {
-      throw new BadRequestException(
-        '해당 게시글에 좋아요를 누른 기록이 없습니다.',
-      );
+      throw new BadRequestException(Message.FAIL_LIKE_DELETION_NEVER_LIKED);
     }
     return this.likeService.delete(user_id, notice_id);
   }

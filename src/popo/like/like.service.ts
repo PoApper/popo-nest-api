@@ -28,6 +28,10 @@ export class LikeService {
     });
   }
 
+  countLikes(notice_id: string) {
+    return this.likeRepo.count({ where: { notice_id: notice_id } });
+  }
+
   delete(user_id: string, notice_id: string) {
     return this.likeRepo.delete({ user_id: user_id, notice_id: notice_id });
   }
