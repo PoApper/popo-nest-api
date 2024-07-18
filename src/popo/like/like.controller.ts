@@ -51,7 +51,12 @@ export class LikeController {
     @Query('user_id') user_id: string,
     @Query('notice_id') notice_id: string,
   ) {
-    if (!this.likeService.findByUserIdAndNoticeId(user_id, notice_id)) {
+    const target = await this.likeService.findByUserIdAndNoticeId(
+      user_id,
+      notice_id,
+    );
+
+    if (!target) {
       throw new BadRequestException(Message.FAIL_LIKE_DELETION_NEVER_LIKED);
     }
     return this.likeService.delete(user_id, notice_id);
