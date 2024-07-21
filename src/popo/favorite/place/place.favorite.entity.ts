@@ -4,11 +4,10 @@ import {
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
-export class Favorite extends BaseEntity {
+export class FavoritePlace extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
@@ -19,8 +18,5 @@ export class Favorite extends BaseEntity {
   place_id: string;
 
   @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updateAt: Date;
+  created_at: Date;
 }
