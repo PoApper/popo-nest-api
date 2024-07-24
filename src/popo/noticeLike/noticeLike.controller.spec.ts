@@ -36,6 +36,8 @@ describe('NoticeLikeController', () => {
     expect(await controller.countLikes(noticeId)).toBe(result);
   });
 
+  // TODO: 테스트 DB를 만들어서 실제로 데이터를 DB에 넣고 findByUserIdAndNoticeId를 테스트하기
+  // 해당 테스트는 service.spec으로 옮기기
   it('should get status', async () => {
     const result = true;
     const like: NoticeLike = {
