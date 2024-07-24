@@ -11,6 +11,7 @@ import { SettingModule } from './setting/setting.module';
 import { UserModule } from './user/user.module';
 import { WhitebookModule } from './whitebook/whitebook.module';
 import { NoticeLikeModule } from './noticeLike/noticeLike.module';
+import { FavoritePlaceModule } from './favorite/place/place.favorite.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { NoticeLikeModule } from './noticeLike/noticeLike.module';
     UserModule,
     WhitebookModule,
     NoticeLikeModule,
+    FavoritePlaceModule,
   ],
   controllers: [],
   providers: [],
