@@ -10,6 +10,7 @@ import { ReservationModule } from './reservation/reservation.module';
 import { SettingModule } from './setting/setting.module';
 import { UserModule } from './user/user.module';
 import { WhitebookModule } from './whitebook/whitebook.module';
+import { FavoritePlaceModule } from './favorite/place/place.favorite.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { WhitebookModule } from './whitebook/whitebook.module';
     SettingModule,
     UserModule,
     WhitebookModule,
+    FavoritePlaceModule,
   ],
   controllers: [],
   providers: [],
