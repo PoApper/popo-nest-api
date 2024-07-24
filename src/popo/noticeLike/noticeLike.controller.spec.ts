@@ -1,26 +1,26 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LikeController } from './like.controller';
-import { LikeService } from './like.service';
+import { NoticeLikeController } from './noticeLike.controller';
+import { NoticeLikeService } from './noticeLike.service';
 import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { Like } from './like.entity';
+import { NoticeLike } from './noticeLike.entity';
 
-describe('LikeController', () => {
-  let controller: LikeController;
-  let likeService: DeepMocked<LikeService>;
+describe('NoticeLikeController', () => {
+  let controller: NoticeLikeController;
+  let likeService: DeepMocked<NoticeLikeService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [LikeController],
+      controllers: [NoticeLikeController],
       providers: [
         {
-          provide: LikeService,
-          useValue: createMock<LikeService>(),
+          provide: NoticeLikeService,
+          useValue: createMock<NoticeLikeService>(),
         },
       ],
     }).compile();
 
-    controller = module.get<LikeController>(LikeController);
-    likeService = module.get(LikeService);
+    controller = module.get<NoticeLikeController>(NoticeLikeController);
+    likeService = module.get(NoticeLikeService);
   });
 
   it('should be defined', () => {
@@ -38,11 +38,11 @@ describe('LikeController', () => {
 
   it('should get status', async () => {
     const result = true;
-    const like: Like = {
+    const like: NoticeLike = {
       id: 1,
       user_id: '1',
       notice_id: '1',
-      createdAt: new Date(),
+      created_at: new Date(),
     };
     const userId = '1';
     const noticeId = '1';
@@ -62,11 +62,11 @@ describe('LikeController', () => {
   it('should delete like', async () => {
     const userId = '1';
     const noticeId = '1';
-    const like: Like = {
+    const like: NoticeLike = {
       id: 1,
       user_id: '1',
       notice_id: '1',
-      createdAt: new Date(),
+      created_at: new Date(),
     };
     const mockedDeletedResult = { affected: 1, raw: null };
     likeService.findByUserIdAndNoticeId.mockResolvedValue(like);

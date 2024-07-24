@@ -10,7 +10,7 @@ import { ReservationModule } from './reservation/reservation.module';
 import { SettingModule } from './setting/setting.module';
 import { UserModule } from './user/user.module';
 import { WhitebookModule } from './whitebook/whitebook.module';
-import { LikeModule } from './like/like.module';
+import { NoticeLikeModule } from './noticeLike/noticeLike.module';
 
 @Module({
   imports: [
@@ -24,7 +24,7 @@ import { LikeModule } from './like/like.module';
     SettingModule,
     UserModule,
     WhitebookModule,
-    LikeModule,
+    NoticeLikeModule,
   ],
   controllers: [],
   providers: [],

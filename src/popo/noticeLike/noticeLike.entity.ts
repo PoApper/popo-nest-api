@@ -8,7 +8,7 @@ import {
 
 @Entity()
 @Index(['user_id', 'notice_id'], { unique: true })
-export class Like {
+export class NoticeLike {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
@@ -19,5 +19,5 @@ export class Like {
   notice_id: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 }
