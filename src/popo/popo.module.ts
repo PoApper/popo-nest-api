@@ -10,6 +10,7 @@ import { ReservationModule } from './reservation/reservation.module';
 import { SettingModule } from './setting/setting.module';
 import { UserModule } from './user/user.module';
 import { WhitebookModule } from './whitebook/whitebook.module';
+import { NoticeLikeModule } from './noticeLike/noticeLike.module';
 import { FavoritePlaceModule } from './favorite/place/place.favorite.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { FavoritePlaceModule } from './favorite/place/place.favorite.module';
     SettingModule,
     UserModule,
     WhitebookModule,
+    NoticeLikeModule,
     FavoritePlaceModule,
   ],
   controllers: [],
