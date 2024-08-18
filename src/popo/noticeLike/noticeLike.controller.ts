@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
@@ -16,10 +17,13 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { NoticeLikeDto } from './noticeLike.dto';
 import { NoticeLikeService } from './noticeLike.service';
 import { NoticeLike } from './noticeLike.entity';
+import { JwtPayload } from 'src/auth/strategies/jwt.payload';
 
 const Message = {
   FAIL_LIKE_DELETION_NEVER_LIKED: 'There is no record of liking the post.',
 };
+
+
 
 @ApiTags('Notice Like')
 @Controller('noticeLike')
@@ -29,7 +33,13 @@ export class NoticeLikeController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBody({ type: NoticeLikeDto })
-  async create(@Body() dto: NoticeLikeDto): Promise<NoticeLike> {
+  async create(@Body() dto: NoticeLikeDto, @Req() req): Promise<NoticeLike> {
+    const user = req.user as JwtPayload;
+
+    if (user.uuid != dto.user_id) {
+      throw new BadRequestException('User ID does not match.');
+    }
+
     return await this.noticeLikeService.save(dto);
   }
 
