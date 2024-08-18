@@ -36,7 +36,7 @@ export class NoticeLikeController {
       throw new BadRequestException('User ID does not match.');
     }
 
-    return await this.noticeLikeService.save(dto);
+    return this.noticeLikeService.save(dto);
   }
 
   @Get('count')

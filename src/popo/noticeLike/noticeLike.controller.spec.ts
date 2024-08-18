@@ -30,7 +30,7 @@ describe('NoticeLikeController', () => {
 
   it('should count likes', async () => {
     const result = 1;
-    const noticeId = '1';
+    const noticeId = 1;
     noticeLikeService.countLikes.mockResolvedValue(result);
 
     expect(await controller.countLikes(noticeId)).toBe(result);
@@ -55,7 +55,7 @@ describe('NoticeLikeController', () => {
 
   it('should throw error when delete if it is not liked', async () => {
     const userId = '1';
-    const noticeId = '1';
+    const noticeId = 1;
     noticeLikeService.findByUserIdAndNoticeId.mockResolvedValue(null);
 
     await expect(controller.delete(userId, noticeId)).rejects.toThrow();
@@ -63,11 +63,11 @@ describe('NoticeLikeController', () => {
 
   it('should delete like', async () => {
     const userId = '1';
-    const noticeId = '1';
+    const noticeId = 1;
     const like: NoticeLike = {
       id: 1,
       user_id: '1',
-      notice_id: '1',
+      notice_id: 1,
       created_at: new Date(),
     };
     const mockedDeletedResult = { affected: 1, raw: null };
