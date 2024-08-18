@@ -4,8 +4,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
   Post,
   Query,
   Req,
@@ -22,8 +20,6 @@ import { JwtPayload } from 'src/auth/strategies/jwt.payload';
 const Message = {
   FAIL_LIKE_DELETION_NEVER_LIKED: 'There is no record of liking the post.',
 };
-
-
 
 @ApiTags('Notice Like')
 @Controller('noticeLike')
