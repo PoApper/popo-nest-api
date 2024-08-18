@@ -40,14 +40,14 @@ export class NoticeLikeController {
   }
 
   @Get('count')
-  countLikes(@Query('notice_id') notice_id: string): Promise<number> {
+  countLikes(@Query('notice_id') notice_id: number): Promise<number> {
     return this.noticeLikeService.countLikes(notice_id);
   }
 
   @Get('status')
   async getStatus(
     @Query('user_id') user_id: string,
-    @Query('notice_id') notice_id: string,
+    @Query('notice_id') notice_id: number,
   ): Promise<boolean> {
     return (await this.noticeLikeService.findByUserIdAndNoticeId(
       user_id,
@@ -61,7 +61,7 @@ export class NoticeLikeController {
   @UseGuards(JwtAuthGuard)
   async delete(
     @Query('user_id') user_id: string,
-    @Query('notice_id') notice_id: string,
+    @Query('notice_id') notice_id: number,
   ) {
     const target = await this.noticeLikeService.findByUserIdAndNoticeId(
       user_id,
