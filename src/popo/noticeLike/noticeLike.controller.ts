@@ -15,13 +15,10 @@ import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { NoticeLikeDto } from './noticeLike.dto';
 import { NoticeLikeService } from './noticeLike.service';
-import { QueryFailedError } from 'typeorm';
 import { NoticeLike } from './noticeLike.entity';
 
 const Message = {
   FAIL_LIKE_DELETION_NEVER_LIKED: 'There is no record of liking the post.',
-  FAIL_DUPLICATE_ENTRY: 'Duplicate entry detected',
-  FAIL_INTERNAL_SERVER: 'Internal server error',
 };
 
 @ApiTags('Notice Like')
@@ -33,21 +30,7 @@ export class NoticeLikeController {
   @UseGuards(JwtAuthGuard)
   @ApiBody({ type: NoticeLikeDto })
   async create(@Body() dto: NoticeLikeDto): Promise<NoticeLike> {
-    try {
-      return await this.noticeLikeService.save(dto);
-    } catch (e) {
-      if (e instanceof QueryFailedError) {
-        throw new HttpException(
-          Message.FAIL_DUPLICATE_ENTRY,
-          HttpStatus.CONFLICT,
-        );
-      } else {
-        throw new HttpException(
-          Message.FAIL_INTERNAL_SERVER,
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
-    }
+    return await this.noticeLikeService.save(dto);
   }
 
   @Get('count')
