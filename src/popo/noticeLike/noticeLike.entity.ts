@@ -16,7 +16,7 @@ export class NoticeLike {
   user_id: string;
 
   @Column({ nullable: false })
-  notice_id: string;
+  notice_id: number;
 
   @CreateDateColumn()
   created_at: Date;
