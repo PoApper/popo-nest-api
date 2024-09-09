@@ -11,8 +11,8 @@ async function bootstrap() {
   const isLocalDeploy = process.env.NODE_ENV == 'local';
   if (isLocalDeploy) {
     const httpsOptions = {
-      key: fs.readFileSync("./local-certs/private-key.pem"),
-      cert: fs.readFileSync("./local-certs/cert.pem"),
+      key: fs.readFileSync('./local-certs/private-key.pem'),
+      cert: fs.readFileSync('./local-certs/cert.pem'),
     };
     app = await NestFactory.create(AppModule, { httpsOptions });
   } else {
@@ -23,13 +23,9 @@ async function bootstrap() {
 
   if (isLocalDeploy) {
     app.enableCors({
-      origin: [
-        'https://localhost:3000',
-        'https://localhost:3001',
-      ],
+      origin: ['https://localhost:3000', 'https://localhost:3001'],
       credentials: true,
     });
-
   } else {
     app.enableCors({
       origin: [
