@@ -3,24 +3,41 @@ import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
+import * as fs from 'fs';
+import { INestApplication } from '@nestjs/common';
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  let app: INestApplication<any>;
+  const isLocalDeploy = process.env.NODE_ENV == 'local';
+  if (isLocalDeploy) {
+    const httpsOptions = {
+      key: fs.readFileSync('./local-certs/private-key.pem'),
+      cert: fs.readFileSync('./local-certs/cert.pem'),
+    };
+    app = await NestFactory.create(AppModule, { httpsOptions });
+  } else {
+    app = await NestFactory.create(AppModule);
+  }
+
   app.use(cookieParser());
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
 
-      'https://popo.poapper.club',
-      'https://popo-dev.poapper.club',
-
-      'https://admin.popo.poapper.club',
-      'https://admin.popo-dev.poapper.club',
-
-      'https://popo.postech.ac.kr',
-    ],
-    credentials: true,
-  });
+  if (isLocalDeploy) {
+    app.enableCors({
+      origin: ['https://localhost:3000', 'https://localhost:3001'],
+      credentials: true,
+    });
+  } else {
+    app.enableCors({
+      origin: [
+        'https://popo.poapper.club',
+        'https://popo-dev.poapper.club',
+        'https://admin.popo.poapper.club',
+        'https://admin.popo-dev.poapper.club',
+        'https://popo.postech.ac.kr',
+      ],
+      credentials: true,
+    });
+  }
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('POPO API')

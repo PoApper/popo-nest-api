@@ -41,3 +41,7 @@ lerna-debug.log*
 .env
 .env*
 *.sql
+
+# local certs
+*.csr
+*.pem
