@@ -4,20 +4,18 @@ import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import * as fs from 'fs';
-import { INestApplication } from '@nestjs/common';
 
 async function bootstrap() {
-  let app: INestApplication<any>;
   const isLocalDeploy = process.env.NODE_ENV == 'local';
+  let httpsOptions = null;
   if (isLocalDeploy) {
-    const httpsOptions = {
+    httpsOptions = {
       key: fs.readFileSync('./local-certs/private-key.pem'),
       cert: fs.readFileSync('./local-certs/cert.pem'),
     };
-    app = await NestFactory.create(AppModule, { httpsOptions });
-  } else {
-    app = await NestFactory.create(AppModule);
   }
+
+  const app = await NestFactory.create(AppModule, { httpsOptions });;
 
   app.use(cookieParser());
 
