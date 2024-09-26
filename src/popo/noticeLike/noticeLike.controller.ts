@@ -69,7 +69,7 @@ export class NoticeLikeController {
   async delete(
     @Param('user_id') user_id: string,
     @Param('notice_id') notice_id: number,
-    @Req() req: Request,
+    @Req() req: Request | any,
   ) {
     const user = req.user as JwtPayload;
     if (user.uuid != user_id) {

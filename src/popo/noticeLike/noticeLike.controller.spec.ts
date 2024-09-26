@@ -3,6 +3,7 @@ import { NoticeLikeController } from './noticeLike.controller';
 import { NoticeLikeService } from './noticeLike.service';
 import { createMock, DeepMocked } from '@golevelup/ts-jest';
 import { NoticeLike } from './noticeLike.entity';
+import { JwtPayload } from 'src/auth/strategies/jwt.payload';
 
 describe('NoticeLikeController', () => {
   let controller: NoticeLikeController;
@@ -58,7 +59,9 @@ describe('NoticeLikeController', () => {
     const noticeId = 1;
     noticeLikeService.findByUserIdAndNoticeId.mockResolvedValue(null);
 
-    await expect(controller.delete(userId, noticeId)).rejects.toThrow();
+    const user = { uuid: '1' } as JwtPayload;
+
+    await expect(controller.delete(userId, noticeId, { user: user })).rejects.toThrow();
   });
 
   it('should delete like', async () => {
@@ -70,10 +73,13 @@ describe('NoticeLikeController', () => {
       notice_id: 1,
       created_at: new Date(),
     };
+
+    const user = { uuid: '1' } as JwtPayload;
+
     const mockedDeletedResult = { affected: 1, raw: null };
     noticeLikeService.findByUserIdAndNoticeId.mockResolvedValue(like);
     noticeLikeService.delete.mockResolvedValue(mockedDeletedResult);
 
-    expect(await controller.delete(userId, noticeId)).toBe(mockedDeletedResult);
+    expect(await controller.delete(userId, noticeId, { user: user })).toBe(mockedDeletedResult);
   });
 });
