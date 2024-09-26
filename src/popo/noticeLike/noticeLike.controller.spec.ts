@@ -61,7 +61,9 @@ describe('NoticeLikeController', () => {
 
     const user = { uuid: '1' } as JwtPayload;
 
-    await expect(controller.delete(userId, noticeId, { user: user })).rejects.toThrow();
+    await expect(
+      controller.delete(userId, noticeId, { user: user }),
+    ).rejects.toThrow();
   });
 
   it('should delete like', async () => {
@@ -80,6 +82,8 @@ describe('NoticeLikeController', () => {
     noticeLikeService.findByUserIdAndNoticeId.mockResolvedValue(like);
     noticeLikeService.delete.mockResolvedValue(mockedDeletedResult);
 
-    expect(await controller.delete(userId, noticeId, { user: user })).toBe(mockedDeletedResult);
+    expect(await controller.delete(userId, noticeId, { user: user })).toBe(
+      mockedDeletedResult,
+    );
   });
 });
