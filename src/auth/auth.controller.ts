@@ -58,7 +58,7 @@ export class AuthController {
 
   @Get('me/reservation')
   @UseGuards(JwtAuthGuard)
-  async getOwnReservations(@Req() req) {
+  async getOwnReservations(@Req() req: Request) {
     const user = req.user as JwtPayload;
     const existUser = await this.userService.findOneByEmail(user.email);
 

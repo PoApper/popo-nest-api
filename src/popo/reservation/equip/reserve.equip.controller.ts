@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
-
+import { Request } from 'express';
 import { ReserveEquipService } from './reserve.equip.service';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { MailService } from '../../../mail/mail.service';
@@ -38,7 +38,7 @@ export class ReserveEquipController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async post(@Req() req, @Body() dto: CreateReserveEquipDto) {
+  async post(@Req() req: Request, @Body() dto: CreateReserveEquipDto) {
     const user = req.user as JwtPayload;
 
     const saveDto = Object.assign(dto, { booker_id: user.uuid });
@@ -118,7 +118,7 @@ export class ReserveEquipController {
 
   @Get('user')
   @UseGuards(JwtAuthGuard)
-  async getMyReservation(@Req() req) {
+  async getMyReservation(@Req() req: Request) {
     const user = req.user as JwtPayload;
 
     const reservations = await this.reserveEquipService.find({
@@ -166,7 +166,7 @@ export class ReserveEquipController {
 
   @Delete(':uuid')
   @UseGuards(JwtAuthGuard)
-  async delete(@Param('uuid') uuid: string, @Req() req) {
+  async delete(@Param('uuid') uuid: string, @Req() req: Request) {
     const reservation = await this.reserveEquipService.findOneByUuid(uuid);
     const user = req.user as JwtPayload;
 
