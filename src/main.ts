@@ -15,7 +15,7 @@ async function bootstrap() {
     };
   }
 
-  const app = await NestFactory.create(AppModule, { httpsOptions });;
+  const app = await NestFactory.create(AppModule, { httpsOptions });
 
   app.use(cookieParser());
 

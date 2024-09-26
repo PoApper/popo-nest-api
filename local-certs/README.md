@@ -66,6 +66,7 @@ NODE_ENV=local
 
 세팅 후에 클라이언트에서 요청하는 로컬 popo-nest-api 서버의 주소가 `http://localhost:4000`에서 `https://localhost:4000`으로 바뀌어야 한다는 것도 잊지 말자!!
 
+## NODE_TLS_REJECT_UNAUTHORIZED
 
 그리고 Client-side에서 아래의 ENV를 설정해줘야 한다.
 
@@ -73,5 +74,6 @@ NODE_ENV=local
 NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
+## Chrome Allow Insecure Localhost
 
 또, 크롬에서도 insecure localhost에 대한 접속을 허용해줘야 한다. `chrome://flags/#allow-insecure-localhost` 경로로 이동해서 해당 옵션을 Enabled로 바꾸자.
