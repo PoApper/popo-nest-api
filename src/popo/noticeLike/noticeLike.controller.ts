@@ -4,12 +4,13 @@ import {
   Controller,
   Delete,
   Get,
+  Param,
   Post,
-  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { NoticeLikeDto } from './noticeLike.dto';
@@ -29,7 +30,10 @@ export class NoticeLikeController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBody({ type: NoticeLikeDto })
-  async create(@Body() dto: NoticeLikeDto, @Req() req): Promise<NoticeLike> {
+  async create(
+    @Body() dto: NoticeLikeDto,
+    @Req() req: Request,
+  ): Promise<NoticeLike> {
     const user = req.user as JwtPayload;
 
     if (user.uuid != dto.user_id) {
@@ -39,16 +43,19 @@ export class NoticeLikeController {
     return this.noticeLikeService.save(dto);
   }
 
-  @Get('count')
-  countLikes(@Query('notice_id') notice_id: number): Promise<number> {
+  @Get('count/:notice_id')
+  countLikes(@Param('notice_id') notice_id: number): Promise<number> {
     return this.noticeLikeService.countLikes(notice_id);
   }
 
-  @Get('status')
+  @Get('status/:user_id/:notice_id')
   async getStatus(
-    @Query('user_id') user_id: string,
-    @Query('notice_id') notice_id: number,
+    @Param('user_id') user_id: string,
+    @Param('notice_id') notice_id: number,
   ): Promise<boolean> {
+    if (!user_id || !notice_id) {
+      return false;
+    }
     return (await this.noticeLikeService.findByUserIdAndNoticeId(
       user_id,
       notice_id,
@@ -57,12 +64,18 @@ export class NoticeLikeController {
       : false;
   }
 
-  @Delete()
+  @Delete(':user_id/:notice_id')
   @UseGuards(JwtAuthGuard)
   async delete(
-    @Query('user_id') user_id: string,
-    @Query('notice_id') notice_id: number,
+    @Param('user_id') user_id: string,
+    @Param('notice_id') notice_id: number,
+    @Req() req: Request | any,
   ) {
+    const user = req.user as JwtPayload;
+    if (user.uuid != user_id) {
+      throw new BadRequestException('User ID does not match.');
+    }
+
     const target = await this.noticeLikeService.findByUserIdAndNoticeId(
       user_id,
       notice_id,

@@ -59,7 +59,10 @@ export class ReservePlaceController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async createWithNameAndId(@Req() req, @Body() dto: CreateReservePlaceDto) {
+  async createWithNameAndId(
+    @Req() req: Request,
+    @Body() dto: CreateReservePlaceDto,
+  ) {
     const user = req.user as JwtPayload;
     const existPlace = await this.placeService.findOneByUuidOrFail(
       dto.place_id,
@@ -290,7 +293,7 @@ export class ReservePlaceController {
 
   @Delete(':uuid')
   @UseGuards(JwtAuthGuard)
-  async delete(@Param('uuid') uuid: string, @Req() req) {
+  async delete(@Param('uuid') uuid: string, @Req() req: Request) {
     const reservation =
       await this.reservePlaceService.findOneByUuidOrFail(uuid);
     const user = req.user as JwtPayload;
