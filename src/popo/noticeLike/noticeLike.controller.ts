@@ -6,11 +6,11 @@ import {
   Get,
   Param,
   Post,
-  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { NoticeLikeDto } from './noticeLike.dto';
@@ -32,7 +32,7 @@ export class NoticeLikeController {
   @ApiBody({ type: NoticeLikeDto })
   async create(
     @Body() dto: NoticeLikeDto,
-    @Req() req: Request & { user: JwtPayload },
+    @Req() req: Request,
   ): Promise<NoticeLike> {
     const user = req.user as JwtPayload;
 
@@ -43,8 +43,8 @@ export class NoticeLikeController {
     return this.noticeLikeService.save(dto);
   }
 
-  @Get('count')
-  countLikes(@Query('notice_id') notice_id: number): Promise<number> {
+  @Get('count/:notice_id')
+  countLikes(@Param('notice_id') notice_id: number): Promise<number> {
     return this.noticeLikeService.countLikes(notice_id);
   }
 
@@ -69,9 +69,9 @@ export class NoticeLikeController {
   async delete(
     @Param('user_id') user_id: string,
     @Param('notice_id') notice_id: number,
-    @Req() req: Request & { user: JwtPayload },
+    @Req() req: Request,
   ) {
-    const user = req.user;
+    const user = req.user as JwtPayload;
     if (user.uuid != user_id) {
       throw new BadRequestException('User ID does not match.');
     }
