@@ -14,15 +14,37 @@ import {
 import { WhitebookService } from './whitebook.service';
 import { WhitebookDto } from './whitebook.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { FileBody } from 'src/file/file-body.decorator';
+import { FileService } from '../../file/file.service';
 
 @ApiTags('생활백서(Whitebook)')
 @Controller('whitebook')
 export class WhitebookController {
-  constructor(private readonly whitebookService: WhitebookService) {}
+  constructor(
+    private readonly whitebookService: WhitebookService,
+    private readonly fileService: FileService,
+  ) {}
 
   @Post()
-  create(@Body() dto: WhitebookDto) {
-    return this.whitebookService.save(dto);
+  @FileBody('pdf_file')
+  async create(@Body() dto: WhitebookDto) {
+    if (dto.pdf_file) {
+      const pdf_url = await this.fileService.uploadFile(
+        // S3 용량을 줄이기 위해 파일 이름이 같으면 덮어쓰게 함
+        `whitebook/${dto.title}.pdf`,
+        dto.pdf_file,
+      );
+      dto.link = pdf_url;
+    }
+
+    const dtoWithoutPdfFile: Omit<WhitebookDto, 'pdf_file'> = {
+      title: dto.title,
+      content: dto.content,
+      link: dto.link,
+      show_only_login: dto.show_only_login,
+    };
+
+    return this.whitebookService.save(dtoWithoutPdfFile);
   }
 
   @Get()
@@ -58,8 +80,25 @@ export class WhitebookController {
   }
 
   @Put(':uuid')
-  update(@Param('uuid') uuid: string, @Body() dto: WhitebookDto) {
-    return this.whitebookService.update(uuid, dto);
+  @FileBody('pdf_file')
+  async update(@Param('uuid') uuid: string, @Body() dto: WhitebookDto) {
+    if (dto.pdf_file) {
+      const pdf_url = await this.fileService.uploadFile(
+        // S3 용량을 줄이기 위해 파일 이름이 같으면 덮어쓰게 함
+        `whitebook/${dto.title}.pdf`,
+        dto.pdf_file,
+      );
+      dto.link = pdf_url;
+    }
+
+    const dtoWithoutPdfFile: Omit<WhitebookDto, 'pdf_file'> = {
+      title: dto.title,
+      content: dto.content,
+      link: dto.link,
+      show_only_login: dto.show_only_login,
+    };
+
+    return this.whitebookService.update(uuid, dtoWithoutPdfFile);
   }
 
   @Delete(':uuid')
