@@ -1,13 +1,13 @@
 repos:
   - repo: local
     hooks:
-      - id: npm-run-lint
-        name: Run ESLint
-        entry: npm run lint
-        language: system
-        types: [javascript, ts]
       - id: npm-run-format
         name: Run Prettier
         entry: npm run format
         language: system
-        types: [javascript, ts]
+        types: [javascript, ts, yaml]
+      - id: npm-run-lint
+        name: Run ESLint
+        entry: npm run lint
+        language: system
+        types: [javascript, ts, yaml]

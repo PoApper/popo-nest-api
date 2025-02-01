@@ -95,7 +95,7 @@ jobs:
       - name: Redeploy Dev Service
         run: |
           RESPONSE=$(curl -s -o response.txt -w "%{http_code}" -X POST ${{ secrets.PORTAINER_DEV_SERVICE_WEBHOOK }})
-          if [ "$RESPONSE" -ne 200 ]; then
+          if [ "$RESPONSE" -ne 204 ]; then
             echo "❌ Deployment failed! HTTP Response: $RESPONSE"
             cat response.txt  # 오류 메시지 출력 (필요 시)
             exit 1
