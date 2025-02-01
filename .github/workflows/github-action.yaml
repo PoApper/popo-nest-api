@@ -85,6 +85,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
+          providence: false
 
   redeploy_dev_service:
     name: Redeploy Dev Service
