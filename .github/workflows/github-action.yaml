@@ -93,11 +93,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Redeploy Dev Service
-        run: curl -X POST ${{ secrets.PORTAINER_DEV_SERVICE_WEBHOOK }}
+        run: |
+          RESPONSE=$(curl -s -o response.txt -w "%{http_code}" -X POST ${{ secrets.PORTAINER_DEV_SERVICE_WEBHOOK }})
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "❌ Deployment failed! HTTP Response: $RESPONSE"
+            cat response.txt  # 오류 메시지 출력 (필요 시)
+            exit 1
+          fi
+          echo "✅ Deployment successful! HTTP Response: $RESPONSE"
 
   deploy_health_check:
     name: Check Application Status
-    needs: docker_build_and_push
+    needs: redeploy_dev_service
     runs-on: ubuntu-latest
     steps:
       - name: Check the deployed service URL
