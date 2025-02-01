@@ -45,7 +45,7 @@ jobs:
   docker_build_and_push:
     name: Docker build and push
     needs: [lint, test]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -85,6 +85,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
+          providence: false  # Disable image index metadata
 
   redeploy_dev_service:
     name: Redeploy Dev Service
@@ -92,11 +93,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Redeploy Dev Service
-        run: curl -X POST ${{ secrets.PORTAINER_DEV_SERVICE_WEBHOOK }}
+        run: |
+          RESPONSE=$(curl -s -o response.txt -w "%{http_code}" -X POST ${{ secrets.PORTAINER_DEV_SERVICE_WEBHOOK }})
+          if [ "$RESPONSE" -ne 204 ]; then
+            echo "❌ Deployment failed! HTTP Response: $RESPONSE"
+            cat response.txt  # 오류 메시지 출력 (필요 시)
+            exit 1
+          fi
+          echo "✅ Deployment successful! HTTP Response: $RESPONSE"
 
   deploy_health_check:
     name: Check Application Status
-    needs: docker_build_and_push
+    needs: redeploy_dev_service
     runs-on: ubuntu-latest
     steps:
       - name: Check the deployed service URL
