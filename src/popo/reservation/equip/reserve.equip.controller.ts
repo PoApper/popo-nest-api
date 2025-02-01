@@ -138,6 +138,17 @@ export class ReserveEquipController {
     return this.reserveEquipService.joinEquips(reservations);
   }
 
+  @Get('user/admin/:uuid')
+  @Roles(UserType.admin)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getUserReservationByAdmin(@Param('uuid') uuid: string) {
+    const reservations = await this.reserveEquipService.find({
+      where: { booker_id: uuid },
+      order: { date: 'DESC', start_time: 'DESC' },
+    });
+    return this.reserveEquipService.joinEquips(reservations);
+  }
+
   @Get('sync-reservation-count')
   async syncPlaceReservationCount() {
     const equipmentList = await this.equipService.find();

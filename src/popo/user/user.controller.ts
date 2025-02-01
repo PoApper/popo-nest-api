@@ -75,6 +75,13 @@ export class UserController {
     return this.userService.findOneByUuid(uuid);
   }
 
+  @Get('admin/:uuid')
+  @Roles(UserType.admin)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getOneByAdmin(@Param('uuid') uuid: string) {
+    return this.userService.findOneByUuid(uuid);
+  }
+
   @Get('email/:email')
   async getOneByEmail(@Param('email') email: string) {
     return this.userService.findOneByEmail(email);
