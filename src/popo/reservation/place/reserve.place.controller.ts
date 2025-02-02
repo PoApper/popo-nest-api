@@ -157,6 +157,17 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinPlace(reservations);
   }
 
+  @Get('user/admin/:uuid')
+  @Roles(UserType.admin)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getUserReservationByAdmin(@Param('uuid') uuid: string) {
+    const reservations = await this.reservePlaceService.find({
+      where: { booker_id: uuid },
+      order: { date: 'DESC', start_time: 'DESC' },
+    });
+    return this.reservePlaceService.joinPlace(reservations);
+  }
+
   @Get('place/:place_uuid')
   @Roles(UserType.admin, UserType.association, UserType.staff)
   @UseGuards(JwtAuthGuard, RolesGuard)
