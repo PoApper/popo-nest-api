@@ -18,8 +18,11 @@ import configuration from './config/configurations';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) =>
-        configService.get('database'),
+      useFactory: (configService: ConfigService) => {
+        const dbConfig = configService.get('database');
+        console.log(`Running in ${process.env.NODE_ENV} mode`);
+        return dbConfig;
+      },
       inject: [ConfigService],
     }),
     PopoModule,
