@@ -6,6 +6,8 @@
 
 [NestJS - Localhost 환경에서 HTTPS 적용하기](https://lee-yo-han.github.io/nestjs-localhost-https) 포스트를 참고할 걸 권장드립니다. 아래의 내용은 위 포스트의 대충에 가깝습니다.
 
+또는 [rehansattar의 포스트](https://rehansattar.dev/creating-a-local-https-nestjs-server-with-free-ssl-certificates-a-step-by-step-guide)를 참고하길 바랍니다.
+
 
 ## Generate Self-signed certificates
 
