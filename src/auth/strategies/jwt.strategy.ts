@@ -13,10 +13,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         (request: Request) => {
           const token = request?.cookies?.Authentication;
           if (!token) {
-            throw new UnauthorizedException('인증 토큰이 없습니다. 로그인이 필요합니다.');
+            throw new UnauthorizedException(
+              '인증 토큰이 없습니다. 로그인이 필요합니다.',
+            );
           }
           if (token === '') {
-            throw new UnauthorizedException('빈 인증 토큰이 제공되었습니다. 유효한 토큰이 필요합니다.');
+            throw new UnauthorizedException(
+              '빈 인증 토큰이 제공되었습니다. 유효한 토큰이 필요합니다.',
+            );
           }
           return token;
         },

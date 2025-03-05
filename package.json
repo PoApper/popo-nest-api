@@ -15,6 +15,7 @@
     "format": "prettier --w **/*.ts",
     "format:check": "prettier --c **/*.ts",
     "lint": "eslint . --ext .ts --ignore-pattern dist/",
+    "lint:fix": "eslint . --ext .ts --ignore-pattern dist/ --fix",
     "test": "NODE_ENV=test jest",
     "test:watch": "NODE_ENV=test jest --watch",
     "test:cov": "NODE_ENV=test jest --coverage",
