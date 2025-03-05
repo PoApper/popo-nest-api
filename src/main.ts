@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { JwtExceptionFilter } from './common/filters/jwt-exception.filter';
 
 import * as fs from 'fs';
 
@@ -39,9 +38,6 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('swagger', app, document);
-
-  // JWT 예외 필터 전역 적용
-  app.useGlobalFilters(new JwtExceptionFilter());
 
   await app.listen(4000);
 }
