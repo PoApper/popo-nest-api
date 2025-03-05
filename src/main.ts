@@ -26,13 +26,7 @@ async function bootstrap() {
     });
   } else {
     app.enableCors({
-      origin: [
-        'https://popo.poapper.club',
-        'https://popo-dev.poapper.club',
-        'https://admin.popo.poapper.club',
-        'https://admin.popo-dev.poapper.club',
-        'https://popo.postech.ac.kr',
-      ],
+      origin: true,
       credentials: true,
     });
   }
