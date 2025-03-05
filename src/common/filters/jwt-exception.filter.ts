@@ -8,7 +8,7 @@ export class JwtExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    let status = HttpStatus.UNAUTHORIZED;
+    const status = HttpStatus.UNAUTHORIZED;
     let message = '인증에 실패했습니다';
 
     if (exception instanceof TokenExpiredError) {
