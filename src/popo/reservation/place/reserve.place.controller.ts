@@ -137,13 +137,28 @@ export class ReservePlaceController {
 
   @Get('user')
   @UseGuards(JwtAuthGuard)
-  async getMyReservation(@Req() req: Request) {
+  @ApiQuery({ name: 'skip', required: false })
+  @ApiQuery({ name: 'take', required: false })
+  async getMyReservation(
+    @Req() req: Request,
+    @Query('skip') skip: number,
+    @Query('take') take: number,
+  ) {
     const user = req.user as JwtPayload;
 
-    const reservations = await this.reservePlaceService.find({
+    const findOption = {
       where: { booker_id: user.uuid },
-      order: { date: 'DESC', start_time: 'DESC' },
-    });
+      order: { date: 'DESC', start_time: 'DESC' }
+    };
+
+    if (skip) {
+      findOption['skip'] = skip;
+    }
+    if (take) {
+      findOption['take'] = take;
+    }
+
+    const reservations = await this.reservePlaceService.find(findOption);
     return this.reservePlaceService.joinPlace(reservations);
   }
 
