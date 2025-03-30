@@ -148,7 +148,7 @@ export class ReservePlaceController {
 
     const findOption = {
       where: { booker_id: user.uuid },
-      order: { date: 'DESC', start_time: 'DESC' }
+      order: { date: 'DESC', start_time: 'DESC' },
     };
 
     if (skip) {
