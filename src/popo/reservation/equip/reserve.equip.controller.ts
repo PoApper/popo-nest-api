@@ -118,14 +118,32 @@ export class ReserveEquipController {
 
   @Get('user')
   @UseGuards(JwtAuthGuard)
-  async getMyReservation(@Req() req: Request) {
+  @ApiQuery({ name: 'skip', required: false })
+  @ApiQuery({ name: 'take', required: false })
+  async getMyReservation(
+    @Req() req: Request,
+    @Query('skip') skip: number,
+    @Query('take') take: number,
+  ) {
     const user = req.user as JwtPayload;
 
-    const reservations = await this.reserveEquipService.find({
+    const findOption = {
       where: { booker_id: user.uuid },
       order: { date: 'DESC', start_time: 'DESC' },
+    };
+
+    const total = await this.reserveEquipService.count({
+      booker_id: user.uuid,
     });
-    return this.reserveEquipService.joinEquips(reservations);
+
+    findOption['skip'] = skip ?? 0;
+    findOption['take'] = take ?? 10;
+
+    const reservations = await this.reserveEquipService.find(findOption);
+    return {
+      items: await this.reserveEquipService.joinEquips(reservations),
+      total: total,
+    };
   }
 
   @Get('user/:uuid')

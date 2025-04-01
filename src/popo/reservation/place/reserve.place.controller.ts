@@ -151,15 +151,18 @@ export class ReservePlaceController {
       order: { date: 'DESC', start_time: 'DESC' },
     };
 
-    if (skip) {
-      findOption['skip'] = skip;
-    }
-    if (take) {
-      findOption['take'] = take;
-    }
+    const total = await this.reservePlaceService.count({
+      booker_id: user.uuid,
+    });
+
+    findOption['skip'] = skip ?? 0;
+    findOption['take'] = take ?? 10;
 
     const reservations = await this.reservePlaceService.find(findOption);
-    return this.reservePlaceService.joinPlace(reservations);
+    return {
+      items: await this.reservePlaceService.joinPlace(reservations),
+      total: total,
+    };
   }
 
   @Get('user/:uuid')
