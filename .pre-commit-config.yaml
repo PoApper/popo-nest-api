@@ -8,6 +8,6 @@ repos:
         types: [javascript, ts, yaml]
       - id: npm-run-lint
         name: Run ESLint
-        entry: npm run lint
+        entry: npm run lint:fix
         language: system
         types: [javascript, ts, yaml]
