@@ -16,7 +16,7 @@ export default () => {
         : ['dist/**/*.entity.js'], // ✅ 프로덕션 환경에서는 컴파일된 JS 파일 포함
       synchronize: isTest ? true : process.env.DATABASE_SYNC === 'true', // 테스트 환경에서는 항상 true
       dropSchema: isTest, // ✅ 테스트 시 DB 초기화
-      charset: isTest ? undefined : 'utf8mb4',
+      charset: isTest ? undefined : 'utf8mb4', // 테스트 환경인 SQLite는 기본적으로 MYSQL의 utf8mb4까지 커버하므로 따로 설정 필요하지 않음
     },
   };
 };
