@@ -1,16 +1,15 @@
-version: "3"
+version: '3.3'
 services:
   popo-nest-dev:
     image: 151345152001.dkr.ecr.ap-northeast-2.amazonaws.com/popo-nest-api:latest
     ports:
       - 6000:4000
     secrets:
-      - source: poapper_popo_dotenv_1
+      - source: poapper_popo_dev_dotenv_1
         target: /usr/src/app/.env
     deploy:
       placement:
         constraints:
-          # deploy to manager node
           - node.role == manager
   popo-nest-prod:
     image: 151345152001.dkr.ecr.ap-northeast-2.amazonaws.com/popo-nest-api:vX.X.X
@@ -22,9 +21,10 @@ services:
     deploy:
       placement:
         constraints:
-          # deploy to manager node
           - node.role == manager
 
 secrets:
+  poapper_popo_dev_dotenv_1:
+    external: true
   poapper_popo_dotenv_1:
     external: true
