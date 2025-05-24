@@ -7,6 +7,7 @@ import { User } from './user.entity';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 import { UserStatus, UserType } from './user.meta';
 import { SettingService } from '../setting/setting.service';
+import { Nickname } from './nickname.entity';
 
 const Message = {
   EXISTING_EMAIL: 'This email is already used.',
@@ -19,6 +20,8 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly settingService: SettingService,
+    @InjectRepository(Nickname)
+    private readonly nicknameRepo: Repository<Nickname>,
   ) {}
 
   async save(dto: CreateUserDto) {
@@ -40,6 +43,7 @@ export class UserService {
       name: dto.name,
       userType: isRcStudent ? UserType.rc_student : dto.userType,
       lastLoginAt: new Date(),
+      userStatus: UserStatus.activated,
     });
   }
 
@@ -195,5 +199,17 @@ export class UserService {
     return crypto
       .pbkdf2Sync(password, cryptoSalt, 10000, 64, 'sha512')
       .toString('base64');
+  }
+
+  async getNickname(userUuid: string) {
+    const nickname = await this.nicknameRepo.findOne({
+      where: { userUuid },
+    });
+
+    if (!nickname) {
+      return { nickname: null };
+    }
+
+    return nickname;
   }
 }
