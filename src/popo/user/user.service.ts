@@ -212,4 +212,18 @@ export class UserService {
 
     return nickname;
   }
+
+  async updateRefreshToken(
+    userUuid: string,
+    hashedToken: string,
+    expiresAt: Date,
+  ) {
+    return this.userRepo.update(
+      { uuid: userUuid },
+      {
+        hashedRefreshToken: hashedToken,
+        refreshTokenExpiresAt: expiresAt,
+      },
+    );
+  }
 }

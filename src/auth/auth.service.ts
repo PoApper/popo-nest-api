@@ -39,7 +39,7 @@ export class AuthService {
     }
   }
 
-  async generateJwtToken(user: any) {
+  async generateAccessToken(user: any) {
     const payload = {
       uuid: user.uuid,
       email: user.email,
@@ -50,10 +50,40 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
+  async generateRefreshToken(user: any) {
+    const payload = {
+      uuid: user.uuid,
+      email: user.email,
+    };
+    const token = this.jwtService.sign(payload, { expiresIn: '60d' });
+    // TODO
+    const hashedToken = '추가';
+    const expiresAt = new Date(Date.now());
+    await this.usersService.updateRefreshToken(
+      user.uuid,
+      hashedToken,
+      expiresAt,
+    );
+    return token;
+  }
+
+  async removeRefreshToken(userUuid: string) {
+    await this.usersService.updateRefreshToken(userUuid, null, null);
+  }
+
   // password encrypt util
   private encryptPassword(password: string, cryptoSalt: string) {
     return crypto
       .pbkdf2Sync(password, cryptoSalt, 10000, 64, 'sha512')
       .toString('base64');
+  }
+
+  validateRefreshToken(userUuid: string, refreshToken: string): boolean {
+    // TODO
+    // 1. 리프레시 토큰이 엑세스 토큰의 정보와 일치하는지 검증
+    // 2. 해싱한 리프레시 토큰이 DB에 저장된 리프레시 토큰과 일치하는지 검증
+    // 일치하지 않는다면 토큰 악용되었을 가능성
+    // 3. 일치한다면 토큰 만료 시간 검증
+    return true;
   }
 }

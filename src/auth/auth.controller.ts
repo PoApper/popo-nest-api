@@ -24,7 +24,7 @@ import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.ser
 import { ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from './strategies/jwt.payload';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
-
+import { ConfigService } from '@nestjs/config';
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
 const Message = {
@@ -40,6 +40,7 @@ export class AuthController {
     private readonly reservePlaceService: ReservePlaceService,
     private readonly reserveEquipService: ReserveEquipService,
     private readonly mailService: MailService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get(['verifyToken', 'verifyToken/admin', 'me'])
@@ -88,9 +89,29 @@ export class AuthController {
         throw new UnauthorizedException('Not authorized account.');
       }
     }
-    const token = await this.authService.generateJwtToken(user);
+    const accessToken = await this.authService.generateAccessToken(user);
+    const refreshToken = await this.authService.generateRefreshToken(user);
 
-    res.setHeader('Set-Cookie', `Authentication=${token}; HttpOnly; Path=/;`);
+    res.cookie('Authentication', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'prod', // 운영 환경에서만 true
+      path: '/', // 모든 경로에서 접근 가능하도록
+      domain: 'popo.poapper.club', // ⭐ 중요: 공통 상위 도메인으로 설정
+      sameSite: 'lax', // 또는 'strict', 필요에 따라 'none' (none 사용 시 Secure 필수)
+      maxAge: 1000 * 60 * 60 * 24 * 5, // 5일
+    });
+
+    // 2. 리프레시 토큰 쿠키 설정
+    // TODO: 리프레시 토큰이 이미 존재하는데 새로 발급받는 경우?
+    // TODO: 한 명의 유저가 다른 기기로 동시에 로그인하는 경우에는 서로 다른 리프레시 토큰 두 개가 아닌 같은 토큰 하나만 발급하는 게 맞지 않을까
+    res.cookie('Refresh', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'prod', // 운영 환경에서만 true
+      path: '/auth/refresh', // 리프레시 토큰은 특정 경로에서만 사용
+      domain: 'popo.poapper.club', // ⭐ 중요: 공통 상위 도메인으로 설정
+      sameSite: 'lax', // 또는 'strict', 필요에 따라 'none'
+      maxAge: 1000 * 60 * 60 * 24 * 60, // 60일
+    });
 
     // update Login History
     const existUser = await this.userService.findOneByUuidOrFail(user.uuid);
@@ -182,5 +203,41 @@ export class AuthController {
     const { ...UserInfo } = await this.userService.findOneByUuid(user.uuid);
 
     return UserInfo;
+  }
+
+  @Post('refresh')
+  @UseGuards(JwtAuthGuard)
+  async refresh(@Req() req: Request, @Res() res: Response) {
+    const user = req.user as JwtPayload;
+
+    const refreshTokenInCookie = req.cookies?.Refresh;
+    const isValid = this.authService.validateRefreshToken(
+      user.uuid,
+      refreshTokenInCookie,
+    );
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const accessToken = await this.authService.generateAccessToken(user);
+    const refreshToken = await this.authService.generateRefreshToken(user);
+
+    res.cookie('Authentication', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'prod',
+      path: '/',
+      domain: 'popo.poapper.club',
+      sameSite: 'lax',
+      maxAge: this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_TIME'),
+    });
+
+    res.cookie('Refresh', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'prod',
+      path: '/auth/refresh',
+      domain: 'popo.poapper.club',
+      sameSite: 'lax',
+      maxAge: this.configService.get('JWT_REFRESH_TOKEN_EXPIRATION_TIME'),
+    });
   }
 }
