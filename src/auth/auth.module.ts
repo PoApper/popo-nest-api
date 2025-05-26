@@ -9,7 +9,6 @@ import { AuthController } from './auth.controller';
 import { MailModule } from '../mail/mail.module';
 import { ReservePlaceModule } from '../popo/reservation/place/reserve.place.module';
 import { ReserveEquipModule } from '../popo/reservation/equip/reserve.equip.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 @Module({
   imports: [
     UserModule,
@@ -17,17 +16,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     ReservePlaceModule,
     ReserveEquipModule,
     PassportModule,
-    ConfigModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_ACCESS_TOKEN_SECRET'),
-        signOptions: {
-          expiresIn: configService.get('JWT_ACCESS_TOKEN_EXPIRATION_TIME'),
-        },
-      }),
-      inject: [ConfigService],
-    }),
+    JwtModule.register({}),
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService],
