@@ -92,10 +92,10 @@ export class AuthController {
 
     res.cookie('Authentication', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'prod', // 운영 환경에서만 true
+      secure: process.env.NODE_ENV === 'local' ? false : true,
       path: '/', // 모든 경로에서 접근 가능하도록
       domain:
-        process.env.NODE_ENV === 'prod' ? 'popo.poapper.club' : 'localhost',
+        process.env.NODE_ENV === 'local' ? 'localhost' : 'popo.poapper.club',
       sameSite: 'lax', // 또는 'strict', 필요에 따라 'none' (none 사용 시 Secure 필수)
       maxAge: 1000 * 60 * 60 * 24 * 5, // 5일
     });
@@ -103,10 +103,10 @@ export class AuthController {
     // 2. 리프레시 토큰 쿠키 설정
     res.cookie('Refresh', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'prod', // 운영 환경에서만 true
+      secure: process.env.NODE_ENV === 'local' ? false : true, // 운영 환경에서만 true
       path: '/auth/refresh', // 리프레시 토큰은 특정 경로에서만 사용, /auth/refresh는 로그아웃 시 사용 안되는지 확인
       domain:
-        process.env.NODE_ENV === 'prod' ? 'popo.poapper.club' : 'localhost',
+        process.env.NODE_ENV === 'local' ? 'localhost' : 'popo.poapper.club',
       sameSite: 'lax', // 또는 'strict', 필요에 따라 'none'
       maxAge: 1000 * 60 * 60 * 24 * 60, // 60일
     });
@@ -233,20 +233,20 @@ export class AuthController {
 
     res.cookie('Authentication', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'prod',
+      secure: process.env.NODE_ENV === 'local' ? false : true,
       path: '/',
       domain:
-        process.env.NODE_ENV === 'prod' ? 'popo.poapper.club' : 'localhost',
+        process.env.NODE_ENV === 'local' ? 'localhost' : 'popo.poapper.club',
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 5, // 5일, TODO: 환경변수로 변경
     });
 
     res.cookie('Refresh', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'prod',
+      secure: process.env.NODE_ENV === 'local' ? false : true,
       path: '/auth/refresh',
       domain:
-        process.env.NODE_ENV === 'prod' ? 'popo.poapper.club' : 'localhost',
+        process.env.NODE_ENV === 'local' ? 'localhost' : 'popo.poapper.club',
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 60, // 60일
     });
