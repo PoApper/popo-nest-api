@@ -24,7 +24,6 @@ import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.ser
 import { ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from './strategies/jwt.payload';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
-
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
 const Message = {
@@ -88,9 +87,29 @@ export class AuthController {
         throw new UnauthorizedException('Not authorized account.');
       }
     }
-    const token = await this.authService.generateJwtToken(user);
+    const accessToken = await this.authService.generateAccessToken(user);
+    const refreshToken = await this.authService.generateRefreshToken(user);
 
-    res.setHeader('Set-Cookie', `Authentication=${token}; HttpOnly; Path=/;`);
+    res.cookie('Authentication', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/', // 모든 경로에서 접근 가능하도록
+      domain:
+        process.env.NODE_ENV === 'local' ? 'localhost' : 'popo.poapper.club',
+      sameSite: 'lax', // 또는 'strict', 필요에 따라 'none' (none 사용 시 Secure 필수)
+      maxAge: 1000 * 60 * 60 * 24 * 5, // 5일
+    });
+
+    // 2. 리프레시 토큰 쿠키 설정
+    res.cookie('Refresh', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true, // 운영 환경에서만 true
+      path: '/auth/refresh', // 리프레시 토큰은 특정 경로에서만 사용, /auth/refresh는 로그아웃 시 사용 안되는지 확인
+      domain:
+        process.env.NODE_ENV === 'local' ? 'localhost' : 'popo.poapper.club',
+      sameSite: 'lax', // 또는 'strict', 필요에 따라 'none'
+      maxAge: 1000 * 60 * 60 * 24 * 60, // 60일
+    });
 
     // update Login History
     const existUser = await this.userService.findOneByUuidOrFail(user.uuid);
@@ -104,7 +123,17 @@ export class AuthController {
   async logOut(@Req() req: Request, @Res() res: Response) {
     const user = req.user as JwtPayload;
     this.userService.updateLogin(user.uuid);
-    res.setHeader('Set-Cookie', `Authentication=; HttpOnly; Path=/; Max-Age=0`);
+    // res.setHeader('Set-Cookie', `Authentication=; HttpOnly; Path=/; Max-Age=0`);
+    await this.userService.updateRefreshToken(user.uuid, null, null);
+    // res.setHeader(
+    //   'Set-Cookie',
+    //   `Refresh=; HttpOnly; Path=/auth/refresh; Max-Age=0`,
+    // );
+    res.clearCookie('Authentication');
+    res.clearCookie('Refresh', {
+      path: '/auth/refresh',
+    });
+
     return res.sendStatus(200);
   }
 
@@ -182,5 +211,46 @@ export class AuthController {
     const { ...UserInfo } = await this.userService.findOneByUuid(user.uuid);
 
     return UserInfo;
+  }
+
+  @Post('refresh')
+  @UseGuards(JwtAuthGuard)
+  async refresh(@Req() req: Request, @Res() res: Response) {
+    const user = req.user as JwtPayload;
+
+    const refreshTokenInCookie = req.cookies?.Refresh;
+    const isValid = await this.authService.validateRefreshToken(
+      user,
+      refreshTokenInCookie,
+    );
+    if (!isValid) {
+      await this.userService.updateRefreshToken(user.uuid, null, null);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const accessToken = await this.authService.generateAccessToken(user);
+    const refreshToken = await this.authService.generateRefreshToken(user);
+
+    res.cookie('Authentication', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/',
+      domain:
+        process.env.NODE_ENV === 'local' ? 'localhost' : 'popo.poapper.club',
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 5, // 5일, TODO: 환경변수로 변경
+    });
+
+    res.cookie('Refresh', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/auth/refresh',
+      domain:
+        process.env.NODE_ENV === 'local' ? 'localhost' : 'popo.poapper.club',
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 60, // 60일
+    });
+
+    return res.send(user);
   }
 }

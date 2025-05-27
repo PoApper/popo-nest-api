@@ -39,7 +39,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_ENV: test
-      JWT_SECRET_KEY: test
+      JWT_ACCESS_TOKEN_SECRET: xxxx
+      JWT_REFRESH_TOKEN_SECRET: xxxx
+      JWT_ACCESS_TOKEN_EXPIRATION_TIME: 1d
+      JWT_REFRESH_TOKEN_EXPIRATION_TIME: 7d
     steps:
       - name: Checkout
         uses: actions/checkout@v4
