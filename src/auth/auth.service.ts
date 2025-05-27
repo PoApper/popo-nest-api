@@ -32,8 +32,8 @@ export class AuthService {
 
     const encryptedPassword = this.encryptPassword(password, cryptoSalt);
     if (user.password === encryptedPassword) {
-      const { ...result } = user;
-      return result;
+      const nickname = await this.usersService.getNickname(user.uuid);
+      return { ...user, nickname: nickname.nickname };
     } else {
       return null;
     }
@@ -44,6 +44,7 @@ export class AuthService {
       uuid: user.uuid,
       email: user.email,
       name: user.name,
+      nickname: user.nickname,
       userType: user.userType,
     };
     return this.jwtService.sign(payload);
