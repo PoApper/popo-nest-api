@@ -115,7 +115,6 @@ export class AuthService {
 
       // 2. 리프레시 토큰의 payload가 액세스 토큰의 정보와 일치하는지 검증
       if (userInRefreshToken.uuid !== userInAccessToken.uuid) {
-        console.log('userInRefreshToken.uuid !== userInAccessToken.uuid');
         return false;
       }
 
@@ -126,7 +125,6 @@ export class AuthService {
       const hashedToken = this.hashToken(refreshToken);
 
       if (!user.hashedRefreshToken || user.hashedRefreshToken !== hashedToken) {
-        console.log('user.hashedRefreshToken !== hashedToken');
         return false;
       }
 
@@ -135,14 +133,12 @@ export class AuthService {
         !user.refreshTokenExpiresAt ||
         user.refreshTokenExpiresAt <= new Date()
       ) {
-        console.log('user.refreshTokenExpiresAt <= new Date()');
         return false;
       }
 
       return true;
     } catch (error) {
       // 토큰 검증 실패 (만료되었거나 서명이 잘못된 경우)
-      console.log('error', error);
       return false;
     }
   }

@@ -104,7 +104,7 @@ export class AuthController {
     res.cookie('Refresh', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'prod', // 운영 환경에서만 true
-      path: '/auth', // 리프레시 토큰은 특정 경로에서만 사용, /auth/refresh는 로그아웃 시 사용 안되는지 확인
+      path: '/auth/refresh', // 리프레시 토큰은 특정 경로에서만 사용, /auth/refresh는 로그아웃 시 사용 안되는지 확인
       domain:
         process.env.NODE_ENV === 'prod' ? 'popo.poapper.club' : 'localhost',
       sameSite: 'lax', // 또는 'strict', 필요에 따라 'none'
@@ -130,7 +130,9 @@ export class AuthController {
     //   `Refresh=; HttpOnly; Path=/auth/refresh; Max-Age=0`,
     // );
     res.clearCookie('Authentication');
-    res.clearCookie('Refresh');
+    res.clearCookie('Refresh', {
+      path: '/auth/refresh',
+    });
 
     return res.sendStatus(200);
   }
@@ -242,7 +244,7 @@ export class AuthController {
     res.cookie('Refresh', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'prod',
-      path: '/auth',
+      path: '/auth/refresh',
       domain:
         process.env.NODE_ENV === 'prod' ? 'popo.poapper.club' : 'localhost',
       sameSite: 'lax',

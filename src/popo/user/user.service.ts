@@ -206,11 +206,7 @@ export class UserService {
       where: { userUuid },
     });
 
-    if (!nickname) {
-      return { nickname: null };
-    }
-
-    return nickname;
+    return { nickname: nickname ? nickname.nickname : null };
   }
 
   async updateRefreshToken(
