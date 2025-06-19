@@ -64,11 +64,6 @@ export class AuthService {
       userType: user.userType,
     };
 
-    // const user_ = await this.usersService.findOneByUuid(user.uuid);
-    // // if (user_.hashedRefreshToken && user_.refreshTokenExpiresAt > new Date()) {
-    // //   return user_.hashedRefreshToken;
-    // // }
-
     const token = this.jwtService.sign(payload, {
       expiresIn: jwtConstants.refreshTokenExpirationTime,
       secret: jwtConstants.refreshTokenSecret,

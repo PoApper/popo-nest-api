@@ -259,7 +259,7 @@ export class AuthController {
   private clearCookies(res: Response): void {
     const domain =
       process.env.NODE_ENV === 'prod'
-        ? 'localhost'
+        ? 'popo.poapper.club'
         : process.env.NODE_ENV === 'dev'
           ? 'popo-dev.poapper.club'
           : 'localhost';
