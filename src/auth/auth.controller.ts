@@ -91,30 +91,8 @@ export class AuthController {
     }
     const accessToken = await this.authService.generateAccessToken(user);
     const refreshToken = await this.authService.generateRefreshToken(user);
-    const domain =
-      process.env.NODE_ENV === 'local'
-        ? 'localhost'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'popo.poapper.club';
-    res.cookie('Authentication', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'local' ? false : true,
-      path: '/',
-      domain: domain,
-      sameSite: 'lax',
-      maxAge: ms(jwtConstants.refreshTokenExpirationTime), // 만료된 엑세스 토큰을 전송시키기 위해 리프레시 토큰 만료시간으로 설정
-    });
 
-    // 2. 리프레시 토큰 쿠키 설정
-    res.cookie('Refresh', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'local' ? false : true, // 운영 환경에서만 true
-      path: '/auth/refresh',
-      domain: domain,
-      sameSite: 'lax',
-      maxAge: ms(jwtConstants.refreshTokenExpirationTime),
-    });
+    this.setCookies(res, accessToken, refreshToken);
 
     // update Login History
     const existUser = await this.userService.findOneByUuidOrFail(user.uuid);
@@ -130,28 +108,7 @@ export class AuthController {
     await this.userService.updateLogin(user.uuid);
     await this.userService.updateRefreshToken(user.uuid, null, null);
 
-    const domain =
-      process.env.NODE_ENV === 'prod'
-        ? 'popo.poapper.club'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'localhost';
-
-    res.clearCookie('Authentication', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'local' ? false : true,
-      path: '/',
-      domain: domain,
-      sameSite: 'lax',
-    });
-
-    res.clearCookie('Refresh', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'local' ? false : true,
-      path: '/auth/refresh',
-      domain: domain,
-      sameSite: 'lax',
-    });
+    this.clearCookies(res);
 
     return res.sendStatus(200);
   }
@@ -237,48 +194,15 @@ export class AuthController {
     const accessTokenInCookie = req.cookies?.Authentication;
     const refreshTokenInCookie = req.cookies?.Refresh;
 
-    const domain =
-      process.env.NODE_ENV === 'prod'
-        ? 'popo.poapper.club'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'localhost';
-
     if (!accessTokenInCookie || !refreshTokenInCookie) {
-      res.clearCookie('Authentication', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'local' ? false : true,
-        path: '/',
-        domain: domain,
-        sameSite: 'lax',
-      });
-      res.clearCookie('Refresh', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'local' ? false : true,
-        path: '/auth/refresh',
-        domain: domain,
-        sameSite: 'lax',
-      });
+      this.clearCookies(res);
       throw new UnauthorizedException('Missing access token or refresh token');
     }
 
     // 만료된 access token을 디코딩 (JWT 가드 우회)
     const user = this.authService.decodeExpiredAccessToken(accessTokenInCookie);
     if (!user) {
-      res.clearCookie('Authentication', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'local' ? false : true,
-        path: '/',
-        domain: domain,
-        sameSite: 'lax',
-      });
-      res.clearCookie('Refresh', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'local' ? false : true,
-        path: '/auth/refresh',
-        domain: domain,
-        sameSite: 'lax',
-      });
+      this.clearCookies(res);
       throw new UnauthorizedException('Invalid access token');
     }
 
@@ -289,25 +213,29 @@ export class AuthController {
     );
     if (!isValid) {
       await this.userService.updateRefreshToken(user.uuid, null, null);
-      res.clearCookie('Authentication', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'local' ? false : true,
-        path: '/',
-        domain: domain,
-        sameSite: 'lax',
-      });
-      res.clearCookie('Refresh', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'local' ? false : true,
-        path: '/auth/refresh',
-        domain: domain,
-        sameSite: 'lax',
-      });
+      this.clearCookies(res);
       throw new UnauthorizedException('Invalid refresh token');
     }
 
     const accessToken = await this.authService.generateAccessToken(user);
     const refreshToken = await this.authService.generateRefreshToken(user);
+
+    this.setCookies(res, accessToken, refreshToken);
+
+    return res.send(user);
+  }
+
+  private setCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ): void {
+    const domain =
+      process.env.NODE_ENV === 'prod'
+        ? 'popo.poapper.club'
+        : process.env.NODE_ENV === 'dev'
+          ? 'popo-dev.poapper.club'
+          : 'localhost';
 
     res.cookie('Authentication', accessToken, {
       httpOnly: true,
@@ -326,7 +254,30 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: ms(jwtConstants.refreshTokenExpirationTime),
     });
+  }
 
-    return res.send(user);
+  private clearCookies(res: Response): void {
+    const domain =
+      process.env.NODE_ENV === 'prod'
+        ? 'localhost'
+        : process.env.NODE_ENV === 'dev'
+          ? 'popo-dev.poapper.club'
+          : 'localhost';
+
+    res.clearCookie('Authentication', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/',
+      domain: domain,
+      sameSite: 'lax',
+    });
+
+    res.clearCookie('Refresh', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/auth/refresh',
+      domain: domain,
+      sameSite: 'lax',
+    });
   }
 }
