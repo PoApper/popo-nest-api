@@ -89,13 +89,18 @@ export class AuthController {
     }
     const accessToken = await this.authService.generateAccessToken(user);
     const refreshToken = await this.authService.generateRefreshToken(user);
-
+    const domain =
+      process.env.NODE_ENV === 'local'
+        ? 'localhost'
+        : process.env.NODE_ENV === 'dev'
+          ? 'popo-dev.poapper.club'
+          : 'popo.poapper.club';
     res.cookie('Authentication', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'local' ? false : true,
-      path: '/', // 모든 경로에서 접근 가능하도록
-      domain: process.env.NODE_ENV === 'local' ? 'localhost' : '.poapper.club',
-      sameSite: 'lax', // 또는 'strict', 필요에 따라 'none' (none 사용 시 Secure 필수)
+      path: '/',
+      domain: domain,
+      sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 5, // 5일
     });
 
@@ -103,9 +108,9 @@ export class AuthController {
     res.cookie('Refresh', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'local' ? false : true, // 운영 환경에서만 true
-      path: '/auth/refresh', // 리프레시 토큰은 특정 경로에서만 사용, /auth/refresh는 로그아웃 시 사용 안되는지 확인
-      domain: process.env.NODE_ENV === 'local' ? 'localhost' : '.poapper.club',
-      sameSite: 'lax', // 또는 'strict', 필요에 따라 'none'
+      path: '/auth/refresh',
+      domain: domain,
+      sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 60, // 60일
     });
 
@@ -120,12 +125,21 @@ export class AuthController {
   @Get('logout')
   async logOut(@Req() req: Request, @Res() res: Response) {
     const user = req.user as JwtPayload;
-    this.userService.updateLogin(user.uuid);
+    await this.userService.updateLogin(user.uuid);
+    await this.userService.updateRefreshToken(user.uuid, null, null);
+
+    const domain =
+      process.env.NODE_ENV === 'local'
+        ? 'localhost'
+        : process.env.NODE_ENV === 'dev'
+          ? 'popo-dev.poapper.club'
+          : 'popo.poapper.club';
+
     res.clearCookie('Authentication', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'local' ? false : true,
       path: '/',
-      domain: process.env.NODE_ENV === 'local' ? 'localhost' : '.poapper.club',
+      domain: domain,
       sameSite: 'lax',
     });
 
@@ -133,7 +147,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'local' ? false : true,
       path: '/auth/refresh',
-      domain: process.env.NODE_ENV === 'local' ? 'localhost' : '.poapper.club',
+      domain: domain,
       sameSite: 'lax',
     });
 
@@ -233,12 +247,17 @@ export class AuthController {
 
     const accessToken = await this.authService.generateAccessToken(user);
     const refreshToken = await this.authService.generateRefreshToken(user);
-
+    const domain =
+      process.env.NODE_ENV === 'local'
+        ? 'localhost'
+        : process.env.NODE_ENV === 'dev'
+          ? 'popo-dev.poapper.club'
+          : 'popo.poapper.club';
     res.cookie('Authentication', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'local' ? false : true,
       path: '/',
-      domain: process.env.NODE_ENV === 'local' ? 'localhost' : '.poapper.club',
+      domain: domain,
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 5, // 5일, TODO: 환경변수로 변경
     });
@@ -247,7 +266,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'local' ? false : true,
       path: '/auth/refresh',
-      domain: process.env.NODE_ENV === 'local' ? 'localhost' : '.poapper.club',
+      domain: domain,
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 60, // 60일
     });
