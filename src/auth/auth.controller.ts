@@ -131,11 +131,11 @@ export class AuthController {
     await this.userService.updateRefreshToken(user.uuid, null, null);
 
     const domain =
-      process.env.NODE_ENV === 'local'
-        ? 'localhost'
+      process.env.NODE_ENV === 'prod'
+        ? 'popo.poapper.club'
         : process.env.NODE_ENV === 'dev'
           ? 'popo-dev.poapper.club'
-          : 'popo.poapper.club';
+          : 'localhost';
 
     res.clearCookie('Authentication', {
       httpOnly: true,
@@ -237,13 +237,48 @@ export class AuthController {
     const accessTokenInCookie = req.cookies?.Authentication;
     const refreshTokenInCookie = req.cookies?.Refresh;
 
+    const domain =
+      process.env.NODE_ENV === 'prod'
+        ? 'popo.poapper.club'
+        : process.env.NODE_ENV === 'dev'
+          ? 'popo-dev.poapper.club'
+          : 'localhost';
+
     if (!accessTokenInCookie || !refreshTokenInCookie) {
+      res.clearCookie('Authentication', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'local' ? false : true,
+        path: '/',
+        domain: domain,
+        sameSite: 'lax',
+      });
+      res.clearCookie('Refresh', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'local' ? false : true,
+        path: '/auth/refresh',
+        domain: domain,
+        sameSite: 'lax',
+      });
       throw new UnauthorizedException('Missing access token or refresh token');
     }
 
     // 만료된 access token을 디코딩 (JWT 가드 우회)
     const user = this.authService.decodeExpiredAccessToken(accessTokenInCookie);
     if (!user) {
+      res.clearCookie('Authentication', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'local' ? false : true,
+        path: '/',
+        domain: domain,
+        sameSite: 'lax',
+      });
+      res.clearCookie('Refresh', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'local' ? false : true,
+        path: '/auth/refresh',
+        domain: domain,
+        sameSite: 'lax',
+      });
       throw new UnauthorizedException('Invalid access token');
     }
 
@@ -254,17 +289,26 @@ export class AuthController {
     );
     if (!isValid) {
       await this.userService.updateRefreshToken(user.uuid, null, null);
+      res.clearCookie('Authentication', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'local' ? false : true,
+        path: '/',
+        domain: domain,
+        sameSite: 'lax',
+      });
+      res.clearCookie('Refresh', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'local' ? false : true,
+        path: '/auth/refresh',
+        domain: domain,
+        sameSite: 'lax',
+      });
       throw new UnauthorizedException('Invalid refresh token');
     }
 
     const accessToken = await this.authService.generateAccessToken(user);
     const refreshToken = await this.authService.generateRefreshToken(user);
-    const domain =
-      process.env.NODE_ENV === 'local'
-        ? 'localhost'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'popo.poapper.club';
+
     res.cookie('Authentication', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'local' ? false : true,
