@@ -121,15 +121,20 @@ export class AuthController {
   async logOut(@Req() req: Request, @Res() res: Response) {
     const user = req.user as JwtPayload;
     this.userService.updateLogin(user.uuid);
-    // res.setHeader('Set-Cookie', `Authentication=; HttpOnly; Path=/; Max-Age=0`);
-    await this.userService.updateRefreshToken(user.uuid, null, null);
-    // res.setHeader(
-    //   'Set-Cookie',
-    //   `Refresh=; HttpOnly; Path=/auth/refresh; Max-Age=0`,
-    // );
-    res.clearCookie('Authentication');
+    res.clearCookie('Authentication', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/',
+      domain: process.env.NODE_ENV === 'local' ? 'localhost' : '.poapper.club',
+      sameSite: 'lax',
+    });
+
     res.clearCookie('Refresh', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
       path: '/auth/refresh',
+      domain: process.env.NODE_ENV === 'local' ? 'localhost' : '.poapper.club',
+      sameSite: 'lax',
     });
 
     return res.sendStatus(200);
