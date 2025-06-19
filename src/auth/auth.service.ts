@@ -142,4 +142,25 @@ export class AuthService {
       return false;
     }
   }
+
+  // 만료된 access token을 디코딩하는 메서드 (refresh 엔드포인트용)
+  decodeExpiredAccessToken(accessToken: string): JwtPayload | null {
+    try {
+      // ignoreExpiration: true로 설정하여 만료된 토큰도 디코딩
+      const payload = this.jwtService.verify(accessToken, {
+        secret: jwtConstants.accessTokenSecret,
+        ignoreExpiration: true,
+      });
+
+      return {
+        uuid: payload.uuid,
+        email: payload.email,
+        name: payload.name,
+        nickname: payload.nickname,
+        userType: payload.userType,
+      };
+    } catch (error) {
+      return null;
+    }
+  }
 }

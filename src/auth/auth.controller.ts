@@ -231,11 +231,21 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @UseGuards(JwtAuthGuard)
   async refresh(@Req() req: Request, @Res() res: Response) {
-    const user = req.user as JwtPayload;
-
+    const accessTokenInCookie = req.cookies?.Authentication;
     const refreshTokenInCookie = req.cookies?.Refresh;
+
+    if (!accessTokenInCookie || !refreshTokenInCookie) {
+      throw new UnauthorizedException('Missing access token or refresh token');
+    }
+
+    // 만료된 access token을 디코딩 (JWT 가드 우회)
+    const user = this.authService.decodeExpiredAccessToken(accessTokenInCookie);
+    if (!user) {
+      throw new UnauthorizedException('Invalid access token');
+    }
+
+    // refresh token 검증
     const isValid = await this.authService.validateRefreshToken(
       user,
       refreshTokenInCookie,
