@@ -24,6 +24,8 @@ import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.ser
 import { ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from './strategies/jwt.payload';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
+import { jwtConstants } from './constants';
+import * as ms from 'ms';
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
 const Message = {
@@ -101,7 +103,7 @@ export class AuthController {
       path: '/',
       domain: domain,
       sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 5, // 5일
+      maxAge: ms(jwtConstants.refreshTokenExpirationTime), // 만료된 엑세스 토큰을 전송시키기 위해 리프레시 토큰 만료시간으로 설정
     });
 
     // 2. 리프레시 토큰 쿠키 설정
@@ -111,7 +113,7 @@ export class AuthController {
       path: '/auth/refresh',
       domain: domain,
       sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 60, // 60일
+      maxAge: ms(jwtConstants.refreshTokenExpirationTime),
     });
 
     // update Login History
@@ -269,7 +271,7 @@ export class AuthController {
       path: '/',
       domain: domain,
       sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 5, // 5일, TODO: 환경변수로 변경
+      maxAge: ms(jwtConstants.refreshTokenExpirationTime),
     });
 
     res.cookie('Refresh', refreshToken, {
@@ -278,7 +280,7 @@ export class AuthController {
       path: '/auth/refresh',
       domain: domain,
       sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 60, // 60일
+      maxAge: ms(jwtConstants.refreshTokenExpirationTime),
     });
 
     return res.send(user);
