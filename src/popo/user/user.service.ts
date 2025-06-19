@@ -211,8 +211,8 @@ export class UserService {
 
   async updateRefreshToken(
     userUuid: string,
-    hashedToken: string,
-    expiresAt: Date,
+    hashedToken: string | null,
+    expiresAt: Date | null,
   ) {
     return this.userRepo.update(
       { uuid: userUuid },
