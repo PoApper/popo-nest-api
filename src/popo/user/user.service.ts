@@ -206,10 +206,20 @@ export class UserService {
       where: { userUuid },
     });
 
-    if (!nickname) {
-      return { nickname: null };
-    }
+    return { nickname: nickname ? nickname.nickname : null };
+  }
 
-    return nickname;
+  async updateRefreshToken(
+    userUuid: string,
+    hashedToken: string | null,
+    expiresAt: Date | null,
+  ) {
+    return this.userRepo.update(
+      { uuid: userUuid },
+      {
+        hashedRefreshToken: hashedToken,
+        refreshTokenExpiresAt: expiresAt,
+      },
+    );
   }
 }

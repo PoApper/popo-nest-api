@@ -37,6 +37,12 @@ export class User extends BaseEntity {
   @Column({ nullable: false, default: UserStatus.deactivated })
   userStatus: UserStatus;
 
+  @Column({ nullable: true })
+  hashedRefreshToken: string;
+
+  @Column({ nullable: true })
+  refreshTokenExpiresAt: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

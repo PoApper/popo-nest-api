@@ -24,7 +24,8 @@ import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.ser
 import { ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from './strategies/jwt.payload';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
-
+import { jwtConstants } from './constants';
+import * as ms from 'ms';
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
 const Message = {
@@ -88,9 +89,10 @@ export class AuthController {
         throw new UnauthorizedException('Not authorized account.');
       }
     }
-    const token = await this.authService.generateJwtToken(user);
+    const accessToken = await this.authService.generateAccessToken(user);
+    const refreshToken = await this.authService.generateRefreshToken(user);
 
-    res.setHeader('Set-Cookie', `Authentication=${token}; HttpOnly; Path=/;`);
+    this.setCookies(res, accessToken, refreshToken);
 
     // update Login History
     const existUser = await this.userService.findOneByUuidOrFail(user.uuid);
@@ -103,8 +105,11 @@ export class AuthController {
   @Get('logout')
   async logOut(@Req() req: Request, @Res() res: Response) {
     const user = req.user as JwtPayload;
-    this.userService.updateLogin(user.uuid);
-    res.setHeader('Set-Cookie', `Authentication=; HttpOnly; Path=/; Max-Age=0`);
+    await this.userService.updateLogin(user.uuid);
+    await this.userService.updateRefreshToken(user.uuid, null, null);
+
+    this.clearCookies(res);
+
     return res.sendStatus(200);
   }
 
@@ -182,5 +187,97 @@ export class AuthController {
     const { ...UserInfo } = await this.userService.findOneByUuid(user.uuid);
 
     return UserInfo;
+  }
+
+  @Post('refresh')
+  async refresh(@Req() req: Request, @Res() res: Response) {
+    const accessTokenInCookie = req.cookies?.Authentication;
+    const refreshTokenInCookie = req.cookies?.Refresh;
+
+    if (!accessTokenInCookie || !refreshTokenInCookie) {
+      this.clearCookies(res);
+      throw new UnauthorizedException('Missing access token or refresh token');
+    }
+
+    // 만료된 access token을 디코딩 (JWT 가드 우회)
+    const user = this.authService.decodeExpiredAccessToken(accessTokenInCookie);
+    if (!user) {
+      this.clearCookies(res);
+      throw new UnauthorizedException('Invalid access token');
+    }
+
+    // refresh token 검증
+    const isValid = await this.authService.validateRefreshToken(
+      user,
+      refreshTokenInCookie,
+    );
+    if (!isValid) {
+      await this.userService.updateRefreshToken(user.uuid, null, null);
+      this.clearCookies(res);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const accessToken = await this.authService.generateAccessToken(user);
+    const refreshToken = await this.authService.generateRefreshToken(user);
+
+    this.setCookies(res, accessToken, refreshToken);
+
+    return res.send(user);
+  }
+
+  private setCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ): void {
+    const domain =
+      process.env.NODE_ENV === 'prod'
+        ? 'popo.poapper.club'
+        : process.env.NODE_ENV === 'dev'
+          ? 'popo-dev.poapper.club'
+          : 'localhost';
+
+    res.cookie('Authentication', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/',
+      domain: domain,
+      sameSite: 'lax',
+      maxAge: ms(jwtConstants.refreshTokenExpirationTime),
+    });
+
+    res.cookie('Refresh', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/auth/refresh',
+      domain: domain,
+      sameSite: 'lax',
+      maxAge: ms(jwtConstants.refreshTokenExpirationTime),
+    });
+  }
+
+  private clearCookies(res: Response): void {
+    const domain =
+      process.env.NODE_ENV === 'prod'
+        ? 'popo.poapper.club'
+        : process.env.NODE_ENV === 'dev'
+          ? 'popo-dev.poapper.club'
+          : 'localhost';
+
+    res.clearCookie('Authentication', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/',
+      domain: domain,
+      sameSite: 'lax',
+    });
+
+    res.clearCookie('Refresh', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/auth/refresh',
+      domain: domain,
+      sameSite: 'lax',
+    });
   }
 }
