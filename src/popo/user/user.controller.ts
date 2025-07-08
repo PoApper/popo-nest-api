@@ -7,15 +7,19 @@ import {
   Post,
   Put,
   Query,
+  Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
+import { Request, Response } from 'express';
 import { CreateUserDto, UpdatePasswordDto, UpdateUserDto } from './user.dto';
 import { UserType } from './user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { JwtPayload } from '../../auth/strategies/jwt.payload';
 
 @ApiTags('User')
 @Controller('user')
@@ -110,6 +114,43 @@ export class UserController {
     @Body() dto: UpdatePasswordDto,
   ) {
     return await this.userService.updatePasswordByUuid(uuid, dto.password);
+  }
+
+  @Delete('me')
+  @UseGuards(JwtAuthGuard)
+  async deleteMyAccount(@Req() req: Request, @Res() res: Response) {
+    const user = req.user as JwtPayload;
+    await this.userService.updateRefreshToken(user.uuid, null, null);
+
+    this.clearCookies(res);
+
+    await this.userService.remove(user.uuid);
+    return res.sendStatus(200);
+  }
+
+  private clearCookies(res: Response): void {
+    const domain =
+      process.env.NODE_ENV === 'prod'
+        ? 'popo.poapper.club'
+        : process.env.NODE_ENV === 'dev'
+          ? 'popo-dev.poapper.club'
+          : 'localhost';
+
+    res.clearCookie('Authentication', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/',
+      domain: domain,
+      sameSite: 'lax',
+    });
+
+    res.clearCookie('Refresh', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'local' ? false : true,
+      path: '/auth/refresh',
+      domain: domain,
+      sameSite: 'lax',
+    });
   }
 
   @Delete(':uuid')
