@@ -82,7 +82,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0
 
 ## 위 방법을 시도했을 때도 안된다면
 
-2025.07.15 일자 수정  
+2025.07.15 일자 수정
 
 `local-certs` 폴더에서 아래 명령어를 실행
 
