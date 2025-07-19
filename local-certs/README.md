@@ -9,6 +9,8 @@
 
 ## Generate Self-signed certificates
 
+(요기 명령어가 아니라 아래 `mkcert` 명령어로 진행하는 것을 권장 합니다.)
+
 ```sh
 # 폴더 이동
 $ cd local-certs
@@ -87,8 +89,10 @@ NODE_TLS_REJECT_UNAUTHORIZED=0
 `local-certs` 폴더에서 아래 명령어를 실행
 
 ```sh
+$ brew install mkcert
 $ mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ::1
 ```
+
 프론트에서도 동일한 명령어를 실행해야 한다.
 
 해당 명령어는 다음을 모두 커버한다:
