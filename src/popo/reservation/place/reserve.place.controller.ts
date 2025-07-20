@@ -81,19 +81,19 @@ export class ReservePlaceController {
     // update place reservation count
     await this.placeService.updateReservationCountByDelta(dto.place_id, +1);
 
-    // Send e-mail to staff
-    await this.mailService.sendPlaceReserveCreateMailToStaff(
-      existPlace.staff_email,
-      existPlace,
-      new_reservation,
-    );
-
-    // Send e-mail to booker
-    await this.mailService.sendPlaceReserveCreateMailToBooker(
-      user.email,
-      existPlace,
-      new_reservation,
-    );
+    // // Send e-mail to staff
+    // await this.mailService.sendPlaceReserveCreateMailToStaff(
+    //   existPlace.staff_email,
+    //   existPlace,
+    //   new_reservation,
+    // );
+    //
+    // // Send e-mail to booker
+    // await this.mailService.sendPlaceReserveCreateMailToBooker(
+    //   user.email,
+    //   existPlace,
+    //   new_reservation,
+    // );
 
     return new_reservation;
   }

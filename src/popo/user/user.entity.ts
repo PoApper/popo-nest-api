@@ -12,6 +12,8 @@ import { UserStatus, UserType } from './user.meta';
 import { ReserveEquip } from '../reservation/equip/reserve.equip.entity';
 import { ReservePlace } from '../reservation/place/reserve.place.entity';
 import { Nickname } from './nickname.entity';
+import { FcmKey } from 'src/fcm/entities/fcm-key.entity';
+import { ApiHideProperty } from '@nestjs/swagger';
 
 @Entity()
 @Unique(['email'])
@@ -64,6 +66,10 @@ export class User extends BaseEntity {
     (place_reservation) => place_reservation.booker,
   )
   place_reservation: ReservePlace[];
+
+  @OneToMany(() => FcmKey, (fcm_key) => fcm_key.user)
+  @ApiHideProperty()
+  push_keys: FcmKey[];
 
   @OneToOne(() => Nickname, (nickname) => nickname.user)
   nickname: Nickname;

@@ -3,7 +3,7 @@ import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { getMessaging } from 'firebase-admin/messaging';
 
-import { FcmKey } from 'src/fcm/entities/fcm-key.entity';
+import { FcmKey } from './entities/fcm-key.entity';
 
 @Injectable()
 export class FcmService {

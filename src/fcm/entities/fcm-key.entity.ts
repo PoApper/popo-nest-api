@@ -1,4 +1,5 @@
 import {
+  BaseEntity,
   Column,
   Entity,
   JoinColumn,
@@ -8,10 +9,9 @@ import {
 import { ApiHideProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 
-import { User } from 'src/user/entities/user.entity';
-import { Base } from 'src/common/base.entity';
+import { User } from '../../popo/user/user.entity';
 @Entity()
-export class FcmKey extends Base {
+export class FcmKey extends BaseEntity {
   @PrimaryGeneratedColumn()
   @ApiHideProperty()
   @Exclude()
