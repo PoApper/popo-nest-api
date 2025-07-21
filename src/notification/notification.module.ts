@@ -5,13 +5,9 @@ import { FcmModule } from '../fcm/fcm.module';
 import { NotificationService } from './notification.service';
 import { ReservePlace } from '../popo/reservation/place/reserve.place.entity';
 import { ReserveEquip } from '../popo/reservation/equip/reserve.equip.entity';
-import { NotificationRecord } from './entities/notification-record.entity';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ReservePlace, ReserveEquip, NotificationRecord]),
-    FcmModule,
-  ],
+  imports: [TypeOrmModule.forFeature([ReservePlace, ReserveEquip]), FcmModule],
   providers: [NotificationService],
   exports: [NotificationService],
 })
