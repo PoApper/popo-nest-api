@@ -26,36 +26,22 @@ export class NotificationService {
     private readonly fcmService: FcmService,
   ) {}
 
-  // Run every minute to check for reservations that are 15 minutes away
   @Cron(CronExpression.EVERY_MINUTE)
   async checkUpcomingReservations() {
-    this.logger.log('Checking for upcoming reservations...');
-
-    // 1. Calculate timestamp 15 minutes ahead
+    // 15분 전 예약 탐색
     const now = moment();
-    const currentTime = now.format('HHmm');
     const fifteenMinutesLater = now.clone().add(15, 'minutes');
     const targetTime = fifteenMinutesLater.format('HHmm');
 
-    // 2. Determine the date to check (today or tomorrow if needed)
+    // 오늘 또는 내일 예약
     let targetDate = now.format('YYYYMMDD');
 
-    // If target time is less than 0015, it means we've crossed to the next day
+    // 15분 전 예약이 오늘 시간보다 작으면 내일 예약 탐색
     if (parseInt(targetTime) < 15) {
       targetDate = now.clone().add(1, 'day').format('YYYYMMDD');
-      this.logger.log(
-        `Target time ${targetTime} is in the next day. Using date: ${targetDate}`,
-      );
     }
 
-    this.logger.log(
-      `Current time: ${currentTime}, checking for reservations at ${targetTime} on ${targetDate}`,
-    );
-
-    // 3. Check for place reservations
     await this.checkUpcomingPlaceReservations(targetDate, targetTime);
-
-    // 4. Check for equipment reservations
     await this.checkUpcomingEquipReservations(targetDate, targetTime);
   }
 
@@ -64,7 +50,6 @@ export class NotificationService {
     targetTime: string,
   ) {
     try {
-      // Query reservations that match the target date and time
       const placeReservations = await this.reservePlaceRepository.find({
         where: {
           date: date,
@@ -74,35 +59,26 @@ export class NotificationService {
         relations: ['booker', 'place'],
       });
 
-      this.logger.log(
-        `Found ${placeReservations.length} place reservations for date ${date} at time ${targetTime}`,
-      );
-
-      // Send notifications for matching reservations
       for (const reservation of placeReservations) {
-        this.logger.log(
-          `Sending notification for place reservation ${reservation.uuid} (starts at ${reservation.start_time})`,
-        );
-
-        // Send notification to the booker
         if (reservation.booker) {
+          const body = `${reservation.place?.name || '예약된 장소'}에 대한 예약이 15분 후에 시작됩니다.`;
           await this.fcmService.sendPushNotificationByUserUuid(
             reservation.booker_id,
             '장소 예약 알림',
-            `${reservation.place?.name || '예약된 장소'}에 대한 예약이 15분 후에 시작됩니다.`,
+            body,
             {
               type: NotificationType.PLACE_RESERVATION,
               reservationId: reservation.uuid,
             },
           );
 
-          this.logger.log(
-            `Notification sent for place reservation ${reservation.uuid}`,
+          this.logger.debug(
+            `장소 예약 알림 전송 성공. userUuid: ${reservation.booker_id}, body: ${body}`,
           );
         }
       }
     } catch (error) {
-      this.logger.error('Error checking place reservations', error);
+      this.logger.error('장소 예약 알림 전송 실패', error);
     }
   }
 
@@ -111,7 +87,6 @@ export class NotificationService {
     targetTime: string,
   ) {
     try {
-      // Query reservations that match the target date and time
       const equipReservations = await this.reserveEquipRepository.find({
         where: {
           date: date,
@@ -121,35 +96,27 @@ export class NotificationService {
         relations: ['booker'],
       });
 
-      this.logger.log(
-        `Found ${equipReservations.length} equipment reservations for date ${date} at time ${targetTime}`,
-      );
-
-      // Send notifications for matching reservations
       for (const reservation of equipReservations) {
-        this.logger.log(
-          `Sending notification for equipment reservation ${reservation.uuid} (starts at ${reservation.start_time})`,
-        );
-
-        // Send notification to the booker
+        const body = `예약하신 장비 사용이 15분 후에 시작됩니다.`;
         if (reservation.booker) {
           await this.fcmService.sendPushNotificationByUserUuid(
             reservation.booker_id,
             '장비 예약 알림',
-            `예약하신 장비 사용이 15분 후에 시작됩니다.`,
+            // TODO: 장비 이름 추가 const targetEquipments = await this.equipService.findByIds(dto.equipments);
+            body,
             {
               type: NotificationType.EQUIP_RESERVATION,
               reservationId: reservation.uuid,
             },
           );
 
-          this.logger.log(
-            `Notification sent for equipment reservation ${reservation.uuid}`,
+          this.logger.debug(
+            `장비 예약 알림 전송 성공. userUuid: ${reservation.booker_id}, body: ${body}`,
           );
         }
       }
     } catch (error) {
-      this.logger.error('Error checking equipment reservations', error);
+      this.logger.error('장비 예약 알림 전송 실패', error);
     }
   }
 }
