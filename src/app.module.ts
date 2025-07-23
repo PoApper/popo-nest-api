@@ -9,6 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { AdminModule } from './admin/admin.module';
 import { SearchModule } from './search/search.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { NotificationModule } from './notification/notification.module';
 import configuration from './config/configurations';
 
 @Module({
@@ -30,6 +32,8 @@ import configuration from './config/configurations';
     AuthModule,
     AdminModule,
     SearchModule,
+    ScheduleModule.forRoot(),
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

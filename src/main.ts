@@ -2,7 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-
+import {
+  initializeApp as initializeFirebaseApp,
+  ServiceAccount,
+} from 'firebase-admin/app';
+import { credential as firebaseCredential } from 'firebase-admin';
+import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 
 async function bootstrap() {
@@ -16,6 +21,7 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule, { httpsOptions });
+  const configService = app.get(ConfigService);
 
   app.use(cookieParser());
 
@@ -44,6 +50,12 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('swagger', app, document);
+
+  initializeFirebaseApp({
+    credential: firebaseCredential.cert(
+      configService.get('firebase') as ServiceAccount,
+    ),
+  });
 
   await app.listen(4000);
 }

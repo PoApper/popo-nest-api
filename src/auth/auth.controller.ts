@@ -116,7 +116,7 @@ export class AuthController {
   @Post(['signIn', 'register'])
   async register(@Body() createUserDto: CreateUserDto) {
     const saveUser = await this.userService.save(createUserDto);
-    console.log('유저 생성 성공!', saveUser.name, saveUser.email);
+    console.log('유저 생성 성공!', saveUser.name, saveUser.email); // TODO: console.log 로깅으로 변경
 
     try {
       await this.mailService.sendVerificationMail(
