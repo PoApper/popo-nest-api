@@ -82,6 +82,7 @@
     "typescript": "^5.5.2"
   },
   "jest": {
+    "watchman": false,
     "moduleFileExtensions": [
       "js",
       "json",
