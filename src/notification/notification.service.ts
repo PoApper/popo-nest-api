@@ -8,6 +8,7 @@ import { FcmService } from '../fcm/fcm.service';
 import { ReservePlace } from '../popo/reservation/place/reserve.place.entity';
 import { ReserveEquip } from '../popo/reservation/equip/reserve.equip.entity';
 import { ReservationStatus } from '../popo/reservation/reservation.meta';
+import { EquipService } from '../popo/equip/equip.service';
 
 export enum NotificationType {
   PLACE_RESERVATION = 'place_reservation',
@@ -24,6 +25,7 @@ export class NotificationService {
     @InjectRepository(ReserveEquip)
     private readonly reserveEquipRepository: Repository<ReserveEquip>,
     private readonly fcmService: FcmService,
+    private readonly equipService: EquipService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -97,12 +99,15 @@ export class NotificationService {
       });
 
       for (const reservation of equipReservations) {
-        const body = `예약하신 장비 사용이 15분 후에 시작됩니다.`;
+        const targetEquipments = await this.equipService.findByIds(
+          reservation.equipments,
+        );
+        const body = `${targetEquipments.map((equip) => equip.name).join(', ') || '예약된 장비'}에 대한 예약이 15분 후에 시작됩니다.`;
+
         if (reservation.booker) {
           await this.fcmService.sendPushNotificationByUserUuid(
             reservation.booker_id,
             '장비 예약 알림',
-            // TODO: 장비 이름 추가 const targetEquipments = await this.equipService.findByIds(dto.equipments);
             body,
             {
               type: NotificationType.EQUIP_RESERVATION,
