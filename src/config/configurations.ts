@@ -24,6 +24,7 @@ export default () => {
       dropSchema: isTest, // ✅ 테스트 시 DB 초기화
       charset: isTest ? undefined : 'utf8mb4', // 테스트 환경인 SQLite는 기본적으로 MYSQL의 utf8mb4까지 커버하므로 따로 설정 필요하지 않음
     },
+    // Paxi의 FCM과 같은 설정 사용
     firebase: {
       type: process.env.FIREBASE_TYPE,
       projectId: process.env.FIREBASE_PROJECT_ID,
