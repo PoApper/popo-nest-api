@@ -45,11 +45,22 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('POPO API')
-    .setDescription('POPO Swagger API')
-    .setVersion('0.1')
+    .setDescription('POPO API Documentation')
+    .setVersion('1.0')
+    .addCookieAuth('Authentication')
+    // TODO: Paxi 출시 후 추가
+    // .setExternalDoc(
+    //   'Paxi API 문서',
+    //   'https://api.paxi.popo.poapper.club/swagger',
+    // )
     .build();
+
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('swagger', app, document);
+  SwaggerModule.setup('swagger', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
   initializeFirebaseApp({
     credential: firebaseCredential.cert(
