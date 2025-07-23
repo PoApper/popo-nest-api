@@ -9,19 +9,21 @@
 
 ## Generate Self-signed certificates
 
+(요기 명령어가 아니라 아래 `mkcert` 명령어로 진행하는 것을 권장 합니다.)
+
 ```sh
 # 폴더 이동
 $ cd local-certs
 
 # 개인키 생성
-$ openssl genrsa -out private-key.pem 2048
+$ openssl genrsa -out localhost-key.pem 2048
 
 # 개인키를 사용한 새로운 인증서 요청서 생성
 # 모두 엔터만 쳐도 무방함.
-$ openssl req -new -key private-key.pem -out cert-request.csr
+$ openssl req -new -key localhost-key.pem -out localhost.csr
 
 # 요청서를 사용한 자체 서명 인증서 생성
-$ openssl x509 -req -in cert-request.csr -signkey private-key.pem -out cert.pem
+$ openssl x509 -req -in localhost.csr -signkey localhost-key.pem -out localhost.pem
 Certificate request self-signature ok
 subject=C=KR, ST=Seoul, L=Seoul, O=personal, OU=local, CN=haha, emailAddress=hoho
 ```
@@ -39,8 +41,8 @@ import * as https from "https";
 
 async function bootstrap() {
   const httpsOptions = {
-    key: fs.readFileSync("./local-certs/private-key.pem"),
-    cert: fs.readFileSync("./local-certs/cert.pem"),
+    key: fs.readFileSync("./local-certs/localhost-key.pem"),
+    cert: fs.readFileSync("./local-certs/localhost.pem"),
   };
   const app = await NestFactory.create(AppModule, {
     httpsOptions,
@@ -76,4 +78,26 @@ NODE_TLS_REJECT_UNAUTHORIZED=0
 
 ## Chrome Allow Insecure Localhost
 
-또, 크롬에서도 insecure localhost에 대한 접속을 허용해줘야 한다. `chrome://flags/#allow-insecure-localhost` 경로로 이동해서 해당 옵션을 Enabled로 바꾸자.
+~~또, 크롬에서도 insecure localhost에 대한 접속을 허용해줘야 한다. `chrome://flags/#allow-insecure-localhost` 경로로 이동해서 해당 옵션을 Enabled로 바꾸자.~~
+
+크롬이 업데이트됨에 따라 해당 설정값 사라짐
+
+## 위 방법을 시도했을 때도 안된다면
+
+2025.07.15 일자 수정
+
+`local-certs` 폴더에서 아래 명령어를 실행
+
+```sh
+$ brew install mkcert
+$ mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.1 ::1
+```
+
+프론트에서도 동일한 명령어를 실행해야 한다.
+
+해당 명령어는 다음을 모두 커버한다:
+- localhost (도메인으로 요청 시)
+- 127.0.0.1 (IPv4로 요청 시)
+- ::1 (IPv6로 요청 시)
+
+이래도 안된다면 트러블슈팅 후 이어서 작성해주시길..

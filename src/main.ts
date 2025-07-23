@@ -15,8 +15,8 @@ async function bootstrap() {
   let httpsOptions = null;
   if (isLocalDeploy) {
     httpsOptions = {
-      key: fs.readFileSync('./local-certs/private-key.pem'),
-      cert: fs.readFileSync('./local-certs/cert.pem'),
+      key: fs.readFileSync('./local-certs/localhost-key.pem'),
+      cert: fs.readFileSync('./local-certs/localhost.pem'),
     };
   }
 
