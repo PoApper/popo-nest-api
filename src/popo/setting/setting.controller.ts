@@ -1,4 +1,4 @@
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   BadRequestException,
   Body,
@@ -19,6 +19,7 @@ import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
 import { SettingService } from './setting.service';
 
+@ApiCookieAuth()
 @ApiTags('POPO 세팅')
 @Controller('setting')
 export class SettingController {

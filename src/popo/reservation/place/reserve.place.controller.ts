@@ -12,7 +12,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiQuery, ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ReservePlaceService } from './reserve.place.service';
 import {
@@ -30,7 +30,8 @@ import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import { ReservePlace } from './reserve.place.entity';
 import * as moment from 'moment-timezone';
 
-@ApiTags('Place Reservation')
+@ApiCookieAuth()
+@ApiTags('Reservation - Place')
 @Controller('reservation-place')
 export class ReservePlaceController {
   constructor(

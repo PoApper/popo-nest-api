@@ -1,11 +1,12 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { Between } from 'typeorm';
 import * as moment from 'moment';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 
-@ApiTags('Statistics')
+@ApiCookieAuth()
+@ApiTags('Statistics - Reservation Place')
 @Controller('statistics/reservation/place')
 export class ReservationPlaceStatisticsController {
   constructor(private readonly reservePlaceService: ReservePlaceService) {}

@@ -8,7 +8,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import * as moment from 'moment';
 
 import { EquipService } from './equip.service';
@@ -21,6 +21,7 @@ import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { FileBody } from '../../file/file-body.decorator';
 import { FileService } from '../../file/file.service';
 
+@ApiCookieAuth()
 @ApiTags('Equipment')
 @Controller('equip')
 export class EquipController {

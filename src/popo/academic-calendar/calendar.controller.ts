@@ -8,7 +8,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 import { CalendarService } from './calendar.service';
 import { CalendarDto } from './calendar.dto';
@@ -18,7 +18,8 @@ import { UserType } from 'src/popo/user/user.meta';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import * as moment from 'moment';
 
-@ApiTags('Calendar')
+@ApiCookieAuth()
+@ApiTags('Academic Calendar')
 @Controller('calendar')
 export class CalendarController {
   constructor(private readonly calendarService: CalendarService) {}

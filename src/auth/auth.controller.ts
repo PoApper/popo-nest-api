@@ -21,7 +21,7 @@ import { CreateUserDto } from '../popo/user/user.dto';
 import { MailService } from '../mail/mail.service';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from './strategies/jwt.payload';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
 import { jwtConstants } from './constants';
@@ -32,6 +32,7 @@ const Message = {
   FAIL_VERIFICATION_EMAIL_SEND: 'Fail to send verification email.',
 };
 
+@ApiCookieAuth()
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {

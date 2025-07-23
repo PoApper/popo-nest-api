@@ -1,11 +1,12 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { UserService } from '../popo/user/user.service';
 import { Roles } from '../auth/authroization/roles.decorator';
 import { UserType } from '../popo/user/user.meta';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/authroization/roles.guard';
 
+@ApiCookieAuth()
 @ApiTags('Search')
 @Controller('search')
 export class SearchController {

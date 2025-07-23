@@ -15,8 +15,9 @@ import { UserType } from './user.meta';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 
+@ApiCookieAuth()
 @ApiTags('User')
 @Controller('user')
 export class UserController {

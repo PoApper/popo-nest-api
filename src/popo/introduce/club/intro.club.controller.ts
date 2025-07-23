@@ -22,8 +22,10 @@ import { ClubImageDto, CreateIntroClubDto } from './intro.club.dto';
 import { ClubType } from './intro.club.meta';
 import { FileService } from '../../../file/file.service';
 import { FileBody } from '../../../file/file-body.decorator';
+import { ApiCookieAuth } from '@nestjs/swagger';
 
-@ApiTags('Introduce Club')
+@ApiCookieAuth()
+@ApiTags('Introduce - Club')
 @Controller('introduce/club')
 export class IntroClubController {
   constructor(

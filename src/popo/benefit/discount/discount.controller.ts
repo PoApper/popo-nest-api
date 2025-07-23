@@ -8,7 +8,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 import { DiscountService } from './discount.service';
 import { DiscountDto } from './discount.dto';
@@ -17,7 +17,8 @@ import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { UserType } from 'src/popo/user/user.meta';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
-@ApiTags('Benefit/Discount')
+@ApiCookieAuth()
+@ApiTags('Benefit - Discount')
 @Controller('benefit/discount')
 export class DiscountController {
   constructor(private readonly discountService: DiscountService) {}

@@ -8,7 +8,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import * as moment from 'moment';
 
 import { PlaceService } from './place.service';
@@ -21,6 +21,7 @@ import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
 
+@ApiCookieAuth()
 @ApiTags('Place')
 @Controller('place')
 export class PlaceController {

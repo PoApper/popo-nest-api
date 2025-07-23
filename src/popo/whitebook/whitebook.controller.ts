@@ -17,7 +17,9 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { FileBody } from 'src/file/file-body.decorator';
 import { FileService } from '../../file/file.service';
 import * as moment from 'moment';
+import { ApiCookieAuth } from '@nestjs/swagger';
 
+@ApiCookieAuth()
 @ApiTags('생활백서(Whitebook)')
 @Controller('whitebook')
 export class WhitebookController {

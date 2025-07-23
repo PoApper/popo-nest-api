@@ -12,7 +12,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ReserveEquipService } from './reserve.equip.service';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
@@ -27,7 +27,8 @@ import { MoreThanOrEqual } from 'typeorm';
 import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import * as moment from 'moment-timezone';
 
-@ApiTags('Equipment Reservation')
+@ApiCookieAuth()
+@ApiTags('Reservation - Equipment')
 @Controller('reservation-equip')
 export class ReserveEquipController {
   constructor(

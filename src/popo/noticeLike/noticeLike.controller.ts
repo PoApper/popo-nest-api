@@ -9,7 +9,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -22,6 +22,7 @@ const Message = {
   FAIL_LIKE_DELETION_NEVER_LIKED: 'There is no record of liking the post.',
 };
 
+@ApiCookieAuth()
 @ApiTags('Notice Like')
 @Controller('noticeLike')
 export class NoticeLikeController {

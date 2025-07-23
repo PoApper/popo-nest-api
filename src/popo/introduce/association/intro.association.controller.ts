@@ -9,7 +9,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Between } from 'typeorm';
 import * as moment from 'moment';
 
@@ -23,7 +23,8 @@ import { FileBody } from '../../../file/file-body.decorator';
 import { ClubImageDto } from '../club/intro.club.dto';
 import { FileService } from '../../../file/file.service';
 
-@ApiTags('Introduce Association')
+@ApiCookieAuth()
+@ApiTags('Introduce - Association')
 @Controller('introduce/association')
 export class IntroAssociationController {
   constructor(
