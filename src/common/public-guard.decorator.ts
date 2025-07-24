@@ -1,2 +1,7 @@
-// TODO: 작성
-// TODO: GET 등 퍼블릭 엔드포인트에 대해서는 해당 데코레이터 이용해서 인증 없이 접근 가능하도록 설정
+import { SetMetadata } from '@nestjs/common';
+
+export const IS_PUBLIC_KEY = 'isPublic';
+
+// 현재는 JwtAuthGuard를 우회하기 위해서만 사용됨
+// 두 개 이상의 Guard를 사용하고, 우회할 일이 있다면 Paxi의 public-guard.decorator.ts 참고
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
