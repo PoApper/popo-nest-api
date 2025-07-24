@@ -20,6 +20,7 @@ import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
+import { Public } from '../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('Notice')
@@ -51,21 +52,25 @@ export class NoticeController {
     return image_url;
   }
 
+  @Public()
   @Get()
   getAll() {
     return this.noticeService.find();
   }
 
+  @Public()
   @Get('active')
   getAllActive() {
     return this.noticeService.findActive();
   }
 
+  @Public()
   @Get(':id')
   async getOne(@Param('id') id: number) {
     return this.noticeService.findOneById(id);
   }
 
+  @Public()
   @Patch('click/:id')
   increaseClickCount(@Param('id') id: number) {
     return this.noticeService.increaseClickCount(id);

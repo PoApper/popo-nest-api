@@ -22,6 +22,7 @@ import { UserType } from '../../user/user.meta';
 import { FileBody } from '../../../file/file-body.decorator';
 import { ClubImageDto } from '../club/intro.club.dto';
 import { FileService } from '../../../file/file.service';
+import { Public } from '../../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('Introduce - Association')
@@ -52,11 +53,13 @@ export class IntroAssociationController {
     return image_url;
   }
 
+  @Public()
   @Get()
   get() {
     return this.introAssociationService.find({ order: { name: 'ASC' } });
   }
 
+  @Public()
   @Get('today')
   getTodayVisited() {
     return this.introAssociationService.find({
@@ -69,6 +72,7 @@ export class IntroAssociationController {
     });
   }
 
+  @Public()
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
     const introAssociation =
@@ -85,6 +89,7 @@ export class IntroAssociationController {
     }
   }
 
+  @Public()
   @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
     return this.introAssociationService.findOneByUuid(uuid);

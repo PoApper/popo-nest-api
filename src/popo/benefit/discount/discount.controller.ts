@@ -16,6 +16,7 @@ import { Roles } from 'src/auth/authroization/roles.decorator';
 import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { UserType } from 'src/popo/user/user.meta';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Public } from '../../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('Benefit - Discount')
@@ -31,11 +32,13 @@ export class DiscountController {
     return this.discountService.save(dto);
   }
 
+  @Public()
   @Get()
   getAllDiscounts() {
     return this.discountService.findAll();
   }
 
+  @Public()
   @Get(':id')
   getDiscountByUuid(@Param('id') id: number) {
     return this.discountService.findById(id);

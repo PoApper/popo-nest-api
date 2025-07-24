@@ -26,6 +26,8 @@ import { JwtPayload } from './strategies/jwt.payload';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
 import { jwtConstants } from './constants';
 import * as ms from 'ms';
+import { Public } from '../common/public-guard.decorator';
+
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
 const Message = {
@@ -114,6 +116,7 @@ export class AuthController {
     return res.sendStatus(200);
   }
 
+  @Public()
   @Post(['signIn', 'register'])
   async register(@Body() createUserDto: CreateUserDto) {
     const saveUser = await this.userService.save(createUserDto);
@@ -133,11 +136,13 @@ export class AuthController {
     return saveUser;
   }
 
+  @Public()
   @Put('activate/:user_uuid')
   activateUser(@Param('user_uuid') user_uuid: string) {
     return this.userService.updateUserStatus(user_uuid, UserStatus.activated);
   }
 
+  @Public()
   @Post('password/reset')
   async resetPassword(@Body() body: PasswordResetRequest) {
     const existUser = await this.userService.findOneByEmail(body.email);

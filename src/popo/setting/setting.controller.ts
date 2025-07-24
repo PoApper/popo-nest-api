@@ -18,6 +18,7 @@ import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
 import { SettingService } from './setting.service';
+import { Public } from '../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('POPO 세팅')
@@ -28,6 +29,7 @@ export class SettingController {
     private readonly settingService: SettingService,
   ) {}
 
+  @Public()
   @Get()
   async getSetting() {
     return this.fileService.getText('popo-setting.json');
@@ -69,6 +71,7 @@ export class SettingController {
     res.send(data);
   }
 
+  @Public()
   @Get('count-rc-students-list')
   async countRcStudentList() {
     return this.settingService.countRcStudentsList();

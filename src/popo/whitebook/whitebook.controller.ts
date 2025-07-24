@@ -18,6 +18,7 @@ import { FileBody } from 'src/file/file-body.decorator';
 import { FileService } from '../../file/file.service';
 import * as moment from 'moment';
 import { ApiCookieAuth } from '@nestjs/swagger';
+import { Public } from '../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('생활백서(Whitebook)')
@@ -49,6 +50,7 @@ export class WhitebookController {
     return this.whitebookService.save(dtoWithoutPdfFile);
   }
 
+  @Public()
   @Get()
   getAll(@Query('orderBy') orderBy: string) {
     if (orderBy === 'click_count') {
@@ -76,6 +78,7 @@ export class WhitebookController {
     }
   }
 
+  @Public()
   @Patch('click/:uuid')
   AddOneClickCount(@Param('uuid') uuid: string) {
     return this.whitebookService.addOneClickCount(uuid);

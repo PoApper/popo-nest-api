@@ -23,6 +23,7 @@ import { ClubType } from './intro.club.meta';
 import { FileService } from '../../../file/file.service';
 import { FileBody } from '../../../file/file-body.decorator';
 import { ApiCookieAuth } from '@nestjs/swagger';
+import { Public } from '../../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('Introduce - Club')
@@ -53,11 +54,13 @@ export class IntroClubController {
     return image_url;
   }
 
+  @Public()
   @Get()
   get() {
     return this.introClubService.find({ order: { name: 'ASC' } });
   }
 
+  @Public()
   @Get('today')
   getTodayVisited() {
     return this.introClubService.find({
@@ -70,6 +73,7 @@ export class IntroClubController {
     });
   }
 
+  @Public()
   @Get('clubType/:clubType')
   getByClubType(@Param('clubType') clubType: ClubType) {
     return this.introClubService.find({
@@ -78,6 +82,7 @@ export class IntroClubController {
     });
   }
 
+  @Public()
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
     const introClub = await this.introClubService.findOneByName(name);
@@ -93,6 +98,7 @@ export class IntroClubController {
     }
   }
 
+  @Public()
   @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
     return this.introClubService.findOneByUuid(uuid);

@@ -17,6 +17,7 @@ import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { UserType } from 'src/popo/user/user.meta';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import * as moment from 'moment';
+import { Public } from '../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('Academic Calendar')
@@ -32,11 +33,13 @@ export class CalendarController {
     return this.calendarService.save(dto);
   }
 
+  @Public()
   @Get()
   getAllCalendars() {
     return this.calendarService.findAll();
   }
 
+  @Public()
   @Get('get-next-event')
   async getNextEvent() {
     const today = moment().format('YYYY-MM-DD');
@@ -44,6 +47,7 @@ export class CalendarController {
     return events[0];
   }
 
+  @Public()
   @Get(':id')
   getCalendarByUuid(@Param('id') id: number) {
     return this.calendarService.findById(id);

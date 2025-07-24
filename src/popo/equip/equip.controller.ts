@@ -20,6 +20,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { FileBody } from '../../file/file-body.decorator';
 import { FileService } from '../../file/file.service';
+import { Public } from '../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('Equipment')
@@ -54,21 +55,25 @@ export class EquipController {
     return image_url;
   }
 
+  @Public()
   @Get()
   get() {
     return this.equipService.find({ order: { updatedAt: 'DESC' } });
   }
 
+  @Public()
   @Get('/:uuid')
   async getOne(@Param('uuid') uuid: string) {
     return this.equipService.findOneByUuid(uuid);
   }
 
+  @Public()
   @Get('/name/:name')
   async getOneByName(@Param('name') name: string) {
     return this.equipService.findOneByName(name);
   }
 
+  @Public()
   @Get('/owner/:owner')
   async getAllByOwner(@Param('owner') owner: EquipOwner) {
     return this.equipService.findAllByOwner(owner);

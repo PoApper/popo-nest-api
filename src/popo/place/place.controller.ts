@@ -20,6 +20,7 @@ import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
+import { Public } from '../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('Place')
@@ -51,21 +52,25 @@ export class PlaceController {
     return image_url;
   }
 
+  @Public()
   @Get()
   getAll() {
     return this.placeService.find();
   }
 
+  @Public()
   @Get(':uuid')
   async getOne(@Param('uuid') uuid: string) {
     return this.placeService.findOneByUuid(uuid);
   }
 
+  @Public()
   @Get('/name/:name')
   async getOneByName(@Param('name') name: string) {
     return this.placeService.findOneByName(name);
   }
 
+  @Public()
   @Get('/region/:region')
   async getAllByRegion(@Param('region') region: PlaceRegion) {
     return this.placeService.findAllByRegion(region);
