@@ -13,7 +13,6 @@ import {
 } from '@nestjs/common';
 import { WhitebookService } from './whitebook.service';
 import { WhitebookDto } from './whitebook.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { FileBody } from 'src/file/file-body.decorator';
 import { FileService } from '../../file/file.service';
 import * as moment from 'moment';
