@@ -34,8 +34,7 @@ describe('WhitebookController (e2e)', () => {
       .mockImplementation((context: ExecutionContext) => {
         const request = context.switchToHttp().getRequest();
 
-        // 이렇게 생김
-        // console.log('request.headers: ', request.headers);
+        // request.headers 이렇게 생김
         // request.headers:  {
         //   host: '127.0.0.1:62986',
         //   'accept-encoding': 'gzip, deflate',
@@ -69,37 +68,6 @@ describe('WhitebookController (e2e)', () => {
           return false;
         }
       });
-
-    // // RolesGuard mock 설정
-    // const rolesGuardSpy = jest
-    //   .spyOn(
-    //     require('../../auth/authroization/roles.guard').RolesGuard.prototype,
-    //     'canActivate',
-    //   )
-    //   .mockImplementation((context: ExecutionContext) => {
-    //     const request = context.switchToHttp().getRequest();
-    //     const user = request.user;
-
-    //     console.log('Mocked RolesGuard canActivate: ', user);
-
-    //     if (!user) return false;
-
-    //     const handler = context.getHandler();
-    //     const roles = Reflect.getMetadata('roles', handler);
-
-    //     console.log('Mocked RolesGuard Debug:', {
-    //       user: user,
-    //       roles: roles,
-    //       userType: user.userType,
-    //       hasAdminRole: roles && roles.includes(UserType.admin),
-    //     });
-
-    //     if (roles && roles.includes(UserType.admin)) {
-    //       return user.userType === UserType.admin;
-    //     }
-
-    //     return true;
-    //   });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -180,13 +148,19 @@ describe('WhitebookController (e2e)', () => {
     await app.close();
   });
 
-  it('/whitebook [GET] 200', async () => {
+  it('/whitebook [POST] 201', async () => {
     const Dto: WhitebookDto = {
       title: 'New Whitebook',
       content: 'Content of the new whitebook',
       link: 'https://www.example.com',
       show_only_login: false,
     };
+
+    const postResponseByNonAdmin = await request(app.getHttpServer())
+      .post('/whitebook')
+      .set('Cookie', [`Authentication=${testUserJwtToken}`])
+      .send(Dto);
+    expect(postResponseByNonAdmin.status).toBe(403);
 
     const postResponse = await request(app.getHttpServer())
       .post('/whitebook')
@@ -215,31 +189,15 @@ describe('WhitebookController (e2e)', () => {
     );
   });
 
-  it('/whitebook [POST] 201', async () => {
-    // PDF 파일 없이 생성
-    const dtoWithoutPdfFile: WhitebookDto = {
-      title: 'New Whitebook',
-      content: 'Content of the new whitebook',
-      link: 'https://www.example.com',
-      show_only_login: true,
-    };
+  it('/whitebook [GET] 200', async () => {
+    const getResponse = await request(app.getHttpServer()).get(`/whitebook`);
 
-    const resWihtoutPDF = await request(app.getHttpServer())
-      .post('/whitebook')
-      .set('Cookie', [`Authentication=${adminUserJwtToken}`])
-      .send(dtoWithoutPdfFile);
+    expect(getResponse.status).toBe(200);
+    expect(getResponse.type).toBe('application/json');
+    expect(Array.isArray(getResponse.body)).toBe(true);
+  });
 
-    expect(resWihtoutPDF.status).toBe(201);
-    expect(resWihtoutPDF.type).toBe('application/json');
-    expect(resWihtoutPDF.body).toEqual(
-      expect.objectContaining({
-        title: dtoWithoutPdfFile.title,
-        content: dtoWithoutPdfFile.content,
-        link: dtoWithoutPdfFile.link,
-        show_only_login: dtoWithoutPdfFile.show_only_login,
-      }),
-    );
-
+  it('/whitebook [POST] 201 - with pdf', async () => {
     // PDF 파일로 생성
     const dtoWithPdfFile: WhitebookDto = {
       title: 'New Whitebook with PDF',
@@ -295,6 +253,12 @@ describe('WhitebookController (e2e)', () => {
       link: 'https://www.example.com/updated',
       show_only_login: false,
     };
+
+    const putResponseByNonAdmin = await request(app.getHttpServer())
+      .put(`/whitebook/${uuid}`)
+      .set('Cookie', [`Authentication=${testUserJwtToken}`])
+      .send(updateDataWithLink);
+    expect(putResponseByNonAdmin.status).toBe(403);
 
     const putResponse = await request(app.getHttpServer())
       .put(`/whitebook/${uuid}`)
@@ -384,6 +348,11 @@ describe('WhitebookController (e2e)', () => {
     expect(postRes.type).toBe('application/json');
 
     const uuid = postRes.body.uuid;
+
+    const deleteResponseByNonAdmin = await request(app.getHttpServer())
+      .delete(`/whitebook/${uuid}`)
+      .set('Cookie', [`Authentication=${testUserJwtToken}`]);
+    expect(deleteResponseByNonAdmin.status).toBe(403);
 
     const deleteResponse = await request(app.getHttpServer())
       .delete(`/whitebook/${uuid}`)

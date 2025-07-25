@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { WhitebookService } from './whitebook.service';
@@ -23,7 +22,6 @@ import { Public } from '../../common/public-guard.decorator';
 import { UserType } from '../user/user.meta';
 import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { Roles } from 'src/auth/authroization/roles.decorator';
-import { Request } from 'express';
 
 @ApiCookieAuth()
 @ApiTags('생활백서(Whitebook)')
@@ -35,8 +33,8 @@ export class WhitebookController {
   ) {}
 
   @Post()
-  // @Roles(UserType.admin)
-  // @UseGuards(JwtAuthGuard)
+  @Roles(UserType.admin)
+  @UseGuards(RolesGuard)
   @FileBody('pdf_file')
   async create(@Body() dto: WhitebookDto) {
     if (dto.pdf_file) {
@@ -91,8 +89,8 @@ export class WhitebookController {
   }
 
   @Put(':uuid')
-  // @Roles(UserType.admin)
-  // @UseGuards(RolesGuard)
+  @Roles(UserType.admin)
+  @UseGuards(RolesGuard)
   @FileBody('pdf_file')
   async update(@Param('uuid') uuid: string, @Body() dto: WhitebookDto) {
     if (dto.pdf_file) {
@@ -115,7 +113,7 @@ export class WhitebookController {
 
   @Delete(':uuid')
   @Roles(UserType.admin)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   delete(@Param('uuid') uuid: string) {
     return this.whitebookService.delete(uuid);
   }
