@@ -1,16 +1,106 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../../app.module';
 import { WhitebookDto } from './whitebook.dto';
 import { DataSource } from 'typeorm';
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { FileService } from 'src/file/file.service';
+import { UserType } from '../user/user.meta';
+import { UserService } from '../user/user.service';
+import { SettingService } from '../setting/setting.service';
+import { User } from '../user/user.entity';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from 'jsonwebtoken';
+import { AppModule } from 'src/app.module';
+import { ExecutionContext } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+const JWT_SECRET = 'SECRET';
+const EXPIRATION_TIME = '1h';
 
 describe('WhitebookController (e2e)', () => {
   let app: INestApplication;
+  let userService: UserService;
+  let jwtService: JwtService;
+  let adminUser: User;
+  let testUser: User;
+  let adminUserJwtToken: string;
+  let testUserJwtToken: string;
 
   beforeAll(async () => {
+    // AuthGuard mock 설정
+    const parentCanActivateSpy = jest
+      .spyOn(AuthGuard('jwt').prototype, 'canActivate')
+      .mockImplementation((context: ExecutionContext) => {
+        const request = context.switchToHttp().getRequest();
+
+        // 이렇게 생김
+        // console.log('request.headers: ', request.headers);
+        // request.headers:  {
+        //   host: '127.0.0.1:62986',
+        //   'accept-encoding': 'gzip, deflate',
+        //   cookie: 'Authentication=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1dWlkIjoiM2E5NjIxN2MtMzJmYy00NjgzLWJiNmYtNmI0OGNiYjBmYjFjIiwibmFtZSI6ImFkbWluIiwibmlja25hbWUiOiIiLCJ1c2VyVHlwZSI6IkFETUlOIiwiZW1haWwiOiJhZG1pbkB0ZXN0LmNvbSIsImlhdCI6MTc1MzQ1Nzk2OSwiZXhwIjoxNzUzNDYxNTY5fQ.oprOrhCRhwkx2m08fEbdW6xDnYQrKsAuusTx4SwEhp4',
+        //   'content-type': 'application/json',
+        //   'content-length': '123',
+        //   connection: 'close'
+        // }
+
+        const cookie = request.headers?.cookie as string;
+        let token = '';
+
+        if (cookie && cookie.includes('Authentication=')) {
+          token = cookie.split('Authentication=')[1];
+        }
+
+        if (!token) return false;
+
+        try {
+          const jwtService = new JwtService({
+            secret: JWT_SECRET,
+          });
+          const decoded = jwtService.verify(token, {
+            secret: JWT_SECRET,
+          });
+
+          request.user = decoded;
+          return true;
+        } catch (error) {
+          console.log('JWT decode error:', error);
+          return false;
+        }
+      });
+
+    // // RolesGuard mock 설정
+    // const rolesGuardSpy = jest
+    //   .spyOn(
+    //     require('../../auth/authroization/roles.guard').RolesGuard.prototype,
+    //     'canActivate',
+    //   )
+    //   .mockImplementation((context: ExecutionContext) => {
+    //     const request = context.switchToHttp().getRequest();
+    //     const user = request.user;
+
+    //     console.log('Mocked RolesGuard canActivate: ', user);
+
+    //     if (!user) return false;
+
+    //     const handler = context.getHandler();
+    //     const roles = Reflect.getMetadata('roles', handler);
+
+    //     console.log('Mocked RolesGuard Debug:', {
+    //       user: user,
+    //       roles: roles,
+    //       userType: user.userType,
+    //       hasAdminRole: roles && roles.includes(UserType.admin),
+    //     });
+
+    //     if (roles && roles.includes(UserType.admin)) {
+    //       return user.userType === UserType.admin;
+    //     }
+
+    //     return true;
+    //   });
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
@@ -20,10 +110,64 @@ describe('WhitebookController (e2e)', () => {
           return `${process.env.S3_CF_DIST_URL}/${key}`;
         }),
       })
+      .overrideProvider(SettingService)
+      .useValue({
+        checkRcStudent: jest.fn().mockImplementation(async () => {
+          return false;
+        }),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
+    userService = moduleFixture.get(UserService);
+    jwtService = moduleFixture.get(JwtService);
     await app.init();
+  });
+
+  beforeEach(async () => {
+    const dataSource = app.get(DataSource);
+    await dataSource.synchronize(true);
+
+    testUser = await userService.save({
+      email: 'test@test.com',
+      password: 'test',
+      name: 'test',
+      userType: UserType.student,
+    });
+
+    adminUser = await userService.save({
+      email: 'admin@test.com',
+      password: 'test',
+      name: 'admin',
+      userType: UserType.admin,
+    });
+
+    // Admin JWT 토큰 생성
+    const adminPayload: JwtPayload = {
+      uuid: adminUser.uuid,
+      name: adminUser.name,
+      nickname: '',
+      userType: adminUser.userType,
+      email: adminUser.email,
+    };
+
+    adminUserJwtToken = jwtService.sign(adminPayload, {
+      expiresIn: EXPIRATION_TIME,
+      secret: JWT_SECRET,
+    });
+
+    const testPayload: JwtPayload = {
+      uuid: testUser.uuid,
+      name: testUser.name,
+      nickname: '',
+      userType: testUser.userType,
+      email: testUser.email,
+    };
+
+    testUserJwtToken = jwtService.sign(testPayload, {
+      expiresIn: EXPIRATION_TIME,
+      secret: JWT_SECRET,
+    });
   });
 
   afterEach(async () => {
@@ -46,6 +190,7 @@ describe('WhitebookController (e2e)', () => {
 
     const postResponse = await request(app.getHttpServer())
       .post('/whitebook')
+      .set('Cookie', [`Authentication=${adminUserJwtToken}`])
       .send(Dto);
 
     expect(postResponse.status).toBe(201);
@@ -81,6 +226,7 @@ describe('WhitebookController (e2e)', () => {
 
     const resWihtoutPDF = await request(app.getHttpServer())
       .post('/whitebook')
+      .set('Cookie', [`Authentication=${adminUserJwtToken}`])
       .send(dtoWithoutPdfFile);
 
     expect(resWihtoutPDF.status).toBe(201);
@@ -106,6 +252,7 @@ describe('WhitebookController (e2e)', () => {
 
     const resWithPdf = await request(app.getHttpServer())
       .post('/whitebook')
+      .set('Cookie', [`Authentication=${adminUserJwtToken}`])
       .attach('pdf_file', pdf.buffer, pdf.originalName)
       .field('title', dtoWithPdfFile.title)
       .field('content', dtoWithPdfFile.content)
@@ -133,6 +280,7 @@ describe('WhitebookController (e2e)', () => {
 
     const postResponse = await request(app.getHttpServer())
       .post('/whitebook')
+      .set('Cookie', [`Authentication=${adminUserJwtToken}`])
       .send(Dto);
 
     expect(postResponse.status).toBe(201);
@@ -150,6 +298,7 @@ describe('WhitebookController (e2e)', () => {
 
     const putResponse = await request(app.getHttpServer())
       .put(`/whitebook/${uuid}`)
+      .set('Cookie', [`Authentication=${adminUserJwtToken}`])
       .send(updateDataWithLink);
 
     expect(putResponse.status).toBe(200);
@@ -187,6 +336,7 @@ describe('WhitebookController (e2e)', () => {
 
     const putResponseWithPdf = await request(app.getHttpServer())
       .put(`/whitebook/${uuid}`)
+      .set('Cookie', [`Authentication=${adminUserJwtToken}`])
       .attach('pdf_file', pdf.buffer, pdf.originalName)
       .field('title', updateDataWithPdf.title)
       .field('content', updateDataWithPdf.content)
@@ -227,6 +377,7 @@ describe('WhitebookController (e2e)', () => {
 
     const postRes = await request(app.getHttpServer())
       .post('/whitebook')
+      .set('Cookie', [`Authentication=${adminUserJwtToken}`])
       .send(Dto);
 
     expect(postRes.status).toBe(201);
@@ -234,9 +385,9 @@ describe('WhitebookController (e2e)', () => {
 
     const uuid = postRes.body.uuid;
 
-    const deleteResponse = await request(app.getHttpServer()).delete(
-      `/whitebook/${uuid}`,
-    );
+    const deleteResponse = await request(app.getHttpServer())
+      .delete(`/whitebook/${uuid}`)
+      .set('Cookie', [`Authentication=${adminUserJwtToken}`]);
 
     expect(deleteResponse.status).toBe(200);
     expect(deleteResponse.type).toBe('application/json');
