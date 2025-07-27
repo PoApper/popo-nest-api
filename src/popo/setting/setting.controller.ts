@@ -35,7 +35,7 @@ export class SettingController {
 
   @ApiCookieAuth()
   @UseGuards(RolesGuard)
-  @Roles(UserType.admin, UserType.association, UserType.staff)
+  @Roles(UserType.admin, UserType.association)
   @Post()
   updatePopoSetting(@Body() dto: PopoSettingDto) {
     const settingKey = 'popo-setting.json';
@@ -44,7 +44,7 @@ export class SettingController {
 
   @ApiCookieAuth()
   @UseGuards(RolesGuard)
-  @Roles(UserType.admin, UserType.association, UserType.staff)
+  @Roles(UserType.admin, UserType.association)
   @Post('rc-students-list')
   @FileBody('csv_file')
   async uploadRcStudentList(@Body() dto: RcStudentsListDto) {
@@ -60,7 +60,7 @@ export class SettingController {
 
   @ApiCookieAuth()
   @UseGuards(RolesGuard)
-  @Roles(UserType.admin, UserType.association, UserType.staff)
+  @Roles(UserType.admin, UserType.association)
   @Get('download-rc-students-list')
   async downloadRcStudentList(@Res() res: Response) {
     const data = await this.fileService.getFile('popo-rc-students-list.csv');
@@ -74,7 +74,7 @@ export class SettingController {
 
   @ApiCookieAuth()
   @UseGuards(RolesGuard)
-  @Roles(UserType.admin, UserType.association, UserType.staff)
+  @Roles(UserType.admin, UserType.association)
   @Get('count-rc-students-list')
   async countRcStudentList() {
     return this.settingService.countRcStudentsList();
@@ -82,7 +82,7 @@ export class SettingController {
 
   @ApiCookieAuth()
   @UseGuards(RolesGuard)
-  @Roles(UserType.admin, UserType.association, UserType.staff)
+  @Roles(UserType.admin, UserType.association)
   @Get('get-rc-students-status')
   async getRcStudentStatus() {
     return this.settingService.getRcStudentsStatus();
@@ -90,7 +90,7 @@ export class SettingController {
 
   @ApiCookieAuth()
   @UseGuards(RolesGuard)
-  @Roles(UserType.admin, UserType.association, UserType.staff)
+  @Roles(UserType.admin, UserType.association)
   @Get('sync-rc-students-list')
   async checkRc() {
     await this.settingService.resetRcStudentsUserType();
