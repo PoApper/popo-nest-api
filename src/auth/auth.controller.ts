@@ -135,7 +135,7 @@ export class AuthController {
     return saveUser;
   }
 
-  @ApiCookieAuth()
+  // 생성한 계정을 활성화하기 위한 이메일의 링크에서 호출
   @Public()
   @Put('activate/:user_uuid')
   activateUser(@Param('user_uuid') user_uuid: string) {
