@@ -60,7 +60,7 @@ export class TestUtils {
           request.user = decoded;
           return true;
         } catch (error) {
-          logger.error('JWT decode error:', error);
+          this.logger.error('JWT decode error:', error);
           return false;
         }
       });
