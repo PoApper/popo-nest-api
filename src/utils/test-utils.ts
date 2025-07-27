@@ -1,4 +1,4 @@
-import { ExecutionContext } from '@nestjs/common';
+import { ExecutionContext, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { UserType } from '../popo/user/user.meta';
@@ -15,11 +15,14 @@ export class TestUtils {
   private testUserJwtToken: string;
   private testAdminJwtToken: string;
   private jwtAuthGuardSpy: jest.SpyInstance;
+  private logger: Logger;
 
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
-  ) {}
+  ) {
+    this.logger = new Logger('TestUtils');
+  }
 
   private createMockJwtAuthGuard = () => {
     return jest
@@ -57,7 +60,7 @@ export class TestUtils {
           request.user = decoded;
           return true;
         } catch (error) {
-          console.log('JWT decode error:', error);
+          this.logger.error('JWT decode error:', error);
           return false;
         }
       });
