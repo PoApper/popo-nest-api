@@ -30,7 +30,6 @@ import { ReservePlace } from './reserve.place.entity';
 import * as moment from 'moment-timezone';
 import { Public } from 'src/common/public-guard.decorator';
 
-@ApiCookieAuth()
 @ApiTags('Reservation - Place')
 @Controller('reservation-place')
 export class ReservePlaceController {
@@ -40,6 +39,7 @@ export class ReservePlaceController {
     private readonly mailService: MailService,
   ) {}
 
+  @ApiCookieAuth()
   @Post('check_possible')
   @ApiBody({
     type: CreateReservePlaceDto,
@@ -57,6 +57,7 @@ export class ReservePlaceController {
     );
   }
 
+  @ApiCookieAuth()
   @Post()
   async createWithNameAndId(
     @Req() req: Request,
@@ -130,11 +131,13 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinPlace(reservations);
   }
 
+  @ApiCookieAuth()
   @Get('count')
   count() {
     return this.reservePlaceService.count();
   }
 
+  @ApiCookieAuth()
   @Get('user')
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
@@ -164,6 +167,7 @@ export class ReservePlaceController {
     };
   }
 
+  @ApiCookieAuth()
   @Get('user/:uuid')
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reservePlaceService.find({
@@ -173,6 +177,7 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinPlace(reservations);
   }
 
+  @ApiCookieAuth()
   @Get('user/admin/:uuid')
   @UseGuards(RolesGuard)
   @Roles(UserType.admin)
@@ -184,6 +189,7 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinPlace(reservations);
   }
 
+  @ApiCookieAuth()
   @Get('place/:place_uuid')
   @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
@@ -208,6 +214,7 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinBooker(existReservations);
   }
 
+  @ApiCookieAuth()
   @Public()
   @Get('placeName/:placeName/:date') // hide user uuid
   async checkByPlaceNameAndDate(
@@ -219,6 +226,7 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinBooker(existReservations);
   }
 
+  @ApiCookieAuth()
   @Get('sync-reservation-count')
   async syncPlaceReservationCount() {
     const placeList = await this.placeService.find();
@@ -234,6 +242,7 @@ export class ReservePlaceController {
     return `Sync Done: ${placeList.length} Places`;
   }
 
+  @ApiCookieAuth()
   @Patch('all/status/accept')
   @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
@@ -281,6 +290,7 @@ export class ReservePlaceController {
     }
   }
 
+  @ApiCookieAuth()
   @Patch(':uuid/status/:status')
   @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
@@ -320,6 +330,7 @@ export class ReservePlaceController {
     }
   }
 
+  @ApiCookieAuth()
   @Delete(':uuid')
   async delete(@Param('uuid') uuid: string, @Req() req: Request) {
     const reservation =

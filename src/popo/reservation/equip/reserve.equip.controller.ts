@@ -27,7 +27,6 @@ import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import * as moment from 'moment-timezone';
 import { Public } from 'src/common/public-guard.decorator';
 
-@ApiCookieAuth()
 @ApiTags('Reservation - Equipment')
 @Controller('reservation-equip')
 export class ReserveEquipController {
@@ -37,6 +36,7 @@ export class ReserveEquipController {
     private readonly mailService: MailService,
   ) {}
 
+  @ApiCookieAuth()
   @Post()
   async post(@Req() req: Request, @Body() dto: CreateReserveEquipDto) {
     const user = req.user as JwtPayload;
@@ -117,6 +117,7 @@ export class ReserveEquipController {
     return this.reserveEquipService.joinEquips(reservations);
   }
 
+  @ApiCookieAuth()
   @Get('user')
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
@@ -146,6 +147,7 @@ export class ReserveEquipController {
     };
   }
 
+  @ApiCookieAuth()
   @Get('user/:uuid')
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
@@ -155,6 +157,7 @@ export class ReserveEquipController {
     return this.reserveEquipService.joinEquips(reservations);
   }
 
+  @ApiCookieAuth()
   @Get('user/admin/:uuid')
   @UseGuards(RolesGuard)
   @Roles(UserType.admin)
@@ -167,6 +170,7 @@ export class ReserveEquipController {
   }
 
   // TODO: 이거 왜 GET?
+  @ApiCookieAuth()
   @Get('sync-reservation-count')
   async syncPlaceReservationCount() {
     const equipmentList = await this.equipService.find();
@@ -183,16 +187,19 @@ export class ReserveEquipController {
     return `Sync Done: ${equipmentList.length} Equipments`;
   }
 
+  @ApiCookieAuth()
   @Get('count')
   count() {
     return this.reserveEquipService.count();
   }
 
+  @ApiCookieAuth()
   @Get(':uuid')
   getOne(@Param('uuid') uuid) {
     return this.reserveEquipService.findOneByUuid(uuid);
   }
 
+  @ApiCookieAuth()
   @Delete(':uuid')
   async delete(@Param('uuid') uuid: string, @Req() req: Request) {
     const reservation = await this.reserveEquipService.findOneByUuid(uuid);
@@ -223,6 +230,7 @@ export class ReserveEquipController {
     }
   }
 
+  @ApiCookieAuth()
   @Patch(':uuid/status/:status')
   @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
