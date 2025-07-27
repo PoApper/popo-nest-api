@@ -4,8 +4,9 @@ import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { FavoritePlaceService } from './place.favorite.service';
 import { FavoritePlaceDto } from './place.favorite.dto';
 
+// 사용 X
 @ApiCookieAuth()
-@ApiTags('Favorite - Place')
+@ApiTags('Favorite - Place: 사용하지 않는 API')
 @Controller('favorite-place')
 export class FavoritePlaceController {
   constructor(private readonly favoritePlaceService: FavoritePlaceService) {}

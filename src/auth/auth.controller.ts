@@ -14,7 +14,6 @@ import {
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { Request, Response } from 'express';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UserStatus, UserType } from '../popo/user/user.meta';
 import { UserService } from '../popo/user/user.service';
 import { CreateUserDto } from '../popo/user/user.dto';
@@ -34,7 +33,6 @@ const Message = {
   FAIL_VERIFICATION_EMAIL_SEND: 'Fail to send verification email.',
 };
 
-@ApiCookieAuth()
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -46,8 +44,8 @@ export class AuthController {
     private readonly mailService: MailService,
   ) {}
 
+  @ApiCookieAuth()
   @Get(['verifyToken', 'verifyToken/admin', 'me'])
-  @UseGuards(JwtAuthGuard)
   async verifyToken(@Req() req: Request) {
     const path = req.path;
     const user = req.user as JwtPayload;
@@ -60,8 +58,8 @@ export class AuthController {
     return user;
   }
 
+  @ApiCookieAuth()
   @Get('me/reservation')
-  @UseGuards(JwtAuthGuard)
   async getOwnReservations(@Req() req: Request) {
     const user = req.user as JwtPayload;
     const existUser = await this.userService.findOneByEmail(user.email);
@@ -81,8 +79,9 @@ export class AuthController {
     };
   }
 
-  @UseGuards(LocalAuthGuard)
+  @Public()
   @Post(['login', 'login/admin'])
+  @UseGuards(LocalAuthGuard)
   async logIn(@Req() req: Request, @Res() res: Response) {
     const path = req.path;
     const user = req.user as JwtPayload;
@@ -104,7 +103,7 @@ export class AuthController {
     return res.send(user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
   @Get('logout')
   async logOut(@Req() req: Request, @Res() res: Response) {
     const user = req.user as JwtPayload;
@@ -136,6 +135,7 @@ export class AuthController {
     return saveUser;
   }
 
+  @ApiCookieAuth()
   @Public()
   @Put('activate/:user_uuid')
   activateUser(@Param('user_uuid') user_uuid: string) {
@@ -176,8 +176,8 @@ export class AuthController {
     );
   }
 
+  @ApiCookieAuth()
   @Post('password/update')
-  @UseGuards(JwtAuthGuard)
   async updatePassword(
     @Req() req: Request,
     @Body() body: PasswordUpdateRequest,
@@ -186,8 +186,8 @@ export class AuthController {
     return this.userService.updatePasswordByEmail(user.email, body.password);
   }
 
+  @ApiCookieAuth()
   @Get('myInfo')
-  @UseGuards(JwtAuthGuard)
   async getMyInfo(@Req() req: Request) {
     const user = req.user as JwtPayload;
     const { ...UserInfo } = await this.userService.findOneByUuid(user.uuid);
@@ -195,6 +195,8 @@ export class AuthController {
     return UserInfo;
   }
 
+  @ApiCookieAuth()
+  @Public()
   @Post('refresh')
   async refresh(@Req() req: Request, @Res() res: Response) {
     const accessTokenInCookie = req.cookies?.Authentication;

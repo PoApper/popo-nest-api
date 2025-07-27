@@ -15,7 +15,6 @@ import * as moment from 'moment';
 
 import { IntroAssociationService } from './intro.association.service';
 import { CreateIntroAssociationDto } from './intro.association.dto';
-import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { UserType } from '../../user/user.meta';
@@ -24,7 +23,6 @@ import { ClubImageDto } from '../club/intro.club.dto';
 import { FileService } from '../../../file/file.service';
 import { Public } from '../../../common/public-guard.decorator';
 
-@ApiCookieAuth()
 @ApiTags('Introduce - Association')
 @Controller('introduce/association')
 export class IntroAssociationController {
@@ -33,15 +31,17 @@ export class IntroAssociationController {
     private readonly fileService: FileService,
   ) {}
 
+  @ApiCookieAuth()
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   create(@Body() createIntroAssociationDto: CreateIntroAssociationDto) {
     return this.introAssociationService.save(createIntroAssociationDto);
   }
 
+  @ApiCookieAuth()
   @Post('image/:uuid')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   @FileBody('image')
   async uploadImage(@Param('uuid') uuid: string, @Body() dto: ClubImageDto) {
@@ -95,8 +95,9 @@ export class IntroAssociationController {
     return this.introAssociationService.findOneByUuid(uuid);
   }
 
+  @ApiCookieAuth()
   @Put(':uuid')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   put(
     @Param('uuid') uuid: string,
@@ -105,8 +106,9 @@ export class IntroAssociationController {
     return this.introAssociationService.update(uuid, updateIntroAssociationDto);
   }
 
+  @ApiCookieAuth()
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   delete(@Param('uuid') uuid: string) {
     return this.introAssociationService.remove(uuid);

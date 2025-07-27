@@ -15,14 +15,12 @@ import { PlaceService } from './place.service';
 import { PlaceDto, PlaceImageDto } from './place.dto';
 import { PlaceRegion } from './place.meta';
 import { UserType } from '../user/user.meta';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
 import { Public } from '../../common/public-guard.decorator';
 
-@ApiCookieAuth()
 @ApiTags('Place')
 @Controller('place')
 export class PlaceController {
@@ -31,17 +29,19 @@ export class PlaceController {
     private readonly fileService: FileService,
   ) {}
 
+  @ApiCookieAuth()
   @Post()
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBody({ type: PlaceDto })
   async create(@Body() dto: PlaceDto) {
     return this.placeService.save(dto);
   }
 
+  @ApiCookieAuth()
   @Post('image/:uuid')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @FileBody('image')
   async uploadImage(@Param('uuid') uuid: string, @Body() dto: PlaceImageDto) {
     const image_url = await this.fileService.uploadFile(
@@ -76,16 +76,18 @@ export class PlaceController {
     return this.placeService.findAllByRegion(region);
   }
 
+  @ApiCookieAuth()
   @Put(':uuid')
-  @Roles(UserType.admin, UserType.association, UserType.staff)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association)
   async put(@Param('uuid') uuid: string, @Body() updatePlaceDto: PlaceDto) {
     return this.placeService.update(uuid, updatePlaceDto);
   }
 
+  @ApiCookieAuth()
   @Delete(':uuid')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   async delete(@Param('uuid') uuid: string) {
     this.placeService.remove(uuid);
   }

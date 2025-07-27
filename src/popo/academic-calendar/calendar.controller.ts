@@ -15,19 +15,18 @@ import { CalendarDto } from './calendar.dto';
 import { Roles } from 'src/auth/authroization/roles.decorator';
 import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { UserType } from 'src/popo/user/user.meta';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import * as moment from 'moment';
 import { Public } from '../../common/public-guard.decorator';
 
-@ApiCookieAuth()
 @ApiTags('Academic Calendar')
 @Controller('calendar')
 export class CalendarController {
   constructor(private readonly calendarService: CalendarService) {}
 
+  @ApiCookieAuth()
   @Post()
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @ApiBody({ type: CalendarDto })
   createCalendar(@Body() dto: CalendarDto) {
     return this.calendarService.save(dto);
@@ -53,17 +52,19 @@ export class CalendarController {
     return this.calendarService.findById(id);
   }
 
+  @ApiCookieAuth()
   @Put(':id')
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @ApiBody({ type: CalendarDto })
   updateCalendar(@Param('id') id: number, @Body() dto: CalendarDto) {
     return this.calendarService.update(id, dto);
   }
 
+  @ApiCookieAuth()
   @Delete(':id')
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   deleteCalendar(@Param('id') id: number) {
     return this.calendarService.delete(id);
   }

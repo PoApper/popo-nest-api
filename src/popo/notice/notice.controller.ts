@@ -15,15 +15,13 @@ import * as moment from 'moment';
 import { NoticeService } from './notice.service';
 import { NoticeDto, NoticeImageDto } from './notice.dto';
 import { UserType } from '../user/user.meta';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
 import { Public } from '../../common/public-guard.decorator';
 
-@ApiCookieAuth()
-@ApiTags('Notice')
+@ApiTags('Notice: 사용하지 않는 API')
 @Controller('notice')
 export class NoticeController {
   constructor(
@@ -31,17 +29,19 @@ export class NoticeController {
     private readonly fileService: FileService,
   ) {}
 
+  @ApiCookieAuth()
   @Post()
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBody({ type: NoticeDto })
   async create(@Body() dto: NoticeDto) {
     return this.noticeService.save(dto);
   }
 
+  @ApiCookieAuth()
   @Post('image/:id')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @FileBody('image')
   async uploadImage(@Param('id') id: number, @Body() dto: NoticeImageDto) {
     const image_url = await this.fileService.uploadFile(
@@ -76,16 +76,18 @@ export class NoticeController {
     return this.noticeService.increaseClickCount(id);
   }
 
+  @ApiCookieAuth()
   @Put(':id')
-  @Roles(UserType.admin, UserType.association, UserType.staff)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association)
   async put(@Param('id') id: number, @Body() updateNoticeDto: NoticeDto) {
     return this.noticeService.update(id, updateNoticeDto);
   }
 
+  @ApiCookieAuth()
   @Delete(':id')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   async delete(@Param('id') id: number) {
     this.noticeService.remove(id);
   }

@@ -22,7 +22,6 @@ import { UserType } from '../user/user.meta';
 import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { Roles } from 'src/auth/authroization/roles.decorator';
 
-@ApiCookieAuth()
 @ApiTags('생활백서(Whitebook)')
 @Controller('whitebook')
 export class WhitebookController {
@@ -31,6 +30,7 @@ export class WhitebookController {
     private readonly fileService: FileService,
   ) {}
 
+  @ApiCookieAuth()
   @Post()
   @Roles(UserType.admin)
   @UseGuards(RolesGuard)
@@ -68,6 +68,7 @@ export class WhitebookController {
     }
   }
 
+  @ApiCookieAuth()
   @Get('with-login')
   getAllForLoginUser(@Query('orderBy') orderBy: string) {
     if (orderBy === 'click_count') {
@@ -87,9 +88,10 @@ export class WhitebookController {
     return this.whitebookService.addOneClickCount(uuid);
   }
 
+  @ApiCookieAuth()
   @Put(':uuid')
-  @Roles(UserType.admin)
   @UseGuards(RolesGuard)
+  @Roles(UserType.admin)
   @FileBody('pdf_file')
   async update(@Param('uuid') uuid: string, @Body() dto: WhitebookDto) {
     if (dto.pdf_file) {
@@ -110,9 +112,10 @@ export class WhitebookController {
     return this.whitebookService.update(uuid, dtoWithoutPdfFile);
   }
 
+  @ApiCookieAuth()
   @Delete(':uuid')
-  @Roles(UserType.admin)
   @UseGuards(RolesGuard)
+  @Roles(UserType.admin)
   delete(@Param('uuid') uuid: string) {
     return this.whitebookService.delete(uuid);
   }

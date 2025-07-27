@@ -17,10 +17,8 @@ import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
 import { SettingService } from './setting.service';
+import { Public } from '../../common/public-guard.decorator';
 
-@ApiCookieAuth()
-@Roles(UserType.admin, UserType.association, UserType.staff)
-@UseGuards(RolesGuard)
 @ApiTags('POPO 세팅')
 @Controller('setting')
 export class SettingController {
@@ -29,17 +27,24 @@ export class SettingController {
     private readonly settingService: SettingService,
   ) {}
 
+  @Public()
   @Get()
   async getSetting() {
     return this.fileService.getText('popo-setting.json');
   }
 
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
   @Post()
   updatePopoSetting(@Body() dto: PopoSettingDto) {
     const settingKey = 'popo-setting.json';
     return this.fileService.uploadText(settingKey, JSON.stringify(dto));
   }
 
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
   @Post('rc-students-list')
   @FileBody('csv_file')
   async uploadRcStudentList(@Body() dto: RcStudentsListDto) {
@@ -53,6 +58,9 @@ export class SettingController {
     return csv_url;
   }
 
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
   @Get('download-rc-students-list')
   async downloadRcStudentList(@Res() res: Response) {
     const data = await this.fileService.getFile('popo-rc-students-list.csv');
@@ -64,16 +72,25 @@ export class SettingController {
     res.send(data);
   }
 
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
   @Get('count-rc-students-list')
   async countRcStudentList() {
     return this.settingService.countRcStudentsList();
   }
 
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
   @Get('get-rc-students-status')
   async getRcStudentStatus() {
     return this.settingService.getRcStudentsStatus();
   }
 
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
   @Get('sync-rc-students-list')
   async checkRc() {
     await this.settingService.resetRcStudentsUserType();

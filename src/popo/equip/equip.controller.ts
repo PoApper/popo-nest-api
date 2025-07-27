@@ -16,13 +16,11 @@ import { EquipOwner } from './equip.meta';
 import { EquipmentDto, EquipmentImageDto } from './equip.dto';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { UserType } from '../user/user.meta';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { FileBody } from '../../file/file-body.decorator';
 import { FileService } from '../../file/file.service';
 import { Public } from '../../common/public-guard.decorator';
 
-@ApiCookieAuth()
 @ApiTags('Equipment')
 @Controller('equip')
 export class EquipController {
@@ -31,17 +29,19 @@ export class EquipController {
     private readonly fileService: FileService,
   ) {}
 
+  @ApiCookieAuth()
   @Post()
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @ApiBody({ type: EquipmentDto })
   async create(@Body() dto: EquipmentDto) {
     return this.equipService.save(dto);
   }
 
+  @ApiCookieAuth()
   @Post('image/:uuid')
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @FileBody('image')
   async uploadImage(
     @Param('uuid') uuid: string,
@@ -79,16 +79,18 @@ export class EquipController {
     return this.equipService.findAllByOwner(owner);
   }
 
+  @ApiCookieAuth()
   @Put(':uuid')
   @Roles(UserType.admin, UserType.association, UserType.staff)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   async put(@Param('uuid') uuid: string, @Body() dto: EquipmentDto) {
     return this.equipService.update(uuid, dto);
   }
 
+  @ApiCookieAuth()
   @Delete(':uuid')
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   async delete(@Param('uuid') uuid: string) {
     return this.equipService.delete(uuid);
   }

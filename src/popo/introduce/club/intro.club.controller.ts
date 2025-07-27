@@ -14,7 +14,6 @@ import { Between } from 'typeorm';
 import * as moment from 'moment';
 
 import { IntroClubService } from './intro.club.service';
-import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { UserType } from '../../user/user.meta';
@@ -25,7 +24,6 @@ import { FileBody } from '../../../file/file-body.decorator';
 import { ApiCookieAuth } from '@nestjs/swagger';
 import { Public } from '../../../common/public-guard.decorator';
 
-@ApiCookieAuth()
 @ApiTags('Introduce - Club')
 @Controller('introduce/club')
 export class IntroClubController {
@@ -34,15 +32,17 @@ export class IntroClubController {
     private readonly fileService: FileService,
   ) {}
 
+  @ApiCookieAuth()
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   post(@Body() createIntroClubDto: CreateIntroClubDto) {
     return this.introClubService.save(createIntroClubDto);
   }
 
+  @ApiCookieAuth()
   @Post('image/:uuid')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   @FileBody('image')
   async uploadImage(@Param('uuid') uuid: string, @Body() dto: ClubImageDto) {
@@ -104,8 +104,9 @@ export class IntroClubController {
     return this.introClubService.findOneByUuid(uuid);
   }
 
+  @ApiCookieAuth()
   @Put(':uuid')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   put(
     @Param('uuid') uuid: string,
@@ -114,8 +115,9 @@ export class IntroClubController {
     return this.introClubService.update(uuid, updateIntroClubDto);
   }
 
+  @ApiCookieAuth()
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   delete(@Param('uuid') uuid: string) {
     return this.introClubService.remove(uuid);

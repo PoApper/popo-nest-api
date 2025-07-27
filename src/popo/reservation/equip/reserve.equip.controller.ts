@@ -19,13 +19,13 @@ import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
-import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
 import { MoreThanOrEqual } from 'typeorm';
 import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import * as moment from 'moment-timezone';
+import { Public } from '../../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('Reservation - Equipment')
@@ -38,7 +38,6 @@ export class ReserveEquipController {
   ) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   async post(@Req() req: Request, @Body() dto: CreateReserveEquipDto) {
     const user = req.user as JwtPayload;
 
@@ -76,6 +75,7 @@ export class ReserveEquipController {
     return new_reservation;
   }
 
+  // TODO: d왜 여기 public 안붙이면 로컬에서 접속 시 에러나지? dev에선 안그럴까? 확인
   @Get()
   @ApiQuery({ name: 'owner', required: false })
   @ApiQuery({ name: 'status', required: false })
@@ -118,7 +118,6 @@ export class ReserveEquipController {
   }
 
   @Get('user')
-  @UseGuards(JwtAuthGuard)
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
   async getMyReservation(
@@ -147,8 +146,8 @@ export class ReserveEquipController {
     };
   }
 
+  @Public()
   @Get('user/:uuid')
-  @UseGuards(JwtAuthGuard)
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
       where: { booker_id: uuid },
@@ -158,8 +157,8 @@ export class ReserveEquipController {
   }
 
   @Get('user/admin/:uuid')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   async getUserReservationByAdmin(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
       where: { booker_id: uuid },
@@ -168,6 +167,7 @@ export class ReserveEquipController {
     return this.reserveEquipService.joinEquips(reservations);
   }
 
+  // TODO: 이거 왜 GET?
   @Get('sync-reservation-count')
   async syncPlaceReservationCount() {
     const equipmentList = await this.equipService.find();
@@ -184,18 +184,19 @@ export class ReserveEquipController {
     return `Sync Done: ${equipmentList.length} Equipments`;
   }
 
+  @Public()
   @Get('count')
   count() {
     return this.reserveEquipService.count();
   }
 
+  @Public()
   @Get(':uuid')
   getOne(@Param('uuid') uuid) {
     return this.reserveEquipService.findOneByUuid(uuid);
   }
 
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard)
   async delete(@Param('uuid') uuid: string, @Req() req: Request) {
     const reservation = await this.reserveEquipService.findOneByUuid(uuid);
     const user = req.user as JwtPayload;
@@ -226,8 +227,8 @@ export class ReserveEquipController {
   }
 
   @Patch(':uuid/status/:status')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   async patchStatus(
     @Param('uuid') uuid: string,
     @Param('status') status: ReservationStatus,
