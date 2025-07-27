@@ -22,7 +22,6 @@ import {
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
-import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { PlaceService } from '../../place/place.service';
@@ -131,13 +130,11 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinPlace(reservations);
   }
 
-  @Public()
   @Get('count')
   count() {
     return this.reservePlaceService.count();
   }
 
-  @Public()
   @Get('user')
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
@@ -167,7 +164,6 @@ export class ReservePlaceController {
     };
   }
 
-  @Public()
   @Get('user/:uuid')
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reservePlaceService.find({
@@ -178,8 +174,8 @@ export class ReservePlaceController {
   }
 
   @Get('user/admin/:uuid')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   async getUserReservationByAdmin(@Param('uuid') uuid: string) {
     const reservations = await this.reservePlaceService.find({
       where: { booker_id: uuid },
@@ -223,7 +219,6 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinBooker(existReservations);
   }
 
-  @Public()
   @Get('sync-reservation-count')
   async syncPlaceReservationCount() {
     const placeList = await this.placeService.find();

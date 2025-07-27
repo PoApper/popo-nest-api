@@ -25,7 +25,7 @@ import { EquipService } from '../../equip/equip.service';
 import { MoreThanOrEqual } from 'typeorm';
 import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import * as moment from 'moment-timezone';
-import { Public } from '../../../common/public-guard.decorator';
+import { Public } from 'src/common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('Reservation - Equipment')
@@ -75,7 +75,7 @@ export class ReserveEquipController {
     return new_reservation;
   }
 
-  // TODO: d왜 여기 public 안붙이면 로컬에서 접속 시 에러나지? dev에선 안그럴까? 확인
+  @Public()
   @Get()
   @ApiQuery({ name: 'owner', required: false })
   @ApiQuery({ name: 'status', required: false })
@@ -146,7 +146,6 @@ export class ReserveEquipController {
     };
   }
 
-  @Public()
   @Get('user/:uuid')
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
@@ -184,13 +183,11 @@ export class ReserveEquipController {
     return `Sync Done: ${equipmentList.length} Equipments`;
   }
 
-  @Public()
   @Get('count')
   count() {
     return this.reserveEquipService.count();
   }
 
-  @Public()
   @Get(':uuid')
   getOne(@Param('uuid') uuid) {
     return this.reserveEquipService.findOneByUuid(uuid);
