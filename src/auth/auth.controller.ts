@@ -20,7 +20,7 @@ import { CreateUserDto } from '../popo/user/user.dto';
 import { MailService } from '../mail/mail.service';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from './strategies/jwt.payload';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
 import { jwtConstants } from './constants';
@@ -196,6 +196,12 @@ export class AuthController {
   }
 
   @ApiCookieAuth()
+  @ApiOperation({
+    summary:
+      'Swagger에서 테스트 불가능: 리프레시 토큰을 사용해 엑세스 토큰 갱신',
+    description:
+      '해당 엔드포인트를 테스트하려면 Authentication, Refresh 두 가지 토큰이 필요한데, Swagger에서는 최대 하나의 토큰만 등록 가능합니다. 테스트하려면 Postman같은 툴을 사용하거나 개발자도구로 Refresh 쿠키를 직접 넣어야 합니다.',
+  })
   @Public()
   @Post('refresh')
   async refresh(@Req() req: Request, @Res() res: Response) {
