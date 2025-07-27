@@ -18,7 +18,7 @@ import { UserType } from 'src/popo/user/user.meta';
 import * as moment from 'moment';
 import { Public } from '../../common/public-guard.decorator';
 
-@ApiTags('Academic Calendar')
+@ApiTags('Calendar')
 @Controller('calendar')
 export class CalendarController {
   constructor(private readonly calendarService: CalendarService) {}
