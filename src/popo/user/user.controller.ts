@@ -17,7 +17,7 @@ import { CreateUserDto, UpdatePasswordDto, UpdateUserDto } from './user.dto';
 import { UserType } from './user.meta';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from '../../auth/strategies/jwt.payload';
 
 @ApiCookieAuth()
@@ -27,6 +27,8 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin)
   create(@Body() dto: CreateUserDto) {
     return this.userService.save(dto);
   }
@@ -115,7 +117,6 @@ export class UserController {
   }
 
   @Delete('me')
-  @UseGuards(JwtAuthGuard)
   async deleteMyAccount(@Req() req: Request, @Res() res: Response) {
     const user = req.user as JwtPayload;
     await this.userService.updateRefreshToken(user.uuid, null, null);
