@@ -10,6 +10,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "incremental": true
+    "incremental": true,
+    "skipLibCheck": true // @google-cloud/storage에서 Type 'Int32Array' is not generic 에러 우회하기 위해 사용
   }
 }
