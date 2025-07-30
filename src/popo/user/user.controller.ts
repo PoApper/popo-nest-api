@@ -125,7 +125,7 @@ export class UserController {
     this.clearCookies(res);
 
     await this.userService.remove(user.uuid);
-    return res.sendStatus(200);
+    return res.sendStatus(204);
   }
 
   private clearCookies(res: Response): void {
