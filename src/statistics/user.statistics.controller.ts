@@ -1,26 +1,33 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { Between } from 'typeorm';
 import * as moment from 'moment';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { UserService } from '../popo/user/user.service';
+import { Public } from '../common/public-guard.decorator';
 
-@ApiTags('Statistics')
+@ApiTags('Statistics - User')
 @Controller('statistics/user')
 export class UserStatisticsController {
   constructor(private readonly userService: UserService) {}
 
-  /**
-   * format: GET statistics/user?start=YYYYMMDD&end=YYYYMMDD
-   * return daily user register counts between start and end date
-   */
-  @Get()
+  @Public()
+  @ApiOperation({
+    summary: '기간 별 유저 가입 통계',
+  })
   @ApiQuery({
     name: 'start',
+    required: true,
+    type: String,
+    example: '20200101',
   })
   @ApiQuery({
     name: 'end',
+    required: true,
+    type: String,
+    example: '20250101',
   })
+  @Get()
   async getUserRegisterStatistics(@Query() query) {
     const query_start = moment(query.start);
     const query_end = moment(query.end);
@@ -46,7 +53,11 @@ export class UserStatisticsController {
     };
   }
 
-  // 전체 유저 수, 오늘 가입 유저 수, 이번주 가입 유저 수, 오늘 로그인 유저 수, 이번주 로그인 유저 수
+  @Public()
+  @ApiOperation({
+    summary:
+      '전체 유저 수, 오늘 가입 유저 수, 이번주 가입 유저 수, 오늘 로그인 유저 수, 이번주 로그인 유저 수',
+  })
   @Get('count')
   async countInfo() {
     moment.updateLocale('en', {

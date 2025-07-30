@@ -43,7 +43,7 @@ export class UserService {
       name: dto.name,
       userType: isRcStudent ? UserType.rc_student : dto.userType,
       lastLoginAt: new Date(),
-      userStatus: UserStatus.activated,
+      userStatus: UserStatus.activated, // TODO: 기본값인 deactivated로 설정해야 함
     });
   }
 

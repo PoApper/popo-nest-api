@@ -7,12 +7,10 @@ import {
   Param,
   Post,
   Req,
-  UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { NoticeLikeDto } from './noticeLike.dto';
 import { NoticeLikeService } from './noticeLike.service';
 import { NoticeLike } from './noticeLike.entity';
@@ -22,13 +20,13 @@ const Message = {
   FAIL_LIKE_DELETION_NEVER_LIKED: 'There is no record of liking the post.',
 };
 
-@ApiTags('Notice Like')
+@ApiTags('Notice Like: 사용하지 않는 API')
 @Controller('noticeLike')
 export class NoticeLikeController {
   constructor(private readonly noticeLikeService: NoticeLikeService) {}
 
+  @ApiCookieAuth()
   @Post()
-  @UseGuards(JwtAuthGuard)
   @ApiBody({ type: NoticeLikeDto })
   async create(
     @Body() dto: NoticeLikeDto,
@@ -48,6 +46,7 @@ export class NoticeLikeController {
     return this.noticeLikeService.countLikes(notice_id);
   }
 
+  @ApiCookieAuth()
   @Get('status/:user_id/:notice_id')
   async getStatus(
     @Param('user_id') user_id: string,
@@ -64,8 +63,8 @@ export class NoticeLikeController {
       : false;
   }
 
+  @ApiCookieAuth()
   @Delete(':user_id/:notice_id')
-  @UseGuards(JwtAuthGuard)
   async delete(
     @Param('user_id') user_id: string,
     @Param('notice_id') notice_id: number,

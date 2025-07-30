@@ -1,4 +1,4 @@
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   BadRequestException,
   Body,
@@ -11,13 +11,13 @@ import {
 import { Response } from 'express';
 
 import { PopoSettingDto, RcStudentsListDto } from './setting.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from 'src/auth/authroization/roles.decorator';
 import { UserType } from '../user/user.meta';
 import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
 import { SettingService } from './setting.service';
+import { Public } from '../../common/public-guard.decorator';
 
 @ApiTags('POPO 세팅')
 @Controller('setting')
@@ -27,22 +27,25 @@ export class SettingController {
     private readonly settingService: SettingService,
   ) {}
 
+  @Public()
   @Get()
   async getSetting() {
     return this.fileService.getText('popo-setting.json');
   }
 
-  @Post()
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post()
   updatePopoSetting(@Body() dto: PopoSettingDto) {
     const settingKey = 'popo-setting.json';
     return this.fileService.uploadText(settingKey, JSON.stringify(dto));
   }
 
-  @Post('rc-students-list')
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('rc-students-list')
   @FileBody('csv_file')
   async uploadRcStudentList(@Body() dto: RcStudentsListDto) {
     if (!dto.csv_file) {
@@ -55,9 +58,10 @@ export class SettingController {
     return csv_url;
   }
 
-  @Get('download-rc-students-list')
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('download-rc-students-list')
   async downloadRcStudentList(@Res() res: Response) {
     const data = await this.fileService.getFile('popo-rc-students-list.csv');
     res.setHeader('Content-Type', 'application/octet-stream');
@@ -68,21 +72,26 @@ export class SettingController {
     res.send(data);
   }
 
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association)
   @Get('count-rc-students-list')
   async countRcStudentList() {
     return this.settingService.countRcStudentsList();
   }
 
-  @Get('get-rc-students-status')
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('get-rc-students-status')
   async getRcStudentStatus() {
     return this.settingService.getRcStudentsStatus();
   }
 
-  @Get('sync-rc-students-list')
+  @ApiCookieAuth()
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('sync-rc-students-list')
   async checkRc() {
     await this.settingService.resetRcStudentsUserType();
     return this.settingService.setRcStudentsUserTypeByCsv();

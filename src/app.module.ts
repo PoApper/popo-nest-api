@@ -7,11 +7,12 @@ import { AppService } from './app.service';
 import { PopoModule } from './popo/popo.module';
 import { AuthModule } from './auth/auth.module';
 import { StatisticsModule } from './statistics/statistics.module';
-import { AdminModule } from './admin/admin.module';
 import { SearchModule } from './search/search.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationModule } from './notification/notification.module';
 import configuration from './config/configurations';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -30,12 +31,17 @@ import configuration from './config/configurations';
     PopoModule,
     StatisticsModule,
     AuthModule,
-    AdminModule,
     SearchModule,
     ScheduleModule.forRoot(),
     NotificationModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

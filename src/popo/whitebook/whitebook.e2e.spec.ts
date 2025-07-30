@@ -1,14 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../../app.module';
 import { WhitebookDto } from './whitebook.dto';
 import { DataSource } from 'typeorm';
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { FileService } from 'src/file/file.service';
+import { UserService } from '../user/user.service';
+import { SettingService } from '../setting/setting.service';
+import { JwtService } from '@nestjs/jwt';
+import { AppModule } from 'src/app.module';
+import { TestUtils } from '../../utils/test-utils';
 
 describe('WhitebookController (e2e)', () => {
   let app: INestApplication;
+  let userService: UserService;
+  let jwtService: JwtService;
+  let testUtils: TestUtils;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -20,23 +27,42 @@ describe('WhitebookController (e2e)', () => {
           return `${process.env.S3_CF_DIST_URL}/${key}`;
         }),
       })
+      .overrideProvider(SettingService)
+      .useValue({
+        checkRcStudent: jest.fn().mockImplementation(async () => {
+          return false;
+        }),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
+    userService = moduleFixture.get(UserService);
+    jwtService = moduleFixture.get(JwtService);
+
     await app.init();
   });
 
+  beforeEach(async () => {
+    const dataSource = app.get(DataSource);
+    await dataSource.synchronize(true);
+
+    testUtils = new TestUtils(userService, jwtService);
+    testUtils.setupMocks();
+
+    await testUtils.initializeTestUsers();
+  });
+
   afterEach(async () => {
-    // 각 테스트 끝날 때마다 DB 초기화
     const dataSource = app.get(DataSource);
     await dataSource.synchronize(true);
   });
 
   afterAll(async () => {
+    testUtils.cleanup();
     await app.close();
   });
 
-  it('/whitebook [GET] 200', async () => {
+  it('/whitebook [POST] 201', async () => {
     const Dto: WhitebookDto = {
       title: 'New Whitebook',
       content: 'Content of the new whitebook',
@@ -44,57 +70,38 @@ describe('WhitebookController (e2e)', () => {
       show_only_login: false,
     };
 
+    const postResponseByNonAdmin = await request(app.getHttpServer())
+      .post('/whitebook')
+      .set('Cookie', [`Authentication=${testUtils.getTestUserJwtToken()}`])
+      .send(Dto);
+    expect(postResponseByNonAdmin.status).toBe(403);
+
     const postResponse = await request(app.getHttpServer())
       .post('/whitebook')
+      .set('Cookie', [`Authentication=${testUtils.getTestAdminJwtToken()}`])
       .send(Dto);
 
     expect(postResponse.status).toBe(201);
     expect(postResponse.type).toBe('application/json');
-
-    const createdUuid = postResponse.body.uuid;
-    const res = await request(app.getHttpServer()).get(`/whitebook`);
-
-    expect(res.status).toBe(200);
-    expect(res.type).toBe('application/json');
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          uuid: createdUuid,
-          title: Dto.title,
-          content: Dto.content,
-          link: Dto.link,
-          show_only_login: Dto.show_only_login,
-        }),
-      ]),
+    expect(postResponse.body).toEqual(
+      expect.objectContaining({
+        title: Dto.title,
+        content: Dto.content,
+        link: Dto.link,
+        show_only_login: Dto.show_only_login,
+      }),
     );
   });
 
-  it('/whitebook [POST] 201', async () => {
-    // PDF 파일 없이 생성
-    const dtoWithoutPdfFile: WhitebookDto = {
-      title: 'New Whitebook',
-      content: 'Content of the new whitebook',
-      link: 'https://www.example.com',
-      show_only_login: true,
-    };
+  it('/whitebook [GET] 200', async () => {
+    const getResponse = await request(app.getHttpServer()).get(`/whitebook`);
 
-    const resWihtoutPDF = await request(app.getHttpServer())
-      .post('/whitebook')
-      .send(dtoWithoutPdfFile);
+    expect(getResponse.status).toBe(200);
+    expect(getResponse.type).toBe('application/json');
+    expect(Array.isArray(getResponse.body)).toBe(true);
+  });
 
-    expect(resWihtoutPDF.status).toBe(201);
-    expect(resWihtoutPDF.type).toBe('application/json');
-    expect(resWihtoutPDF.body).toEqual(
-      expect.objectContaining({
-        title: dtoWithoutPdfFile.title,
-        content: dtoWithoutPdfFile.content,
-        link: dtoWithoutPdfFile.link,
-        show_only_login: dtoWithoutPdfFile.show_only_login,
-      }),
-    );
-
-    // PDF 파일로 생성
+  it('/whitebook [POST] 201 - with pdf', async () => {
     const dtoWithPdfFile: WhitebookDto = {
       title: 'New Whitebook with PDF',
       content: 'Content of the new whitebook with PDF',
@@ -106,6 +113,7 @@ describe('WhitebookController (e2e)', () => {
 
     const resWithPdf = await request(app.getHttpServer())
       .post('/whitebook')
+      .set('Cookie', [`Authentication=${testUtils.getTestAdminJwtToken()}`])
       .attach('pdf_file', pdf.buffer, pdf.originalName)
       .field('title', dtoWithPdfFile.title)
       .field('content', dtoWithPdfFile.content)
@@ -133,6 +141,7 @@ describe('WhitebookController (e2e)', () => {
 
     const postResponse = await request(app.getHttpServer())
       .post('/whitebook')
+      .set('Cookie', [`Authentication=${testUtils.getTestAdminJwtToken()}`])
       .send(Dto);
 
     expect(postResponse.status).toBe(201);
@@ -140,7 +149,6 @@ describe('WhitebookController (e2e)', () => {
 
     const uuid = postResponse.body.uuid;
 
-    // PDF 파일 없이 업데이트
     const updateDataWithLink = {
       title: 'Updated Whitebook without PDF',
       content: 'Updated content of the whitebook without PDF',
@@ -148,8 +156,15 @@ describe('WhitebookController (e2e)', () => {
       show_only_login: false,
     };
 
+    const putResponseByNonAdmin = await request(app.getHttpServer())
+      .put(`/whitebook/${uuid}`)
+      .set('Cookie', [`Authentication=${testUtils.getTestUserJwtToken()}`])
+      .send(updateDataWithLink);
+    expect(putResponseByNonAdmin.status).toBe(403);
+
     const putResponse = await request(app.getHttpServer())
       .put(`/whitebook/${uuid}`)
+      .set('Cookie', [`Authentication=${testUtils.getTestAdminJwtToken()}`])
       .send(updateDataWithLink);
 
     expect(putResponse.status).toBe(200);
@@ -175,7 +190,6 @@ describe('WhitebookController (e2e)', () => {
       ]),
     );
 
-    // PDF 파일로 업데이트
     const updateDataWithPdf = {
       title: 'Updated Whitebook with PDF',
       content: 'Updated content of the whitebook with PDF',
@@ -187,6 +201,7 @@ describe('WhitebookController (e2e)', () => {
 
     const putResponseWithPdf = await request(app.getHttpServer())
       .put(`/whitebook/${uuid}`)
+      .set('Cookie', [`Authentication=${testUtils.getTestAdminJwtToken()}`])
       .attach('pdf_file', pdf.buffer, pdf.originalName)
       .field('title', updateDataWithPdf.title)
       .field('content', updateDataWithPdf.content)
@@ -227,6 +242,7 @@ describe('WhitebookController (e2e)', () => {
 
     const postRes = await request(app.getHttpServer())
       .post('/whitebook')
+      .set('Cookie', [`Authentication=${testUtils.getTestAdminJwtToken()}`])
       .send(Dto);
 
     expect(postRes.status).toBe(201);
@@ -234,9 +250,14 @@ describe('WhitebookController (e2e)', () => {
 
     const uuid = postRes.body.uuid;
 
-    const deleteResponse = await request(app.getHttpServer()).delete(
-      `/whitebook/${uuid}`,
-    );
+    const deleteResponseByNonAdmin = await request(app.getHttpServer())
+      .delete(`/whitebook/${uuid}`)
+      .set('Cookie', [`Authentication=${testUtils.getTestUserJwtToken()}`]);
+    expect(deleteResponseByNonAdmin.status).toBe(403);
+
+    const deleteResponse = await request(app.getHttpServer())
+      .delete(`/whitebook/${uuid}`)
+      .set('Cookie', [`Authentication=${testUtils.getTestAdminJwtToken()}`]);
 
     expect(deleteResponse.status).toBe(200);
     expect(deleteResponse.type).toBe('application/json');

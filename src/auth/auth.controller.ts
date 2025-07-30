@@ -14,18 +14,19 @@ import {
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { Request, Response } from 'express';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { UserStatus, UserType } from '../popo/user/user.meta';
 import { UserService } from '../popo/user/user.service';
 import { CreateUserDto } from '../popo/user/user.dto';
 import { MailService } from '../mail/mail.service';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from './strategies/jwt.payload';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
 import { jwtConstants } from './constants';
 import * as ms from 'ms';
+import { Public } from '../common/public-guard.decorator';
+
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
 const Message = {
@@ -43,8 +44,8 @@ export class AuthController {
     private readonly mailService: MailService,
   ) {}
 
+  @ApiCookieAuth()
   @Get(['verifyToken', 'verifyToken/admin', 'me'])
-  @UseGuards(JwtAuthGuard)
   async verifyToken(@Req() req: Request) {
     const path = req.path;
     const user = req.user as JwtPayload;
@@ -57,8 +58,8 @@ export class AuthController {
     return user;
   }
 
+  @ApiCookieAuth()
   @Get('me/reservation')
-  @UseGuards(JwtAuthGuard)
   async getOwnReservations(@Req() req: Request) {
     const user = req.user as JwtPayload;
     const existUser = await this.userService.findOneByEmail(user.email);
@@ -78,8 +79,9 @@ export class AuthController {
     };
   }
 
-  @UseGuards(LocalAuthGuard)
+  @Public()
   @Post(['login', 'login/admin'])
+  @UseGuards(LocalAuthGuard)
   async logIn(@Req() req: Request, @Res() res: Response) {
     const path = req.path;
     const user = req.user as JwtPayload;
@@ -101,7 +103,7 @@ export class AuthController {
     return res.send(user);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
   @Get('logout')
   async logOut(@Req() req: Request, @Res() res: Response) {
     const user = req.user as JwtPayload;
@@ -113,6 +115,7 @@ export class AuthController {
     return res.sendStatus(200);
   }
 
+  @Public()
   @Post(['signIn', 'register'])
   async register(@Body() createUserDto: CreateUserDto) {
     const saveUser = await this.userService.save(createUserDto);
@@ -132,11 +135,14 @@ export class AuthController {
     return saveUser;
   }
 
+  // 생성한 계정을 활성화하기 위한 이메일의 링크에서 호출
+  @Public()
   @Put('activate/:user_uuid')
   activateUser(@Param('user_uuid') user_uuid: string) {
     return this.userService.updateUserStatus(user_uuid, UserStatus.activated);
   }
 
+  @Public()
   @Post('password/reset')
   async resetPassword(@Body() body: PasswordResetRequest) {
     const existUser = await this.userService.findOneByEmail(body.email);
@@ -170,8 +176,8 @@ export class AuthController {
     );
   }
 
+  @ApiCookieAuth()
   @Post('password/update')
-  @UseGuards(JwtAuthGuard)
   async updatePassword(
     @Req() req: Request,
     @Body() body: PasswordUpdateRequest,
@@ -180,8 +186,8 @@ export class AuthController {
     return this.userService.updatePasswordByEmail(user.email, body.password);
   }
 
+  @ApiCookieAuth()
   @Get('myInfo')
-  @UseGuards(JwtAuthGuard)
   async getMyInfo(@Req() req: Request) {
     const user = req.user as JwtPayload;
     const { ...UserInfo } = await this.userService.findOneByUuid(user.uuid);
@@ -189,6 +195,14 @@ export class AuthController {
     return UserInfo;
   }
 
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary:
+      'Swagger에서 테스트 불가능: 리프레시 토큰을 사용해 엑세스 토큰 갱신',
+    description:
+      '해당 엔드포인트를 테스트하려면 Authentication, Refresh 두 가지 토큰이 필요한데, Swagger에서는 최대 하나의 토큰만 등록 가능합니다. 테스트하려면 Postman같은 툴을 사용하거나 개발자도구로 Refresh 쿠키를 직접 넣어야 합니다.',
+  })
+  @Public()
   @Post('refresh')
   async refresh(@Req() req: Request, @Res() res: Response) {
     const accessTokenInCookie = req.cookies?.Authentication;

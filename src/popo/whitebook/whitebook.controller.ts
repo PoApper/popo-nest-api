@@ -13,10 +13,14 @@ import {
 } from '@nestjs/common';
 import { WhitebookService } from './whitebook.service';
 import { WhitebookDto } from './whitebook.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { FileBody } from 'src/file/file-body.decorator';
 import { FileService } from '../../file/file.service';
 import * as moment from 'moment';
+import { ApiCookieAuth } from '@nestjs/swagger';
+import { Public } from '../../common/public-guard.decorator';
+import { UserType } from '../user/user.meta';
+import { RolesGuard } from 'src/auth/authroization/roles.guard';
+import { Roles } from 'src/auth/authroization/roles.decorator';
 
 @ApiTags('생활백서(Whitebook)')
 @Controller('whitebook')
@@ -26,7 +30,10 @@ export class WhitebookController {
     private readonly fileService: FileService,
   ) {}
 
+  @ApiCookieAuth()
   @Post()
+  @Roles(UserType.admin)
+  @UseGuards(RolesGuard)
   @FileBody('pdf_file')
   async create(@Body() dto: WhitebookDto) {
     if (dto.pdf_file) {
@@ -47,6 +54,7 @@ export class WhitebookController {
     return this.whitebookService.save(dtoWithoutPdfFile);
   }
 
+  @Public()
   @Get()
   getAll(@Query('orderBy') orderBy: string) {
     if (orderBy === 'click_count') {
@@ -60,8 +68,8 @@ export class WhitebookController {
     }
   }
 
+  @ApiCookieAuth()
   @Get('with-login')
-  @UseGuards(JwtAuthGuard)
   getAllForLoginUser(@Query('orderBy') orderBy: string) {
     if (orderBy === 'click_count') {
       return this.whitebookService.findAll({ click_count: 'DESC' }, true);
@@ -74,12 +82,16 @@ export class WhitebookController {
     }
   }
 
+  @Public()
   @Patch('click/:uuid')
   AddOneClickCount(@Param('uuid') uuid: string) {
     return this.whitebookService.addOneClickCount(uuid);
   }
 
+  @ApiCookieAuth()
   @Put(':uuid')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin)
   @FileBody('pdf_file')
   async update(@Param('uuid') uuid: string, @Body() dto: WhitebookDto) {
     if (dto.pdf_file) {
@@ -100,7 +112,10 @@ export class WhitebookController {
     return this.whitebookService.update(uuid, dtoWithoutPdfFile);
   }
 
+  @ApiCookieAuth()
   @Delete(':uuid')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin)
   delete(@Param('uuid') uuid: string) {
     return this.whitebookService.delete(uuid);
   }

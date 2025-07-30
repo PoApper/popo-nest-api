@@ -12,7 +12,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiQuery, ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ReservePlaceService } from './reserve.place.service';
 import {
@@ -22,15 +22,15 @@ import {
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
-import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { PlaceService } from '../../place/place.service';
 import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import { ReservePlace } from './reserve.place.entity';
 import * as moment from 'moment-timezone';
+import { Public } from 'src/common/public-guard.decorator';
 
-@ApiTags('Place Reservation')
+@ApiTags('Reservation - Place')
 @Controller('reservation-place')
 export class ReservePlaceController {
   constructor(
@@ -39,8 +39,8 @@ export class ReservePlaceController {
     private readonly mailService: MailService,
   ) {}
 
+  @ApiCookieAuth()
   @Post('check_possible')
-  @UseGuards(JwtAuthGuard)
   @ApiBody({
     type: CreateReservePlaceDto,
   })
@@ -57,8 +57,8 @@ export class ReservePlaceController {
     );
   }
 
+  @ApiCookieAuth()
   @Post()
-  @UseGuards(JwtAuthGuard)
   async createWithNameAndId(
     @Req() req: Request,
     @Body() dto: CreateReservePlaceDto,
@@ -98,6 +98,7 @@ export class ReservePlaceController {
     return new_reservation;
   }
 
+  @Public()
   @Get()
   @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'date', required: false })
@@ -130,13 +131,14 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinPlace(reservations);
   }
 
+  @ApiCookieAuth()
   @Get('count')
   count() {
     return this.reservePlaceService.count();
   }
 
+  @ApiCookieAuth()
   @Get('user')
-  @UseGuards(JwtAuthGuard)
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
   async getMyReservation(
@@ -165,8 +167,8 @@ export class ReservePlaceController {
     };
   }
 
+  @ApiCookieAuth()
   @Get('user/:uuid')
-  @UseGuards(JwtAuthGuard)
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reservePlaceService.find({
       where: { booker_id: uuid },
@@ -175,9 +177,10 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinPlace(reservations);
   }
 
+  @ApiCookieAuth()
   @Get('user/admin/:uuid')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   async getUserReservationByAdmin(@Param('uuid') uuid: string) {
     const reservations = await this.reservePlaceService.find({
       where: { booker_id: uuid },
@@ -186,9 +189,10 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinPlace(reservations);
   }
 
+  @ApiCookieAuth()
   @Get('place/:place_uuid')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   async getByPlace(@Param('place_uuid') place_uuid: string) {
     return this.reservePlaceService.find({
       where: { place: place_uuid },
@@ -196,6 +200,7 @@ export class ReservePlaceController {
     });
   }
 
+  @Public()
   @Get('placeName/:placeName') // hide user uuid
   @ApiQuery({ name: 'startDate', required: false })
   async checkByPlaceName(
@@ -209,6 +214,8 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinBooker(existReservations);
   }
 
+  @ApiCookieAuth()
+  @Public()
   @Get('placeName/:placeName/:date') // hide user uuid
   async checkByPlaceNameAndDate(
     @Param('placeName') placeName: string,
@@ -219,6 +226,7 @@ export class ReservePlaceController {
     return this.reservePlaceService.joinBooker(existReservations);
   }
 
+  @ApiCookieAuth()
   @Get('sync-reservation-count')
   async syncPlaceReservationCount() {
     const placeList = await this.placeService.find();
@@ -234,9 +242,10 @@ export class ReservePlaceController {
     return `Sync Done: ${placeList.length} Places`;
   }
 
+  @ApiCookieAuth()
   @Patch('all/status/accept')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   async acceptAllStatus(
     @Body() body: AcceptPlaceReservationListDto,
     @Query('sendEmail') sendEmail?: string,
@@ -281,9 +290,10 @@ export class ReservePlaceController {
     }
   }
 
+  @ApiCookieAuth()
   @Patch(':uuid/status/:status')
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   async patchStatus(
     @Param('uuid') uuid: string,
     @Param('status') status: ReservationStatus,
@@ -320,8 +330,8 @@ export class ReservePlaceController {
     }
   }
 
+  @ApiCookieAuth()
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard)
   async delete(@Param('uuid') uuid: string, @Req() req: Request) {
     const reservation =
       await this.reservePlaceService.findOneByUuidOrFail(uuid);

@@ -14,7 +14,6 @@ import { Between } from 'typeorm';
 import * as moment from 'moment';
 
 import { IntroClubService } from './intro.club.service';
-import { JwtAuthGuard } from '../../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { UserType } from '../../user/user.meta';
@@ -22,8 +21,10 @@ import { ClubImageDto, CreateIntroClubDto } from './intro.club.dto';
 import { ClubType } from './intro.club.meta';
 import { FileService } from '../../../file/file.service';
 import { FileBody } from '../../../file/file-body.decorator';
+import { ApiCookieAuth } from '@nestjs/swagger';
+import { Public } from '../../../common/public-guard.decorator';
 
-@ApiTags('Introduce Club')
+@ApiTags('Introduce - Club')
 @Controller('introduce/club')
 export class IntroClubController {
   constructor(
@@ -31,15 +32,17 @@ export class IntroClubController {
     private readonly fileService: FileService,
   ) {}
 
+  @ApiCookieAuth()
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   post(@Body() createIntroClubDto: CreateIntroClubDto) {
     return this.introClubService.save(createIntroClubDto);
   }
 
+  @ApiCookieAuth()
   @Post('image/:uuid')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   @FileBody('image')
   async uploadImage(@Param('uuid') uuid: string, @Body() dto: ClubImageDto) {
@@ -51,11 +54,13 @@ export class IntroClubController {
     return image_url;
   }
 
+  @Public()
   @Get()
   get() {
     return this.introClubService.find({ order: { name: 'ASC' } });
   }
 
+  @Public()
   @Get('today')
   getTodayVisited() {
     return this.introClubService.find({
@@ -68,6 +73,7 @@ export class IntroClubController {
     });
   }
 
+  @Public()
   @Get('clubType/:clubType')
   getByClubType(@Param('clubType') clubType: ClubType) {
     return this.introClubService.find({
@@ -76,6 +82,7 @@ export class IntroClubController {
     });
   }
 
+  @Public()
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
     const introClub = await this.introClubService.findOneByName(name);
@@ -91,13 +98,15 @@ export class IntroClubController {
     }
   }
 
+  @Public()
   @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
     return this.introClubService.findOneByUuid(uuid);
   }
 
+  @ApiCookieAuth()
   @Put(':uuid')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   put(
     @Param('uuid') uuid: string,
@@ -106,8 +115,9 @@ export class IntroClubController {
     return this.introClubService.update(uuid, updateIntroClubDto);
   }
 
+  @ApiCookieAuth()
   @Delete(':uuid')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   delete(@Param('uuid') uuid: string) {
     return this.introClubService.remove(uuid);
