@@ -127,9 +127,10 @@ export class AuthController {
         saveUser.uuid,
       );
     } catch (error) {
-      console.log('!! 유저 인증 메일 전송 실패 !!');
+      console.error('!! 유저 인증 메일 전송 실패 !!');
+      console.error(error);
       await this.userService.remove(saveUser.uuid);
-      console.log('잘못 생성된 유저 정보를 DB에서 삭제합니다.');
+      console.error('잘못 생성된 유저 정보를 DB에서 삭제합니다.');
       throw new BadRequestException(Message.FAIL_VERIFICATION_EMAIL_SEND);
     }
     return saveUser;
