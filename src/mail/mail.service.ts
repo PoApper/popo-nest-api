@@ -9,6 +9,13 @@ export class MailService {
   constructor(private readonly mailerService: MailerService) {}
 
   async sendVerificationMail(recipient_email: string, uuid: string) {
+    const host_domain =
+      process.env.NODE_ENV === 'prod'
+        ? 'popo.poapper.club'
+        : process.env.NODE_ENV === 'dev'
+          ? 'popo-dev.poapper.club'
+          : 'localhost';
+
     await this.mailerService.sendMail({
       to: recipient_email,
       from: process.env.POPO_MAIL_ADDRESS,
@@ -27,7 +34,7 @@ export class MailService {
           <p>POPO를 통해 POSTECH 총학생회에서 제공하는 여러 서비스를 이용해보실 수 있습니다 😊</p>
           <br/>
           <div style="padding: 2px; background-color: crimson; text-align: center;">
-             <a href="https://popo.poapper.club/auth/activate-account/${uuid}" style="text-decoration: none; color: white">
+             <a href="https://${host_domain}/auth/activate-account/${uuid}" style="text-decoration: none; color: white">
               계정 활성하기
              </a>
           </div>
