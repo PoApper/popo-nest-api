@@ -6,12 +6,12 @@ import { Exclude } from 'class-transformer';
 // @ApiHideProperty() 어노테이션을 붙이면 swagger에서 해당 칼럼을 보이지 않게 할 수 있음
 // @Exclude() 어노테이션을 붙이면 컨트롤러에서 리턴 시 해당 칼럼을 보이지 않게 할 수 있음
 export abstract class Base {
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   @ApiHideProperty()
   @Exclude()
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   @ApiHideProperty()
   @Exclude()
   updatedAt: Date;

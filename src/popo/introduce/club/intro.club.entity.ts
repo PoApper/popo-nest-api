@@ -10,8 +10,8 @@ export class IntroClub extends Base {
   @Column({ nullable: false })
   name: string;
 
-  @Column({ nullable: false })
-  short_desc: string;
+  @Column({ nullable: false, name: 'short_desc' })
+  shortDesc: string;
 
   @Column('text', { nullable: true })
   content: string;
@@ -28,21 +28,21 @@ export class IntroClub extends Base {
   @Column({ nullable: false })
   clubType: ClubType;
 
-  @Column({ nullable: true })
-  image_url: string;
+  @Column({ nullable: true, name: 'image_url' })
+  imageUrl: string;
 
   @Column({ default: 0 })
   views: number;
 
-  @Column({ nullable: true })
-  homepage_url: string;
+  @Column({ nullable: true, name: 'homepage_url' })
+  homepageUrl: string;
 
-  @Column({ nullable: true })
-  facebook_url: string;
+  @Column({ nullable: true, name: 'facebook_url' })
+  facebookUrl: string;
 
-  @Column({ nullable: true })
-  instagram_url: string;
+  @Column({ nullable: true, name: 'instagram_url' })
+  instagramUrl: string;
 
-  @Column({ nullable: true })
-  youtube_url: string;
+  @Column({ nullable: true, name: 'youtube_url' })
+  youtubeUrl: string;
 }

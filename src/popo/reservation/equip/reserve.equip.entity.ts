@@ -1,7 +1,5 @@
 import {
-  BaseEntity,
   Column,
-  CreateDateColumn,
   Entity,
   ManyToOne,
   JoinColumn,
@@ -10,9 +8,10 @@ import {
 import { ReservationStatus } from '../reservation.meta';
 import { EquipOwner } from '../../equip/equip.meta';
 import { User } from '../../user/user.entity';
+import { Base } from '../../../common/base.entity';
 
 @Entity()
-export class ReserveEquip extends BaseEntity {
+export class ReserveEquip extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
@@ -45,9 +44,6 @@ export class ReserveEquip extends BaseEntity {
 
   @Column({ nullable: false, default: ReservationStatus.in_process })
   status: ReservationStatus;
-
-  @CreateDateColumn()
-  created_at: Date;
 
   /**
    * Database Relation
