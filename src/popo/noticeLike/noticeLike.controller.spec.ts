@@ -43,9 +43,10 @@ describe('NoticeLikeController', () => {
   //   const result = true;
   //   const like: Promise<NoticeLike> = {
   //     id: 1,
-  //     user_id: '1',
-  //     notice_id: '1',
+  //     userId: '1',
+  //     noticeId: '1',
   //     createdAt: new Date(),
+  //     updatedAt: new Date(),
   //   };
   //   const userId = '1';
   //   const noticeId = '1';
@@ -71,9 +72,10 @@ describe('NoticeLikeController', () => {
     const noticeId = 1;
     const like: NoticeLike = {
       id: 1,
-      user_id: '1',
-      notice_id: 1,
+      userId: '1',
+      noticeId: 1,
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     const user = { uuid: '1' } as JwtPayload;
