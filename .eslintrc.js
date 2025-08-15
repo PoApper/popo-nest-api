@@ -14,7 +14,7 @@ module.exports = {
     'prettier/prettier': ['error', { endOfLine: 'auto' }],
     '@typescript-eslint/no-explicit-any': 'warn',
   },
-  ignores: [
+  ignorePatterns: [
     'eslint.config.mjs',
     'node_modules',
     'dist',
