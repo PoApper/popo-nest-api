@@ -25,7 +25,7 @@ export class IntroClub extends Base {
   @Column({ nullable: false })
   contact: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, name: 'club_type' })
   clubType: ClubType;
 
   @Column({ nullable: true, name: 'image_url' })
