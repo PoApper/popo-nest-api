@@ -26,25 +26,29 @@ export class User extends Base {
   @Column({ nullable: false })
   password: string;
 
-  @Column({ nullable: false })
+  @Column({ name: 'crypto_salt', nullable: false })
   cryptoSalt: string;
 
   @Column({ nullable: false })
   name: string;
 
-  @Column({ nullable: false, default: UserType.student })
+  @Column({ name: 'user_type', nullable: false, default: UserType.student })
   userType: UserType;
 
-  @Column({ nullable: false, default: UserStatus.deactivated })
+  @Column({
+    name: 'user_status',
+    nullable: false,
+    default: UserStatus.deactivated,
+  })
   userStatus: UserStatus;
 
-  @Column({ nullable: true })
+  @Column({ name: 'hashed_refresh_token', nullable: true })
   hashedRefreshToken: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'refresh_token_expires_at', nullable: true })
   refreshTokenExpiresAt: Date;
 
-  @Column()
+  @Column({ name: 'last_login_at' })
   lastLoginAt: Date;
 
   /**
