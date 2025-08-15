@@ -29,8 +29,8 @@ export class UserController {
 
   @Post()
   @Public()
-  // @UseGuards(RolesGuard)
-  // @Roles(UserType.admin)
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin)
   create(@Body() dto: CreateUserDto) {
     return this.userService.save(dto);
   }
