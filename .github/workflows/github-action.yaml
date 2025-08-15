@@ -1,13 +1,23 @@
+name: Docker Build and Push
+
 on:
   push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   release:
     types: [published]
-
-name: Docker Build and Push
 
 env:
   ECR_REGISTRY: 151345152001.dkr.ecr.ap-northeast-2.amazonaws.com
   ECR_REPOSITORY: popo-nest-api
+
+# 같은 PR 안에서는 가장 최근 push만 워크플로우를 실행하도록 설정
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   lint:
@@ -59,6 +69,10 @@ jobs:
     name: Docker build and push
     needs: [lint, test]
     runs-on: ubuntu-24.04-arm
+    # docker_build_and_push 잡은 모든 워크플로우에서 유일하게 하나만 실행되도록 설정
+    concurrency:
+      group: docker-build
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
