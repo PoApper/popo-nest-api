@@ -5,6 +5,8 @@ import { Exclude } from 'class-transformer';
 // 날짜 관련 칼럼을 가지는 모든 엔티티의 기본 클래스
 // @ApiHideProperty() 어노테이션을 붙이면 swagger에서 해당 칼럼을 보이지 않게 할 수 있음
 // @Exclude() 어노테이션을 붙이면 컨트롤러에서 리턴 시 해당 칼럼을 보이지 않게 할 수 있음
+
+// TODO: 다른 .entity 파일의 snake_case typeorm 필드명 모두 camelCase로 변경
 export abstract class Base {
   @CreateDateColumn({ name: 'created_at' })
   @ApiHideProperty()
