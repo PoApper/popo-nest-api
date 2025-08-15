@@ -48,7 +48,7 @@ export class User extends Base {
   @Column({ name: 'refresh_token_expires_at', nullable: true })
   refreshTokenExpiresAt: Date;
 
-  @Column({ name: 'last_login_at' })
+  @Column({ name: 'last_login_at', nullable: true })
   lastLoginAt: Date;
 
   /**

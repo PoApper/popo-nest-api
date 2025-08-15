@@ -26,7 +26,7 @@ export class Nickname extends Base {
   @OneToOne(() => User, (user) => user.nickname, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'userUuid' })
+  @JoinColumn({ name: 'user_uuid' })
   @ApiHideProperty()
   user: User;
 }

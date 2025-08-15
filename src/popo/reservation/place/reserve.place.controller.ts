@@ -118,7 +118,7 @@ export class ReservePlaceController {
       whereOption['date'] = date;
     }
 
-    const findOption = { where: whereOption, order: { created_at: 'DESC' } };
+    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
     if (skip) {
       findOption['skip'] = skip;
     }

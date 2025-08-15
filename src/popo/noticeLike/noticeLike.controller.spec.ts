@@ -45,7 +45,7 @@ describe('NoticeLikeController', () => {
   //     id: 1,
   //     user_id: '1',
   //     notice_id: '1',
-  //     created_at: new Date(),
+  //     createdAt: new Date(),
   //   };
   //   const userId = '1';
   //   const noticeId = '1';
@@ -73,7 +73,7 @@ describe('NoticeLikeController', () => {
       id: 1,
       user_id: '1',
       notice_id: 1,
-      created_at: new Date(),
+      createdAt: new Date(),
     };
 
     const user = { uuid: '1' } as JwtPayload;
