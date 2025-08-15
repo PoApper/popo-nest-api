@@ -58,8 +58,8 @@ export class UserService {
       .select('*')
       .where(`LOWER(name) LIKE '%${keyword}%'`)
       .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
-      .orWhere(`LOWER(userType) LIKE '%${keyword}%'`)
-      .orderBy('lastLoginAt', 'DESC')
+      .orWhere(`LOWER(user_type) LIKE '%${keyword}%'`)
+      .orderBy('last_login_at', 'DESC') // TODO: 카멜케이스로 변경
       .skip(skip)
       .take(take)
       .getRawMany();
@@ -71,8 +71,8 @@ export class UserService {
       .select('COUNT(*) AS count')
       .where(`LOWER(name) LIKE '%${keyword}%'`)
       .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
-      .orWhere(`LOWER(userType) LIKE '%${keyword}%'`)
-      .orderBy('lastLoginAt', 'DESC')
+      .orWhere(`LOWER(user_type) LIKE '%${keyword}%'`)
+      .orderBy('last_login_at', 'DESC') // TODO: 카멜케이스로 변경
       .getRawOne();
   }
 
