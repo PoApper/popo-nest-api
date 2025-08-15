@@ -34,14 +34,14 @@ export class UserService {
     const cryptoSalt = crypto.randomBytes(64).toString('base64');
     const encryptedPassword = this.encryptPassword(dto.password, cryptoSalt);
 
-    // const isRcStudent = await this.settingService.checkRcStudent(dto.email);
+    const isRcStudent = await this.settingService.checkRcStudent(dto.email);
 
     return this.userRepo.save({
       email: dto.email,
       password: encryptedPassword,
       cryptoSalt: cryptoSalt,
       name: dto.name,
-      userType: dto.userType,
+      userType: isRcStudent ? UserType.rc_student : dto.userType,
       lastLoginAt: new Date(),
       userStatus: UserStatus.activated, // TODO: 기본값인 deactivated로 설정해야 함
     });
