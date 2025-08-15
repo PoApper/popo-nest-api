@@ -30,7 +30,7 @@ export class NoticeService {
   }
 
   find() {
-    return this.noticeRepo.find({ order: { updateAt: 'DESC' } });
+    return this.noticeRepo.find({ order: { updatedAt: 'DESC' } });
   }
 
   findActive() {
