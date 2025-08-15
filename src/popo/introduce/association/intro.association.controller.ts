@@ -64,7 +64,7 @@ export class IntroAssociationController {
   getTodayVisited() {
     return this.introAssociationService.find({
       where: {
-        updateAt: Between(
+        updatedAt: Between(
           moment().startOf('day').toDate(),
           moment().endOf('day').toDate(),
         ),

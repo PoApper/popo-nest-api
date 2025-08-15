@@ -19,6 +19,7 @@ import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { ApiCookieAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from '../../auth/strategies/jwt.payload';
+import { Public } from '../../common/public-guard.decorator';
 
 @ApiCookieAuth()
 @ApiTags('User')
@@ -27,6 +28,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @Public()
   @UseGuards(RolesGuard)
   @Roles(UserType.admin)
   create(@Body() dto: CreateUserDto) {

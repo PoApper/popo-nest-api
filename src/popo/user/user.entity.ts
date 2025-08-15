@@ -1,7 +1,5 @@
 import {
-  BaseEntity,
   Column,
-  CreateDateColumn,
   Entity,
   OneToMany,
   OneToOne,
@@ -14,10 +12,11 @@ import { ReservePlace } from '../reservation/place/reserve.place.entity';
 import { Nickname } from './nickname.entity';
 import { FcmKey } from 'src/fcm/entities/fcm-key.entity';
 import { ApiHideProperty } from '@nestjs/swagger';
+import { Base } from '../../common/base.entity';
 
 @Entity()
 @Unique(['email'])
-export class User extends BaseEntity {
+export class User extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
@@ -27,28 +26,29 @@ export class User extends BaseEntity {
   @Column({ nullable: false })
   password: string;
 
-  @Column({ nullable: false })
+  @Column({ name: 'crypto_salt', nullable: false })
   cryptoSalt: string;
 
   @Column({ nullable: false })
   name: string;
 
-  @Column({ nullable: false, default: UserType.student })
+  @Column({ name: 'user_type', nullable: false, default: UserType.student })
   userType: UserType;
 
-  @Column({ nullable: false, default: UserStatus.deactivated })
+  @Column({
+    name: 'user_status',
+    nullable: false,
+    default: UserStatus.deactivated,
+  })
   userStatus: UserStatus;
 
-  @Column({ nullable: true })
+  @Column({ name: 'hashed_refresh_token', nullable: true })
   hashedRefreshToken: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'refresh_token_expires_at', nullable: true })
   refreshTokenExpiresAt: Date;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Column()
+  @Column({ name: 'last_login_at', nullable: true })
   lastLoginAt: Date;
 
   /**

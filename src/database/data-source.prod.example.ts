@@ -15,6 +15,6 @@ export const ProdDataSource = new DataSource({
 });
 
 // NOTE: prod 마이그레이션 생성 명령어
-// npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.prod.ts src/database/migrations/prod/example-name-month-day
+// npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.prod.ts src/database/migrations/prod/popo-example-name-month-day
 // NOTE: prod 마이그레이션 실행 명령어
 // npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.prod.ts

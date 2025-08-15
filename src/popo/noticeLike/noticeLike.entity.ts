@@ -1,23 +1,15 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
+import { Base } from '../../common/base.entity';
 
 @Entity()
-@Index(['user_id', 'notice_id'], { unique: true })
-export class NoticeLike {
+@Index(['userId', 'noticeId'], { unique: true })
+export class NoticeLike extends Base {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
-  @Column({ nullable: false })
-  user_id: string;
+  @Column({ name: 'user_id', nullable: false })
+  userId: string;
 
-  @Column({ nullable: false })
-  notice_id: number;
-
-  @CreateDateColumn()
-  created_at: Date;
+  @Column({ name: 'notice_id', nullable: false })
+  noticeId: number;
 }

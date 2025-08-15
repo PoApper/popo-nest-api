@@ -18,24 +18,24 @@ export class NoticeLikeService {
 
   findByUserIdAndNoticeId(user_id: string, notice_id: number) {
     return this.noticeLikeRepo.findOne({
-      where: { user_id: user_id, notice_id: notice_id },
+      where: { userId: user_id, noticeId: notice_id },
     });
   }
 
   findAllByNoticeId(notice_id: number) {
     return this.noticeLikeRepo.find({
-      where: { notice_id: notice_id },
+      where: { noticeId: notice_id },
     });
   }
 
   countLikes(notice_id: number) {
-    return this.noticeLikeRepo.count({ where: { notice_id: notice_id } });
+    return this.noticeLikeRepo.count({ where: { noticeId: notice_id } });
   }
 
   delete(user_id: string, notice_id: number) {
     return this.noticeLikeRepo.delete({
-      user_id: user_id,
-      notice_id: notice_id,
+      userId: user_id,
+      noticeId: notice_id,
     });
   }
 }

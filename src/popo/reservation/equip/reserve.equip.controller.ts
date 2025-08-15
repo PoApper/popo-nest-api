@@ -104,7 +104,7 @@ export class ReserveEquipController {
       whereOption['date'] = MoreThanOrEqual(startDate);
     }
 
-    const findOption = { where: whereOption, order: { created_at: 'DESC' } };
+    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
     if (skip) {
       findOption['skip'] = skip;
     }

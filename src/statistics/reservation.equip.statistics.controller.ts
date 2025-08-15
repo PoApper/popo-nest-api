@@ -41,7 +41,7 @@ export class ReservationEquipmentStatisticsController {
       const target_end_date = query_idx.add(1, 'M').format('YYYY-MM-DD');
 
       data[target_month] = await this.reserveEquipService.count({
-        created_at: Between(target_start_date, target_end_date),
+        createdAt: Between(target_start_date, target_end_date),
       });
     }
 
@@ -66,14 +66,14 @@ export class ReservationEquipmentStatisticsController {
     const totalReservationCnt = await this.reserveEquipService.count();
 
     const todayReservationCnt = await this.reserveEquipService.count({
-      created_at: Between(
+      createdAt: Between(
         moment().startOf('day').toDate(),
         moment().endOf('day').toDate(),
       ),
     });
 
     const thisWeekReservationCnt = await this.reserveEquipService.count({
-      created_at: Between(
+      createdAt: Between(
         moment().startOf('week').toDate(),
         moment().endOf('week').toDate(),
       ),

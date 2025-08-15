@@ -14,6 +14,6 @@ export const DevDataSource = new DataSource({
 });
 
 // NOTE: dev 마이그레이션 생성 명령어
-// npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.dev.ts src/database/migrations/dev/example-name-month-day
+// npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.dev.ts src/database/migrations/dev/popo-example-name-month-day
 // NOTE: dev 마이그레이션 실행 명령어
 // npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.dev.ts

@@ -1,13 +1,8 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Base } from '../../../common/base.entity';
 
 @Entity()
-export class FavoritePlace extends BaseEntity {
+export class FavoritePlace extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
@@ -16,7 +11,4 @@ export class FavoritePlace extends BaseEntity {
 
   @Column({ nullable: false })
   place_id: string;
-
-  @CreateDateColumn()
-  created_at: Date;
 }

@@ -118,7 +118,7 @@ export class ReservePlaceController {
       whereOption['date'] = date;
     }
 
-    const findOption = { where: whereOption, order: { created_at: 'DESC' } };
+    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
     if (skip) {
       findOption['skip'] = skip;
     }
@@ -258,7 +258,7 @@ export class ReservePlaceController {
     }
 
     // early created reservation should be processed first
-    reservations.sort((a, b) => (a.created_at > b.created_at ? 1 : -1));
+    reservations.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
 
     for (const reservation of reservations) {
       await this.reservePlaceService.checkReservationPossible(

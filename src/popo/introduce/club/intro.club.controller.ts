@@ -65,7 +65,7 @@ export class IntroClubController {
   getTodayVisited() {
     return this.introClubService.find({
       where: {
-        updateAt: Between(
+        updatedAt: Between(
           moment().startOf('day').toDate(),
           moment().endOf('day').toDate(),
         ),
