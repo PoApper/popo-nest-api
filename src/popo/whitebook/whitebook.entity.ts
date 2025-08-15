@@ -1,14 +1,8 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Base } from '../../common/base.entity';
 
 @Entity()
-export class Whitebook extends BaseEntity {
+export class Whitebook extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
@@ -26,10 +20,4 @@ export class Whitebook extends BaseEntity {
 
   @Column({ default: false })
   show_only_login: boolean;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

@@ -1,7 +1,5 @@
 import {
-  BaseEntity,
   Column,
-  CreateDateColumn,
   Entity,
   OneToMany,
   OneToOne,
@@ -14,10 +12,11 @@ import { ReservePlace } from '../reservation/place/reserve.place.entity';
 import { Nickname } from './nickname.entity';
 import { FcmKey } from 'src/fcm/entities/fcm-key.entity';
 import { ApiHideProperty } from '@nestjs/swagger';
+import { Base } from '../../common/base.entity';
 
 @Entity()
 @Unique(['email'])
-export class User extends BaseEntity {
+export class User extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
@@ -44,9 +43,6 @@ export class User extends BaseEntity {
 
   @Column({ nullable: true })
   refreshTokenExpiresAt: Date;
-
-  @CreateDateColumn()
-  createdAt: Date;
 
   @Column()
   lastLoginAt: Date;

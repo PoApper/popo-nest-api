@@ -1,14 +1,8 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Base } from '../../common/base.entity';
 
 @Entity()
-export class Notice extends BaseEntity {
+export class Notice extends Base {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -32,10 +26,4 @@ export class Notice extends BaseEntity {
 
   @Column({ default: 0 })
   click_count: number;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updateAt: Date;
 }

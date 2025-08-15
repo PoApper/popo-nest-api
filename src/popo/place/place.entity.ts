@@ -1,17 +1,10 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { PlaceEnableAutoAccept, PlaceRegion } from './place.meta';
 import { ReservePlace } from '../reservation/place/reserve.place.entity';
+import { Base } from '../../common/base.entity';
 
 @Entity()
-export class Place extends BaseEntity {
+export class Place extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
@@ -49,12 +42,6 @@ export class Place extends BaseEntity {
 
   @Column({ default: 0 })
   total_reservation_count: number;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updateAt: Date;
 
   /**
    * Database Relation

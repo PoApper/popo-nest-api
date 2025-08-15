@@ -1,14 +1,14 @@
 import {
-  BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Base } from '../../common/base.entity';
 
 @Entity()
-export class Calendar extends BaseEntity {
+export class Calendar extends Base {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
@@ -17,10 +17,4 @@ export class Calendar extends BaseEntity {
 
   @Column({ nullable: false })
   event_date: string; // YYYY-MM-DD
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updateAt: Date;
 }

@@ -1,14 +1,8 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Base } from '../../../common/base.entity';
 
 @Entity()
-export class Discount extends BaseEntity {
+export class Discount extends Base {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
@@ -26,10 +20,4 @@ export class Discount extends BaseEntity {
 
   @Column('text', { nullable: false })
   content: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updateAt: Date;
 }

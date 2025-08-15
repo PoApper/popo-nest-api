@@ -1,15 +1,9 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { ClubType } from './intro.club.meta';
+import { Base } from '../../../common/base.entity';
 
 @Entity()
-export class IntroClub extends BaseEntity {
+export class IntroClub extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
@@ -51,10 +45,4 @@ export class IntroClub extends BaseEntity {
 
   @Column({ nullable: true })
   youtube_url: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updateAt: Date;
 }

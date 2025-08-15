@@ -1,14 +1,8 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Base } from '../../../common/base.entity';
 
 @Entity()
-export class Affiliate extends BaseEntity {
+export class Affiliate extends Base {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
@@ -20,10 +14,4 @@ export class Affiliate extends BaseEntity {
 
   @Column('text', { nullable: false })
   content: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updateAt: Date;
 }
