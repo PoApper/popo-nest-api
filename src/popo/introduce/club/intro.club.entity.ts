@@ -1,22 +1,18 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { ClubType } from './intro.club.meta';
+import { Base } from '../../../common/base.entity';
+
+// TODO: Prod DB 안정화 후 엔티티들 camelCase로 변경
 
 @Entity()
-export class IntroClub extends BaseEntity {
+export class IntroClub extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
   @Column({ nullable: false })
   name: string;
 
-  @Column({ nullable: false })
+  @Column({ name: 'short_desc', nullable: false })
   short_desc: string;
 
   @Column('text', { nullable: true })
@@ -31,30 +27,24 @@ export class IntroClub extends BaseEntity {
   @Column({ nullable: false })
   contact: string;
 
-  @Column({ nullable: false })
-  clubType: ClubType;
+  @Column({ name: 'club_type', nullable: false })
+  club_type: ClubType;
 
-  @Column({ nullable: true })
+  @Column({ name: 'image_url', nullable: true })
   image_url: string;
 
   @Column({ default: 0 })
   views: number;
 
-  @Column({ nullable: true })
+  @Column({ name: 'homepage_url', nullable: true })
   homepage_url: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'facebook_url', nullable: true })
   facebook_url: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'instagram_url', nullable: true })
   instagram_url: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'youtube_url', nullable: true })
   youtube_url: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updateAt: Date;
 }

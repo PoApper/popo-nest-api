@@ -38,7 +38,7 @@ export class PlaceService {
   }
 
   find() {
-    return this.placeRepo.find({ order: { updateAt: 'DESC' } });
+    return this.placeRepo.find({ order: { updatedAt: 'DESC' } });
   }
 
   findOneByUuid(uuid: string) {
@@ -60,7 +60,7 @@ export class PlaceService {
   async findAllByRegion(region: PlaceRegion) {
     return this.placeRepo.find({
       where: { region: region },
-      order: { updateAt: 'DESC' },
+      order: { updatedAt: 'DESC' },
     });
   }
 

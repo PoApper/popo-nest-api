@@ -1,15 +1,8 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryColumn,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Base } from '../../../common/base.entity';
 
 @Entity()
-export class IntroAssociation extends BaseEntity {
+export class IntroAssociation extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
@@ -42,10 +35,4 @@ export class IntroAssociation extends BaseEntity {
 
   @Column({ nullable: true })
   instagram_url: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updateAt: Date;
 }

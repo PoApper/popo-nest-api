@@ -15,6 +15,6 @@ export const LocalDataSource = new DataSource({
 });
 
 // NOTE: local 마이그레이션 생성 명령어
-// npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.local.ts src/database/migrations/local/example-name-month-day
+// npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.local.ts src/database/migrations/local/popo-example-name-month-day
 // NOTE: local 마이그레이션 실행 명령어
 // npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.local.ts

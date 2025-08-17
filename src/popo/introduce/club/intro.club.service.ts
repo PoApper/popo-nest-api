@@ -16,10 +16,10 @@ export class IntroClubService {
     return this.introClub_repository.save(dto);
   }
 
-  updateImageUrl(uuid: string, image_url: string) {
+  updateImageUrl(uuid: string, imageUrl: string) {
     return this.introClub_repository.update(
       { uuid: uuid },
-      { image_url: image_url },
+      { image_url: imageUrl },
     );
   }
 

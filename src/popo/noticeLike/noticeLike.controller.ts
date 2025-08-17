@@ -34,55 +34,55 @@ export class NoticeLikeController {
   ): Promise<NoticeLike> {
     const user = req.user as JwtPayload;
 
-    if (user.uuid != dto.user_id) {
+    if (user.uuid != dto.userId) {
       throw new BadRequestException('User ID does not match.');
     }
 
     return this.noticeLikeService.save(dto);
   }
 
-  @Get('count/:notice_id')
-  countLikes(@Param('notice_id') notice_id: number): Promise<number> {
-    return this.noticeLikeService.countLikes(notice_id);
+  @Get('count/:noticeId')
+  countLikes(@Param('noticeId') noticeId: number): Promise<number> {
+    return this.noticeLikeService.countLikes(noticeId);
   }
 
   @ApiCookieAuth()
-  @Get('status/:user_id/:notice_id')
+  @Get('status/:userId/:noticeId')
   async getStatus(
-    @Param('user_id') user_id: string,
-    @Param('notice_id') notice_id: number,
+    @Param('userId') userId: string,
+    @Param('noticeId') noticeId: number,
   ): Promise<boolean> {
-    if (!user_id || !notice_id) {
+    if (!userId || !noticeId) {
       return false;
     }
     return (await this.noticeLikeService.findByUserIdAndNoticeId(
-      user_id,
-      notice_id,
+      userId,
+      noticeId,
     ))
       ? true
       : false;
   }
 
   @ApiCookieAuth()
-  @Delete(':user_id/:notice_id')
+  @Delete(':userId/:noticeId')
   async delete(
-    @Param('user_id') user_id: string,
-    @Param('notice_id') notice_id: number,
+    @Param('userId') userId: string,
+    @Param('noticeId') noticeId: number,
     @Req() req: Request | any,
   ) {
     const user = req.user as JwtPayload;
-    if (user.uuid != user_id) {
+    if (user.uuid != userId) {
       throw new BadRequestException('User ID does not match.');
     }
 
     const target = await this.noticeLikeService.findByUserIdAndNoticeId(
-      user_id,
-      notice_id,
+      userId,
+      noticeId,
     );
 
     if (!target) {
       throw new BadRequestException(Message.FAIL_LIKE_DELETION_NEVER_LIKED);
     }
-    return this.noticeLikeService.delete(user_id, notice_id);
+    return this.noticeLikeService.delete(userId, noticeId);
   }
 }

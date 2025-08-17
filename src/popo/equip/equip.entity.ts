@@ -1,15 +1,9 @@
-import {
-  BaseEntity,
-  Column,
-  CreateDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { EquipOwner } from './equip.meta';
+import { Base } from '../../common/base.entity';
 
 @Entity()
-export class Equip extends BaseEntity {
+export class Equip extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
@@ -36,10 +30,4 @@ export class Equip extends BaseEntity {
 
   @Column({ default: 0 })
   total_reservation_count: number;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

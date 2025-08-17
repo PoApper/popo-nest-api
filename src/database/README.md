@@ -18,14 +18,13 @@ src/database/
 ## 사용법
 TypeORM 엔티티를 변경한 후 Dev, Prod DB 마이그레이션할 일이 있을 때 사용합니다.
 
-사용할 환경에 맞는 data-source 스크립트에 들어가서 hostname, username, password, database 등을 수정하고 하단에 있는 명령어를 실행합니다.
-마이그레이션을 만들 때 `example-name`에 `수정-사항-월-일`과 같이 적당한 마이그레이션 이름을 넣어줍니다. ex) add-isEdited-08-15
-첫 문자로 숫자가 오면 에러가 나니 주의
+사용할 환경에 맞는 data-source.*.example.ts 스크립트에 들어가서 hostname, username, password, database 등을 수정하고 파일 이름 변경 후 하단에 있는 명령어를 실행합니다.
+마이그레이션을 만들 때 `example-name`에 `popo-수정사항-월-일`과 같이 적당한 마이그레이션 이름을 넣어줍니다. ex) popo-add-isEdited-08-15
 
 ```bash
-$ npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.dev.ts src/database/migrations/dev/example-name-month-day
+$ npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.dev.ts src/database/migrations/dev/popo-example-name-month-day
 
-Migration .../popo-nest-api/src/database/migrations/dev/1755250819946-example-name-month-day.ts has been generated successfully.
+Migration .../popo-nest-api/src/database/migrations/dev/1755250819946-popo-example-name-month-day.ts has been generated successfully.
 
 $ npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.dev.ts
 ...

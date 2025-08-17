@@ -65,7 +65,7 @@ export class IntroClubController {
   getTodayVisited() {
     return this.introClubService.find({
       where: {
-        updateAt: Between(
+        updatedAt: Between(
           moment().startOf('day').toDate(),
           moment().endOf('day').toDate(),
         ),
@@ -77,7 +77,7 @@ export class IntroClubController {
   @Get('clubType/:clubType')
   getByClubType(@Param('clubType') clubType: ClubType) {
     return this.introClubService.find({
-      where: { clubType: clubType },
+      where: { club_type: clubType }, // TODO: 여기도 카멜케이스로 변경
       order: { name: 'ASC' },
     });
   }
