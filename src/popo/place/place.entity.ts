@@ -32,7 +32,7 @@ export class Place extends Base {
   @Column({ default: 1 })
   max_concurrent_reservation: number;
 
-  @Column('text', { nullable: true })
+  @Column('text', { nullable: false, default: '{"Everyday":"00:00-24:00"}' })
   opening_hours: string;
   // if null, there's no rule for opening hours.
   // checking opening hours is implemented on the frontend side.
