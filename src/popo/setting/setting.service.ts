@@ -37,7 +37,7 @@ export class SettingService {
 
     for (const row of rc_list) {
       const email = row['email'];
-      const user = await this.userRepo.findOneBy({ email: email });
+      const user = await this.userRepo.findOneBy({ email: email }); // TODO: 이거 부하 오지것는데
       if (user) {
         row['status'] = 'registered';
         row['user_name'] = user['name'];
