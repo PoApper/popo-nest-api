@@ -9,6 +9,7 @@ import { AuthController } from './auth.controller';
 import { MailModule } from '../mail/mail.module';
 import { ReservePlaceModule } from '../popo/reservation/place/reserve.place.module';
 import { ReserveEquipModule } from '../popo/reservation/equip/reserve.equip.module';
+import { jwtConstants } from './constants';
 @Module({
   imports: [
     UserModule,
@@ -16,7 +17,12 @@ import { ReserveEquipModule } from '../popo/reservation/equip/reserve.equip.modu
     ReservePlaceModule,
     ReserveEquipModule,
     PassportModule,
-    JwtModule.register({}),
+    JwtModule.register({
+      secret: jwtConstants.accessTokenSecret,
+      signOptions: {
+        expiresIn: jwtConstants.accessTokenExpirationTime,
+      },
+    }),
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
   exports: [AuthService],
