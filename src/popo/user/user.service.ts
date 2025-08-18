@@ -52,14 +52,28 @@ export class UserService {
   }
 
   searchByKeyword(keyword = '', take = 10, skip = 0) {
-    const qb = this.userRepo.createQueryBuilder();
+    const qb = this.userRepo.createQueryBuilder('user');
 
     return qb
-      .select('*')
-      .where(`LOWER(name) LIKE '%${keyword}%'`)
-      .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
-      .orWhere(`LOWER(user_type) LIKE '%${keyword}%'`)
-      .orderBy('last_login_at', 'DESC')
+      .select([
+        'user.uuid',
+        'user.email',
+        'user.name',
+        'user.userType',
+        'user.userStatus',
+        'user.lastLoginAt',
+        'user.createdAt',
+      ])
+      .where(`LOWER(user.name) LIKE :keyword`, {
+        keyword: `%${keyword}%`,
+      })
+      .orWhere(`LOWER(user.email) LIKE :keyword`, {
+        keyword: `%${keyword}%`,
+      })
+      .orWhere(`LOWER(user.userType) LIKE :keyword`, {
+        keyword: `%${keyword}%`,
+      })
+      .orderBy('user.lastLoginAt', 'DESC')
       .skip(skip)
       .take(take)
       .getMany();
