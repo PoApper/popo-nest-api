@@ -54,17 +54,17 @@ export class UserService {
   searchByKeyword(keyword = '', take = 10, skip = 0) {
     const qb = this.userRepo.createQueryBuilder();
 
-    // TODO: 해당 쿼리 DB 거치지 않고 typeorm entity(camelCase) 사용하는 방법. 프론트에서 헷갈림 userType, lastLoginAt, createdAt 등
     return qb
       .select('*')
       .where(`LOWER(name) LIKE '%${keyword}%'`)
       .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
       .orWhere(`LOWER(user_type) LIKE '%${keyword}%'`)
-      .orderBy('last_login_at', 'DESC') // TODO: 카멜케이스로 변경
+      .orderBy('last_login_at', 'DESC')
       .skip(skip)
       .take(take)
-      .getRawMany();
+      .getMany();
   }
+
   searchCountByKeyword(keyword = '') {
     const qb = this.userRepo.createQueryBuilder();
 
@@ -73,7 +73,7 @@ export class UserService {
       .where(`LOWER(name) LIKE '%${keyword}%'`)
       .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
       .orWhere(`LOWER(user_type) LIKE '%${keyword}%'`)
-      .orderBy('last_login_at', 'DESC') // TODO: 카멜케이스로 변경
+      .orderBy('last_login_at', 'DESC')
       .getRawOne();
   }
 
