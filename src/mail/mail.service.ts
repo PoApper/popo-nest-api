@@ -138,6 +138,15 @@ export class MailService {
     place: Place,
     reservation,
   ) {
+    // prod 환경이 아닐 경우 담당자에게 메일 발송하지 않음
+    if (process.env.NODE_ENV !== 'prod') {
+      console.log(
+        `장소 예약 생성 메일 (담당자): ${process.env.NODE_ENV} 환경에서는 발송하지 않음`,
+      );
+      return;
+    }
+
+    // prod 환경에서는 기존 로직대로 담당자에게 메일 발송
     recipient_email = EmailValidator.validate(recipient_email)
       ? recipient_email
       : null;
@@ -228,6 +237,15 @@ export class MailService {
     equipments: Equip[],
     reservation,
   ) {
+    // prod 환경이 아닐 경우 담당자에게 메일 발송하지 않음
+    if (process.env.NODE_ENV !== 'prod') {
+      console.log(
+        `장비 예약 생성 메일 (담당자): ${process.env.NODE_ENV} 환경에서는 발송하지 않음`,
+      );
+      return;
+    }
+
+    // prod 환경에서는 기존 로직대로 담당자에게 메일 발송
     recipient_email = EmailValidator.validate(recipient_email)
       ? recipient_email
       : process.env.ADMIN_EMAIL;
