@@ -189,7 +189,7 @@ export class ReservePlaceController {
   @Roles(UserType.admin, UserType.association, UserType.staff)
   async getByPlace(@Param('place_uuid') place_uuid: string) {
     return this.reservePlaceService.find({
-      where: { place: place_uuid },
+      where: { place_id: place_uuid },
       order: { date: 'DESC', start_time: 'DESC' },
     });
   }
@@ -277,7 +277,7 @@ export class ReservePlaceController {
           await this.mailService.sendReservationPatchMail(
             response.email,
             response.title,
-            ReservationStatus[status],
+            ReservationStatus.accept,
           );
         }
       }
