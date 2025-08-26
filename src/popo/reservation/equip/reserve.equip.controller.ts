@@ -8,12 +8,10 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiQuery, ApiTags, ApiCookieAuth } from '@nestjs/swagger';
-import { Request } from 'express';
 import { ReserveEquipService } from './reserve.equip.service';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { MailService } from '../../../mail/mail.service';
@@ -26,6 +24,7 @@ import { MoreThanOrEqual } from 'typeorm';
 import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import * as moment from 'moment-timezone';
 import { Public } from 'src/common/public-guard.decorator';
+import { User } from 'src/popo/common/user.decorator';
 
 @ApiTags('Reservation - Equipment')
 @Controller('reservation-equip')
@@ -38,9 +37,7 @@ export class ReserveEquipController {
 
   @ApiCookieAuth()
   @Post()
-  async post(@Req() req: Request, @Body() dto: CreateReserveEquipDto) {
-    const user = req.user as JwtPayload;
-
+  async post(@User() user: JwtPayload, @Body() dto: CreateReserveEquipDto) {
     const saveDto = Object.assign(dto, { booker_id: user.uuid });
     const new_reservation = await this.reserveEquipService.save(
       saveDto,
@@ -122,12 +119,10 @@ export class ReserveEquipController {
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
   async getMyReservation(
-    @Req() req: Request,
+    @User() user: JwtPayload,
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
-    const user = req.user as JwtPayload;
-
     const findOption = {
       where: { booker_id: user.uuid },
       order: { date: 'DESC', start_time: 'DESC' },
@@ -201,9 +196,8 @@ export class ReserveEquipController {
 
   @ApiCookieAuth()
   @Delete(':uuid')
-  async delete(@Param('uuid') uuid: string, @Req() req: Request) {
+  async delete(@Param('uuid') uuid: string, @User() user: JwtPayload) {
     const reservation = await this.reserveEquipService.findOneByUuid(uuid);
-    const user = req.user as JwtPayload;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
       await this.reserveEquipService.remove(uuid);

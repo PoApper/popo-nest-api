@@ -7,18 +7,18 @@ import {
   Post,
   Put,
   Query,
-  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { CreateUserDto, UpdatePasswordDto, UpdateUserDto } from './user.dto';
 import { UserType } from './user.meta';
 import { Roles } from '../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../auth/authroization/roles.guard';
 import { ApiCookieAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from '../../auth/strategies/jwt.payload';
+import { User } from 'src/popo/common/user.decorator';
 
 @ApiCookieAuth()
 @ApiTags('User')
@@ -117,8 +117,7 @@ export class UserController {
   }
 
   @Delete('me')
-  async deleteMyAccount(@Req() req: Request, @Res() res: Response) {
-    const user = req.user as JwtPayload;
+  async deleteMyAccount(@User() user: JwtPayload, @Res() res: Response) {
     await this.userService.updateRefreshToken(user.uuid, null, null);
 
     this.clearCookies(res);

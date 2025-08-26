@@ -26,6 +26,7 @@ import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
 import { jwtConstants } from './constants';
 import * as ms from 'ms';
 import { Public } from '../common/public-guard.decorator';
+import { User } from 'src/popo/common/user.decorator';
 
 const requiredRoles = [UserType.admin, UserType.association, UserType.staff];
 
@@ -60,8 +61,7 @@ export class AuthController {
 
   @ApiCookieAuth()
   @Get('me/reservation')
-  async getOwnReservations(@Req() req: Request) {
-    const user = req.user as JwtPayload;
+  async getOwnReservations(@User() user: JwtPayload) {
     const existUser = await this.userService.findOneByEmail(user.email);
 
     const existPlaceReserve = await this.reservePlaceService.find({
@@ -105,8 +105,7 @@ export class AuthController {
 
   @ApiCookieAuth()
   @Get('logout')
-  async logOut(@Req() req: Request, @Res() res: Response) {
-    const user = req.user as JwtPayload;
+  async logOut(@User() user: JwtPayload, @Res() res: Response) {
     await this.userService.updateLogin(user.uuid);
     await this.userService.updateRefreshToken(user.uuid, null, null);
 
@@ -179,17 +178,15 @@ export class AuthController {
   @ApiCookieAuth()
   @Post('password/update')
   async updatePassword(
-    @Req() req: Request,
+    @User() user: JwtPayload,
     @Body() body: PasswordUpdateRequest,
   ) {
-    const user = req.user as JwtPayload;
     return this.userService.updatePasswordByEmail(user.email, body.password);
   }
 
   @ApiCookieAuth()
   @Get('myInfo')
-  async getMyInfo(@Req() req: Request) {
-    const user = req.user as JwtPayload;
+  async getMyInfo(@User() user: JwtPayload) {
     const { ...UserInfo } = await this.userService.findOneByUuid(user.uuid);
 
     return UserInfo;

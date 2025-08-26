@@ -6,15 +6,14 @@ import {
   Get,
   Param,
   Post,
-  Req,
 } from '@nestjs/common';
 import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
 
 import { NoticeLikeDto } from './noticeLike.dto';
 import { NoticeLikeService } from './noticeLike.service';
 import { NoticeLike } from './noticeLike.entity';
 import { JwtPayload } from 'src/auth/strategies/jwt.payload';
+import { User } from 'src/popo/common/user.decorator';
 
 const Message = {
   FAIL_LIKE_DELETION_NEVER_LIKED: 'There is no record of liking the post.',
@@ -30,10 +29,8 @@ export class NoticeLikeController {
   @ApiBody({ type: NoticeLikeDto })
   async create(
     @Body() dto: NoticeLikeDto,
-    @Req() req: Request,
+    @User() user: JwtPayload,
   ): Promise<NoticeLike> {
-    const user = req.user as JwtPayload;
-
     if (user.uuid != dto.userId) {
       throw new BadRequestException('User ID does not match.');
     }
@@ -68,9 +65,8 @@ export class NoticeLikeController {
   async delete(
     @Param('userId') userId: string,
     @Param('noticeId') noticeId: number,
-    @Req() req: Request | any,
+    @User() user: JwtPayload,
   ) {
-    const user = req.user as JwtPayload;
     if (user.uuid != userId) {
       throw new BadRequestException('User ID does not match.');
     }
