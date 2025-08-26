@@ -65,11 +65,11 @@ export class AuthController {
     const existUser = await this.userService.findOneByEmail(user.email);
 
     const existPlaceReserve = await this.reservePlaceService.find({
-      where: { user: existUser.uuid },
+      where: { booker_id: existUser.uuid },
       order: { createdAt: 'DESC' },
     });
     const existEquipReserve = await this.reserveEquipService.find({
-      where: { user: existUser.uuid },
+      where: { booker_id: existUser.uuid },
       order: { createdAt: 'DESC' },
     });
 
