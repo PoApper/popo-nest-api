@@ -8,12 +8,10 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiQuery, ApiTags, ApiCookieAuth } from '@nestjs/swagger';
-import { Request } from 'express';
 import { ReservePlaceService } from './reserve.place.service';
 import {
   AcceptPlaceReservationListDto,
@@ -29,6 +27,7 @@ import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import { ReservePlace } from './reserve.place.entity';
 import * as moment from 'moment-timezone';
 import { Public } from 'src/common/public-guard.decorator';
+import { User } from 'src/popo/common/user.decorator';
 
 @ApiTags('Reservation - Place')
 @Controller('reservation-place')
@@ -45,11 +44,9 @@ export class ReservePlaceController {
     type: CreateReservePlaceDto,
   })
   async checkReservationPossible(
-    @Req() req,
+    @User() user: JwtPayload,
     @Body() dto: CreateReservePlaceDto,
   ) {
-    const user = req.user as JwtPayload;
-
     return this.reservePlaceService.checkReservationPossible(
       dto,
       user.uuid,
@@ -60,10 +57,9 @@ export class ReservePlaceController {
   @ApiCookieAuth()
   @Post()
   async createWithNameAndId(
-    @Req() req: Request,
+    @User() user: JwtPayload,
     @Body() dto: CreateReservePlaceDto,
   ) {
-    const user = req.user as JwtPayload;
     const existPlace = await this.placeService.findOneByUuidOrFail(
       dto.place_id,
     );
@@ -142,12 +138,10 @@ export class ReservePlaceController {
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
   async getMyReservation(
-    @Req() req: Request,
+    @User() user: JwtPayload,
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
-    const user = req.user as JwtPayload;
-
     const findOption = {
       where: { booker_id: user.uuid },
       order: { date: 'DESC', start_time: 'DESC' },
@@ -195,7 +189,7 @@ export class ReservePlaceController {
   @Roles(UserType.admin, UserType.association, UserType.staff)
   async getByPlace(@Param('place_uuid') place_uuid: string) {
     return this.reservePlaceService.find({
-      where: { place: place_uuid },
+      where: { place_id: place_uuid },
       order: { date: 'DESC', start_time: 'DESC' },
     });
   }
@@ -283,7 +277,7 @@ export class ReservePlaceController {
           await this.mailService.sendReservationPatchMail(
             response.email,
             response.title,
-            ReservationStatus[status],
+            ReservationStatus.accept,
           );
         }
       }
@@ -332,10 +326,9 @@ export class ReservePlaceController {
 
   @ApiCookieAuth()
   @Delete(':uuid')
-  async delete(@Param('uuid') uuid: string, @Req() req: Request) {
+  async delete(@Param('uuid') uuid: string, @User() user: JwtPayload) {
     const reservation =
       await this.reservePlaceService.findOneByUuidOrFail(uuid);
-    const user = req.user as JwtPayload;
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
       await this.reservePlaceService.remove(uuid);
