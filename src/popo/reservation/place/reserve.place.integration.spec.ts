@@ -16,6 +16,7 @@ import { MailService } from 'src/mail/mail.service';
 import { PlaceService } from 'src/popo/place/place.service';
 import { PlaceModule } from 'src/popo/place/place.module';
 import { PlaceRegion, PlaceEnableAutoAccept } from 'src/popo/place/place.meta';
+import { SettingService } from 'src/popo/setting/setting.service';
 
 import { ReservePlaceController } from './reserve.place.controller';
 import { ReservePlaceService } from './reserve.place.service';
@@ -62,7 +63,14 @@ describe('ReservePlaceModule - Integration Test', () => {
         UserModule,
         PlaceModule,
       ],
-    }).compile();
+    })
+      .overrideProvider(SettingService)
+      .useValue({
+        checkRcStudent: jest.fn().mockImplementation(async () => {
+          return false;
+        }),
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
