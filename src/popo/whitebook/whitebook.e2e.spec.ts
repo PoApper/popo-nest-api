@@ -8,8 +8,13 @@ import { FileService } from 'src/file/file.service';
 import { UserService } from '../user/user.service';
 import { SettingService } from '../setting/setting.service';
 import { JwtService } from '@nestjs/jwt';
-import { AppModule } from 'src/app.module';
 import { TestUtils } from '../../utils/test-utils';
+import { AppModule } from 'src/app.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import configurations from 'src/config/configurations';
+import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
 
 describe('WhitebookController (e2e)', () => {
   let app: INestApplication;
@@ -19,7 +24,32 @@ describe('WhitebookController (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [
+        ConfigModule.forRoot({
+          load: [configurations],
+          isGlobal: true,
+          envFilePath: ['.env.test'],
+        }),
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: (configService: ConfigService) => {
+            const dbConfig = configService.get('database');
+            return dbConfig;
+          },
+        }),
+        JwtModule.registerAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: () => ({
+            secret: process.env.JWT_ACCESS_TOKEN_SECRET,
+            signOptions: {
+              expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME,
+            },
+          }),
+        }),
+        AppModule,
+      ],
     })
       .overrideProvider(FileService)
       .useValue({
@@ -33,6 +63,12 @@ describe('WhitebookController (e2e)', () => {
           return false;
         }),
       })
+      .overrideProvider(JwtStrategy)
+      .useValue({
+        validate: jest.fn().mockImplementation((payload: any) => {
+          return payload;
+        }),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -44,6 +80,9 @@ describe('WhitebookController (e2e)', () => {
 
   beforeEach(async () => {
     const dataSource = app.get(DataSource);
+
+    // 데이터베이스를 완전히 삭제하고 다시 생성
+    await dataSource.dropDatabase();
     await dataSource.synchronize(true);
 
     testUtils = new TestUtils(userService, jwtService);
@@ -58,8 +97,12 @@ describe('WhitebookController (e2e)', () => {
   });
 
   afterAll(async () => {
-    testUtils.cleanup();
-    await app.close();
+    if (testUtils) {
+      testUtils.cleanup();
+    }
+    if (app) {
+      await app.close();
+    }
   });
 
   it('/whitebook [POST] 201', async () => {

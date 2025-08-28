@@ -6,9 +6,6 @@ import { User } from '../popo/user/user.entity';
 import { UserService } from '../popo/user/user.service';
 import { JwtPayload } from '../auth/strategies/jwt.payload';
 
-const JWT_SECRET = 'SECRET';
-const EXPIRATION_TIME = '1h';
-
 export class TestUtils {
   private testUser: User;
   private testAdmin: User;
@@ -51,10 +48,10 @@ export class TestUtils {
 
         try {
           const jwtService = new JwtService({
-            secret: JWT_SECRET,
+            secret: process.env.JWT_ACCESS_TOKEN_SECRET,
           });
           const decoded = jwtService.verify(token, {
-            secret: JWT_SECRET,
+            secret: process.env.JWT_ACCESS_TOKEN_SECRET,
           });
 
           request.user = decoded;
@@ -67,15 +64,18 @@ export class TestUtils {
   };
 
   async initializeTestUsers() {
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(7);
+
     this.testUser = await this.userService.save({
-      email: 'test@test.com',
+      email: `test${timestamp}${randomSuffix}@test.com`,
       password: 'test',
       name: 'test',
       userType: UserType.student,
     });
 
     this.testAdmin = await this.userService.save({
-      email: 'admin@test.com',
+      email: `admin${timestamp}${randomSuffix}@test.com`,
       password: 'test',
       name: 'admin',
       userType: UserType.admin,
@@ -98,13 +98,13 @@ export class TestUtils {
     };
 
     this.testUserJwtToken = this.jwtService.sign(testUserPayload, {
-      expiresIn: EXPIRATION_TIME,
-      secret: JWT_SECRET,
+      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME,
+      secret: process.env.JWT_ACCESS_TOKEN_SECRET,
     });
 
     this.testAdminJwtToken = this.jwtService.sign(testAdminPayload, {
-      expiresIn: EXPIRATION_TIME,
-      secret: JWT_SECRET,
+      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME,
+      secret: process.env.JWT_ACCESS_TOKEN_SECRET,
     });
   }
 

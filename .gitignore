@@ -45,7 +45,6 @@ lerna-debug.log*
 !assets/**
 
 .env
-.env*
 *.sql
 
 # local certs
