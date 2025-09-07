@@ -6,9 +6,15 @@ import { SettingController } from './setting.controller';
 import { FileModule } from '../../file/file.module';
 import { SettingService } from './setting.service';
 import { User } from '../user/user.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), NestjsFormDataModule, FileModule],
+  imports: [
+    TypeOrmModule.forFeature([User]),
+    NestjsFormDataModule,
+    FileModule,
+    ConfigModule,
+  ],
   controllers: [SettingController],
   providers: [SettingService],
   exports: [SettingService],
