@@ -4,6 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { ApiHideProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
@@ -11,6 +12,7 @@ import { User } from '../../popo/user/user.entity';
 import { Base } from '../../common/base.entity';
 
 @Entity()
+@Unique(['userUuid', 'pushKey'])
 export class FcmKey extends Base {
   @PrimaryGeneratedColumn()
   @ApiHideProperty()
@@ -20,7 +22,7 @@ export class FcmKey extends Base {
   @Column({ name: 'user_uuid', nullable: false })
   userUuid: string;
 
-  @Column({ name: 'push_key', nullable: false, unique: true }) // TODO: unique 조건 composite key로 변경
+  @Column({ name: 'push_key', nullable: false })
   pushKey: string;
 
   /**
