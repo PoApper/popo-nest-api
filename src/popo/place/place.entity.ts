@@ -32,12 +32,19 @@ export class Place extends Base {
   @Column({ name: 'max_concurrent_reservation', default: 1 })
   maxConcurrentReservation: number;
 
-  @Column('text', { name: 'opening_hours', nullable: false, default: '{"Everyday":"00:00-24:00"}' })
+  @Column('text', {
+    name: 'opening_hours',
+    nullable: false,
+    default: '{"Everyday":"00:00-24:00"}',
+  })
   openingHours: string;
   // if null, there's no rule for opening hours.
   // checking opening hours is implemented on the frontend side.
 
-  @Column({ name: 'enable_auto_accept', default: PlaceEnableAutoAccept.inactive })
+  @Column({
+    name: 'enable_auto_accept',
+    default: PlaceEnableAutoAccept.inactive,
+  })
   enableAutoAccept: PlaceEnableAutoAccept;
 
   @Column({ name: 'total_reservation_count', default: 0 })

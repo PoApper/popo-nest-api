@@ -55,16 +55,10 @@ export class User extends Base {
    * Database Relation
    */
 
-  @OneToMany(
-    () => ReserveEquip,
-    (equipReservation) => equipReservation.booker,
-  )
+  @OneToMany(() => ReserveEquip, (equipReservation) => equipReservation.booker)
   equipReservation: ReserveEquip[];
 
-  @OneToMany(
-    () => ReservePlace,
-    (placeReservation) => placeReservation.booker,
-  )
+  @OneToMany(() => ReservePlace, (placeReservation) => placeReservation.booker)
   placeReservation: ReservePlace[];
 
   @OneToMany(() => FcmKey, (fcmKey) => fcmKey.user)

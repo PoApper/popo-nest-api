@@ -60,9 +60,7 @@ export class ReservePlaceController {
     @User() user: JwtPayload,
     @Body() dto: CreateReservePlaceDto,
   ) {
-    const existPlace = await this.placeService.findOneByUuidOrFail(
-      dto.placeId,
-    );
+    const existPlace = await this.placeService.findOneByUuidOrFail(dto.placeId);
 
     await this.reservePlaceService.checkReservationPossible(
       dto,
@@ -335,8 +333,7 @@ export class ReservePlaceController {
     } else {
       if (reservation.bookerId === user.uuid) {
         // if the reservation is in the past, deny delete
-        const reservationStartTime =
-          reservation.date + reservation.startTime;
+        const reservationStartTime = reservation.date + reservation.startTime;
         const currentTime = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
 
         if (reservationStartTime < currentTime) {
