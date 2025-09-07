@@ -1,5 +1,5 @@
 export class AffiliateDto {
   readonly title: string;
-  readonly content_short: string;
+  readonly contentShort: string;
   readonly content: string;
 }

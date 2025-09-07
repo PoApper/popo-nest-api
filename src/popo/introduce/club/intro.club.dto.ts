@@ -3,16 +3,16 @@ import { IsFile, MaxFileSize, MemoryStoredFile } from 'nestjs-form-data';
 
 export class CreateIntroClubDto {
   readonly name: string;
-  readonly short_desc: string;
+  readonly shortDesc: string;
   readonly clubType: ClubType;
   readonly content: string;
   readonly location: string;
   readonly representative: string;
   readonly contact: string;
-  readonly homepage_url: string;
-  readonly facebook_url: string;
-  readonly instagram_url: string;
-  readonly youtube_url: string;
+  readonly homepageUrl: string;
+  readonly facebookUrl: string;
+  readonly instagramUrl: string;
+  readonly youtubeUrl: string;
 }
 
 export class ClubImageDto {
