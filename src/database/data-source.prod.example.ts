@@ -2,7 +2,7 @@ import { DataSource } from 'typeorm';
 
 // PRODUCTION 환경을 위한 마이그레이션 스크립트
 export const ProdDataSource = new DataSource({
-  type: 'mysql',
+  type: 'mariadb',
   host: 'popo-host', // popo host name
   port: 3306,
   username: 'prod-username', // prod 환경의 username

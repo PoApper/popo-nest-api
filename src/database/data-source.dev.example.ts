@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 
 export const DevDataSource = new DataSource({
-  type: 'mysql',
+  type: 'mariadb',
   host: 'popo-host', // popo host name
   port: 3306,
   username: 'dev-username', // dev 환경의 username
