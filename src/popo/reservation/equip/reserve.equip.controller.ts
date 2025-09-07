@@ -39,7 +39,7 @@ export class ReserveEquipController {
   @Post()
   async post(@User() user: JwtPayload, @Body() dto: CreateReserveEquipDto) {
     const saveDto = Object.assign(dto, { booker_id: user.uuid });
-    const new_reservation = await this.reserveEquipService.save(
+    const newReservation = await this.reserveEquipService.save(
       saveDto,
       user.uuid,
     );
@@ -51,25 +51,25 @@ export class ReserveEquipController {
       await this.equipService.updateReservationCountByDelta(equipment.uuid, +1);
     }
 
-    const staff_emails = existEquips.map((equip) => equip.staff_email);
-    const unique_emails = new Set(staff_emails);
+    const staffEmails = existEquips.map((equip) => equip.staffEmail);
+    const uniqueEmails = new Set(staffEmails);
 
     // send e-mail to staff
-    unique_emails.forEach((email) =>
+    uniqueEmails.forEach((email) =>
       this.mailService.sendEquipReserveCreateMailToStaff(
         email,
         existEquips,
-        new_reservation,
+        newReservation,
       ),
     );
 
     // send e-mail to booker
     await this.mailService.sendEquipReserveCreateMailToBooker(
       user.email,
-      new_reservation,
+      newReservation,
     );
 
-    return new_reservation;
+    return newReservation;
   }
 
   @Public()
@@ -124,12 +124,12 @@ export class ReserveEquipController {
     @Query('take') take: number,
   ) {
     const findOption = {
-      where: { booker_id: user.uuid },
+      where: { bookerId: user.uuid },
       order: { date: 'DESC', start_time: 'DESC' },
     };
 
     const total = await this.reserveEquipService.count({
-      booker_id: user.uuid,
+      bookerId: user.uuid,
     });
 
     findOption['skip'] = skip ?? 0;
@@ -146,7 +146,7 @@ export class ReserveEquipController {
   @Get('user/:uuid')
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
-      where: { booker_id: uuid },
+      where: { bookerId: uuid },
       order: { date: 'DESC', start_time: 'DESC' },
     });
     return this.reserveEquipService.joinEquips(reservations);
@@ -158,7 +158,7 @@ export class ReserveEquipController {
   @Roles(UserType.admin)
   async getUserReservationByAdmin(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
-      where: { booker_id: uuid },
+      where: { bookerId: uuid },
       order: { date: 'DESC', start_time: 'DESC' },
     });
     return this.reserveEquipService.joinEquips(reservations);
@@ -202,13 +202,13 @@ export class ReserveEquipController {
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
       await this.reserveEquipService.remove(uuid);
     } else {
-      if (reservation.booker_id == user.uuid) {
+      if (reservation.bookerId == user.uuid) {
         // if the reservation is in the past, deny delete
-        const reservation_start_time =
-          reservation.date + reservation.start_time;
-        const current_time = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
+        const reservationStartTime =
+          reservation.date + reservation.startTime;
+        const currentTime = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
 
-        if (reservation_start_time < current_time) {
+        if (reservationStartTime < currentTime) {
           throw new BadRequestException('Cannot delete past reservation');
         } else {
           await this.reserveEquipService.remove(uuid);
@@ -219,8 +219,8 @@ export class ReserveEquipController {
     }
 
     // update equipment reservation count
-    for (const equipment_id of reservation.equipments) {
-      await this.equipService.updateReservationCountByDelta(equipment_id, -1);
+    for (const equipmentId of reservation.equipments) {
+      await this.equipService.updateReservationCountByDelta(equipmentId, -1);
     }
   }
 

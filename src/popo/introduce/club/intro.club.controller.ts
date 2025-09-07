@@ -46,12 +46,12 @@ export class IntroClubController {
   @Roles(UserType.admin, UserType.association)
   @FileBody('image')
   async uploadImage(@Param('uuid') uuid: string, @Body() dto: ClubImageDto) {
-    const image_url = await this.fileService.uploadFile(
+    const imageUrl = await this.fileService.uploadFile(
       `club/${uuid}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
       dto.image,
     );
-    await this.introClubService.updateImageUrl(uuid, image_url);
-    return image_url;
+    await this.introClubService.updateImageUrl(uuid, imageUrl);
+    return imageUrl;
   }
 
   @Public()
@@ -77,7 +77,7 @@ export class IntroClubController {
   @Get('clubType/:clubType')
   getByClubType(@Param('clubType') clubType: ClubType) {
     return this.introClubService.find({
-      where: { club_type: clubType }, // TODO: 여기도 카멜케이스로 변경
+      where: { clubType: clubType },
       order: { name: 'ASC' },
     });
   }
