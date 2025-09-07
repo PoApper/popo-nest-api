@@ -15,9 +15,9 @@ export class Whitebook extends Base {
   @Column('text', { nullable: true })
   content: string;
 
-  @Column({ default: 0 })
-  click_count: number;
+  @Column({ name: 'click_count', default: 0 })
+  clickCount: number;
 
-  @Column({ default: false })
-  show_only_login: boolean;
+  @Column({ name: 'show_only_login', default: false })
+  showOnlyLogin: boolean;
 }

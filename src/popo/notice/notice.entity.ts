@@ -12,18 +12,18 @@ export class Notice extends Base {
   @Column('text', { nullable: true })
   content: string;
 
-  @Column({ nullable: true })
-  image_url: string;
+  @Column({ name: 'image_url', nullable: true })
+  imageUrl: string;
 
   @Column({ nullable: true })
   link: string;
 
-  @Column({ nullable: false })
-  start_datetime: string; // YYYY-MM-DD HH:mm:ss (KST)
+  @Column({ name: 'start_datetime', nullable: false })
+  startDatetime: string; // YYYY-MM-DD HH:mm:ss (KST)
 
-  @Column({ nullable: false })
-  end_datetime: string; // YYYY-MM-DD HH:mm:ss (KST)
+  @Column({ name: 'end_datetime', nullable: false })
+  endDatetime: string; // YYYY-MM-DD HH:mm:ss (KST)
 
-  @Column({ default: 0 })
-  click_count: number;
+  @Column({ name: 'click_count', default: 0 })
+  clickCount: number;
 }

@@ -18,8 +18,8 @@ export class ReserveEquip extends Base {
   @Column('simple-array', { nullable: false })
   equipments: string[]; // Array of equipment uuids
 
-  @Column({ nullable: true })
-  booker_id: string; // uuid of booker
+  @Column({ name: 'booker_id', nullable: true })
+  bookerId: string; // uuid of booker
 
   @Column({ nullable: false })
   owner: EquipOwner; // 장비의 owner
@@ -36,11 +36,11 @@ export class ReserveEquip extends Base {
   @Column({ nullable: false })
   date: string; // YYYYMMDD
 
-  @Column({ nullable: false })
-  start_time: string; // HHmm
+  @Column({ name: 'start_time', nullable: false })
+  startTime: string; // HHmm
 
-  @Column({ nullable: false })
-  end_time: string; // HHmm
+  @Column({ name: 'end_time', nullable: false })
+  endTime: string; // HHmm
 
   @Column({ nullable: false, default: ReservationStatus.in_process })
   status: ReservationStatus;
@@ -49,7 +49,7 @@ export class ReserveEquip extends Base {
    * Database Relation
    */
 
-  @ManyToOne(() => User, (user) => user.equip_reservation, {
+  @ManyToOne(() => User, (user) => user.equipReservation, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'booker_id' })

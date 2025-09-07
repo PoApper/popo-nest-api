@@ -15,11 +15,11 @@ export class ReservePlace extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
 
-  @Column({ nullable: true })
-  place_id: string; // uuid of place
+  @Column({ name: 'place_id', nullable: true })
+  placeId: string; // uuid of place
 
-  @Column({ nullable: true })
-  booker_id: string; // uuid of booker
+  @Column({ name: 'booker_id', nullable: true })
+  bookerId: string; // uuid of booker
 
   @Column({ nullable: false })
   phone: string; // 010-xxxx-xxxx
@@ -33,11 +33,11 @@ export class ReservePlace extends Base {
   @Column({ nullable: false })
   date: string; // YYYYMMDD
 
-  @Column({ nullable: false })
-  start_time: string; // HHmm
+  @Column({ name: 'start_time', nullable: false })
+  startTime: string; // HHmm
 
-  @Column({ nullable: false })
-  end_time: string; // HHmm
+  @Column({ name: 'end_time', nullable: false })
+  endTime: string; // HHmm
 
   @Column({ nullable: false, default: ReservationStatus.in_process })
   status: ReservationStatus;
@@ -46,13 +46,13 @@ export class ReservePlace extends Base {
    * Database Relation
    */
 
-  @ManyToOne(() => Place, (place) => place.place_reservation, {
+  @ManyToOne(() => Place, (place) => place.placeReservation, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'place_id' })
   place: Place;
 
-  @ManyToOne(() => User, (user) => user.place_reservation, {
+  @ManyToOne(() => User, (user) => user.placeReservation, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'booker_id' })

@@ -20,14 +20,14 @@ export class FcmKey extends Base {
   @Column({ name: 'user_uuid', nullable: false })
   userUuid: string;
 
-  @Column({ name: 'push_key', nullable: false, unique: true })
+  @Column({ name: 'push_key', nullable: false, unique: true }) // TODO: unique 조건 composite key로 변경
   pushKey: string;
 
   /**
    * Database Relation
    */
 
-  @ManyToOne(() => User, (user) => user.push_keys, {
+  @ManyToOne(() => User, (user) => user.pushKeys, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'user_uuid', referencedColumnName: 'uuid' })
