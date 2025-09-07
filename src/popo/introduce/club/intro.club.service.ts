@@ -17,10 +17,7 @@ export class IntroClubService {
   }
 
   updateImageUrl(uuid: string, imageUrl: string) {
-    return this.introClubRepo.update(
-      { uuid: uuid },
-      { imageUrl: imageUrl },
-    );
+    return this.introClubRepo.update({ uuid: uuid }, { imageUrl: imageUrl });
   }
 
   find(findOptions?: object) {
