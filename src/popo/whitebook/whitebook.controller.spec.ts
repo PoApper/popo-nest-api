@@ -45,8 +45,8 @@ describe('WhitebookController', () => {
     entity.title = dto.title;
     entity.content = dto.content;
     entity.link = link;
-    entity.show_only_login = dto.show_only_login;
-    entity.click_count = 0;
+    entity.showOnlyLogin = dto.showOnlyLogin;
+    entity.clickCount = 0;
     entity.createdAt = new Date();
     entity.updatedAt = new Date();
     return entity;
@@ -75,7 +75,7 @@ describe('WhitebookController', () => {
       title: 'title',
       content: 'content',
       link: 'link',
-      show_only_login: false,
+      showOnlyLogin: false,
     };
 
     const WhitebookEntity = createWhitebookEntityFromDto(dto, dto.link!);
@@ -93,8 +93,8 @@ describe('WhitebookController', () => {
     const dto: WhitebookDto = {
       title: 'title',
       content: 'content',
-      pdf_file: pdfFile,
-      show_only_login: false,
+      pdfFile: pdfFile,
+      showOnlyLogin: false,
     };
 
     const pdfUrl = generatePdfUrl(dto.title);
@@ -111,7 +111,7 @@ describe('WhitebookController', () => {
     expect(whitebookService.save).toHaveBeenCalledWith({
       title: dto.title,
       content: dto.content,
-      show_only_login: dto.show_only_login,
+      showOnlyLogin: dto.showOnlyLogin,
       link: pdfUrl,
     });
   });
@@ -122,7 +122,7 @@ describe('WhitebookController', () => {
       title: 'updated title',
       content: 'updated content',
       link: 'updated link',
-      show_only_login: false,
+      showOnlyLogin: false,
     };
 
     const updatedResult = createUpdateResultFromDto(dto, uuid);
@@ -141,8 +141,8 @@ describe('WhitebookController', () => {
     const dto: WhitebookDto = {
       title: 'updated title',
       content: 'updated content',
-      pdf_file: pdfFile,
-      show_only_login: false,
+      pdfFile: pdfFile,
+      showOnlyLogin: false,
     };
 
     const pdfUrl = generatePdfUrl(dto.title);
@@ -154,7 +154,7 @@ describe('WhitebookController', () => {
         title: dto.title,
         content: dto.content,
         link: pdfUrl,
-        show_only_login: dto.show_only_login,
+        showOnlyLogin: dto.showOnlyLogin,
       },
       uuid,
     );
@@ -167,7 +167,7 @@ describe('WhitebookController', () => {
     expect(whitebookService.update).toHaveBeenCalledWith(uuid, {
       title: dto.title,
       content: dto.content,
-      show_only_login: dto.show_only_login,
+      showOnlyLogin: dto.showOnlyLogin,
       link: pdfUrl,
     });
   });
