@@ -9,48 +9,48 @@ import { CreateIntroAssociationDto } from './intro.association.dto';
 export class IntroAssociationService {
   constructor(
     @InjectRepository(IntroAssociation)
-    private readonly introAssociation_repository: Repository<IntroAssociation>,
+    private readonly introAssociationRepo: Repository<IntroAssociation>,
   ) {}
 
   save(dto: CreateIntroAssociationDto) {
-    return this.introAssociation_repository.save(dto);
+    return this.introAssociationRepo.save(dto);
   }
 
   find(findOptions?: object) {
-    return this.introAssociation_repository.find(findOptions);
+    return this.introAssociationRepo.find(findOptions);
   }
 
   updateImageUrl(uuid: string, imageUrl: string) {
-    return this.introAssociation_repository.update(
+    return this.introAssociationRepo.update(
       { uuid: uuid },
       { imageUrl: imageUrl },
     );
   }
 
   findOneByUuid(uuid: string) {
-    return this.introAssociation_repository.findOneBy({ uuid: uuid });
+    return this.introAssociationRepo.findOneBy({ uuid: uuid });
   }
 
   findOneByUuidOrFail(uuid: string) {
-    return this.introAssociation_repository.findOneByOrFail({ uuid: uuid });
+    return this.introAssociationRepo.findOneByOrFail({ uuid: uuid });
   }
 
   findOneByName(name: string) {
-    return this.introAssociation_repository.findOneBy({ name: name });
+    return this.introAssociationRepo.findOneBy({ name: name });
   }
 
   async update(uuid: string, dto: CreateIntroAssociationDto) {
     await this.findOneByUuidOrFail(uuid);
-    return this.introAssociation_repository.update({ uuid: uuid }, dto);
+    return this.introAssociationRepo.update({ uuid: uuid }, dto);
   }
 
   async remove(uuid: string) {
     await this.findOneByUuidOrFail(uuid);
-    return this.introAssociation_repository.delete({ uuid: uuid });
+    return this.introAssociationRepo.delete({ uuid: uuid });
   }
 
   updateViewCount(uuid: string, views: number) {
-    return this.introAssociation_repository.update(
+    return this.introAssociationRepo.update(
       { uuid: uuid },
       { views: views },
     );
