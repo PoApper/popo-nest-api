@@ -86,8 +86,8 @@ export class UserService {
       .select('COUNT(*) AS count')
       .where(`LOWER(name) LIKE '%${keyword}%'`)
       .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
-      .orWhere(`LOWER(user_type) LIKE '%${keyword}%'`)
-      .orderBy('last_login_at', 'DESC')
+      .orWhere(`LOWER(userType) LIKE '%${keyword}%'`)
+      .orderBy('lastLoginAt', 'DESC')
       .getRawOne();
   }
 

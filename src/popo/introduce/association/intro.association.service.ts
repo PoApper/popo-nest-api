@@ -20,10 +20,10 @@ export class IntroAssociationService {
     return this.introAssociation_repository.find(findOptions);
   }
 
-  updateImageUrl(uuid: string, image_url: string) {
+  updateImageUrl(uuid: string, imageUrl: string) {
     return this.introAssociation_repository.update(
       { uuid: uuid },
-      { image_url: image_url },
+      { imageUrl: imageUrl },
     );
   }
 

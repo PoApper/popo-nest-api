@@ -21,7 +21,7 @@ export class WhitebookService {
     } else {
       return this.whitebookRepo.find({
         order: orderOption,
-        where: { show_only_login: false },
+        where: { showOnlyLogin: false },
       });
     }
   }
@@ -29,7 +29,7 @@ export class WhitebookService {
   async addOneClickCount(uuid: string) {
     const whitebook = await this.whitebookRepo.findOneBy({ uuid: uuid });
     return this.whitebookRepo.update(uuid, {
-      click_count: whitebook.click_count + 1,
+      clickCount: whitebook.clickCount + 1,
     });
   }
 

@@ -26,15 +26,15 @@ export class PlaceService {
       location: dto.location,
       description: dto.description,
       region: dto.region,
-      staff_email: dto.staff_email,
-      max_minutes: dto.max_minutes,
-      opening_hours: dto.opening_hours,
+      staffEmail: dto.staffEmail,
+      maxMinutes: dto.maxMinutes,
+      openingHours: dto.openingHours,
     };
     return this.placeRepo.save(saveDto);
   }
 
-  updateImageUrl(uuid: string, image_url: string) {
-    return this.placeRepo.update({ uuid: uuid }, { image_url: image_url });
+  updateImageUrl(uuid: string, imageUrl: string) {
+    return this.placeRepo.update({ uuid: uuid }, { imageUrl: imageUrl });
   }
 
   find() {
@@ -78,14 +78,14 @@ export class PlaceService {
     const place = await this.placeRepo.findOneByOrFail({ uuid: uuid });
     return this.placeRepo.update(
       { uuid: uuid },
-      { total_reservation_count: place.total_reservation_count + delta },
+      { totalReservationCount: place.totalReservationCount + delta },
     );
   }
 
   updateReservationCount(uuid: string, reservation_count: number) {
     return this.placeRepo.update(
       { uuid: uuid },
-      { total_reservation_count: reservation_count },
+      { totalReservationCount: reservation_count },
     );
   }
 

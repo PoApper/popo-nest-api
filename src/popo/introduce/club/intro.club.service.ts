@@ -19,7 +19,7 @@ export class IntroClubService {
   updateImageUrl(uuid: string, imageUrl: string) {
     return this.introClub_repository.update(
       { uuid: uuid },
-      { image_url: imageUrl },
+      { imageUrl: imageUrl },
     );
   }
 

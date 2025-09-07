@@ -18,7 +18,7 @@ export class CalendarService {
 
   findAll() {
     return this.calendarRepo.find({
-      order: { event_date: 'DESC' },
+      order: { eventDate: 'DESC' },
     });
   }
 
@@ -26,10 +26,10 @@ export class CalendarService {
     return this.calendarRepo.findOneBy({ id: id });
   }
 
-  findEventAfter(after_date: string) {
+  findEventAfter(afterDate: string) {
     return this.calendarRepo.find({
       where: {
-        event_date: MoreThanOrEqual(after_date),
+        eventDate: MoreThanOrEqual(afterDate),
       },
       order: {
         createdAt: 'ASC',
