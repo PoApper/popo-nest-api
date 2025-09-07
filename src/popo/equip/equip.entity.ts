@@ -16,18 +16,18 @@ export class Equip extends Base {
   @Column({ nullable: false })
   fee: number;
 
-  @Column({ nullable: false })
-  equip_owner: EquipOwner;
+  @Column({ name: 'equip_owner', nullable: false })
+  equipOwner: EquipOwner;
 
-  @Column({ nullable: true })
-  staff_email: string;
+  @Column({ name: 'staff_email', nullable: true })
+  staffEmail: string;
 
-  @Column({ nullable: true })
-  image_url: string;
+  @Column({ name: 'image_url', nullable: true })
+  imageUrl: string;
 
-  @Column({ default: 24 * 60 })
-  max_minutes: number;
+  @Column({ name: 'max_minutes', default: 24 * 60 })
+  maxMinutes: number;
 
-  @Column({ default: 0 })
-  total_reservation_count: number;
+  @Column({ name: 'total_reservation_count', default: 0 })
+  totalReservationCount: number;
 }

@@ -2,7 +2,7 @@ import { DataSource } from 'typeorm';
 
 // Local은 synchronize: true가 되어있어서 따로 마이그레이션 할 필요는 없는데 필요하다면 사용
 export const LocalDataSource = new DataSource({
-  type: 'mysql',
+  type: 'mariadb',
   host: 'localhost',
   port: 3306,
   username: 'local-username', // local 환경의 username

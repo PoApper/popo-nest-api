@@ -1,7 +1,7 @@
 export class CreateReservePlaceDto {
-  readonly place_id: string; // uuid of place
+  readonly placeId: string; // uuid of place
 
-  readonly booker_id?: string; // uuid of booker
+  readonly bookerId?: string; // uuid of booker
 
   readonly phone: string;
 
@@ -11,11 +11,11 @@ export class CreateReservePlaceDto {
 
   readonly date: string; // YYYYMMDD
 
-  readonly start_time: string; // hhmm
+  readonly startTime: string; // hhmm
 
-  readonly end_time: string; // hhmm
+  readonly endTime: string; // hhmm
 }
 
 export class AcceptPlaceReservationListDto {
-  readonly uuid_list: string[];
+  readonly uuidList: string[];
 }

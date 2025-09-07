@@ -110,7 +110,7 @@ describe('WhitebookController (e2e)', () => {
       title: 'New Whitebook',
       content: 'Content of the new whitebook',
       link: 'https://www.example.com',
-      show_only_login: false,
+      showOnlyLogin: false,
     };
 
     const postResponseByNonAdmin = await request(app.getHttpServer())
@@ -131,7 +131,7 @@ describe('WhitebookController (e2e)', () => {
         title: Dto.title,
         content: Dto.content,
         link: Dto.link,
-        show_only_login: Dto.show_only_login,
+        showOnlyLogin: Dto.showOnlyLogin,
       }),
     );
   });
@@ -148,7 +148,7 @@ describe('WhitebookController (e2e)', () => {
     const dtoWithPdfFile: WhitebookDto = {
       title: 'New Whitebook with PDF',
       content: 'Content of the new whitebook with PDF',
-      show_only_login: false,
+      showOnlyLogin: false,
     };
     const pdf = new MemoryStoredFile();
     pdf.originalName = 'test.pdf';
@@ -157,10 +157,10 @@ describe('WhitebookController (e2e)', () => {
     const resWithPdf = await request(app.getHttpServer())
       .post('/whitebook')
       .set('Cookie', [`Authentication=${testUtils.getTestAdminJwtToken()}`])
-      .attach('pdf_file', pdf.buffer, pdf.originalName)
+      .attach('pdfFile', pdf.buffer, pdf.originalName)
       .field('title', dtoWithPdfFile.title)
       .field('content', dtoWithPdfFile.content)
-      .field('show_only_login', dtoWithPdfFile.show_only_login);
+      .field('showOnlyLogin', dtoWithPdfFile.showOnlyLogin);
 
     expect(resWithPdf.status).toBe(201);
     expect(resWithPdf.type).toBe('application/json');
@@ -169,7 +169,7 @@ describe('WhitebookController (e2e)', () => {
         title: dtoWithPdfFile.title,
         content: dtoWithPdfFile.content,
         link: expect.stringContaining('whitebook'),
-        show_only_login: dtoWithPdfFile.show_only_login,
+        showOnlyLogin: dtoWithPdfFile.showOnlyLogin,
       }),
     );
   });
@@ -179,7 +179,7 @@ describe('WhitebookController (e2e)', () => {
       title: 'New Whitebook',
       content: 'Content of the new whitebook',
       link: 'https://www.example.com',
-      show_only_login: false,
+      showOnlyLogin: false,
     };
 
     const postResponse = await request(app.getHttpServer())
@@ -196,7 +196,7 @@ describe('WhitebookController (e2e)', () => {
       title: 'Updated Whitebook without PDF',
       content: 'Updated content of the whitebook without PDF',
       link: 'https://www.example.com/updated',
-      show_only_login: false,
+      showOnlyLogin: false,
     };
 
     const putResponseByNonAdmin = await request(app.getHttpServer())
@@ -228,7 +228,7 @@ describe('WhitebookController (e2e)', () => {
           title: updateDataWithLink.title,
           content: updateDataWithLink.content,
           link: updateDataWithLink.link,
-          show_only_login: updateDataWithLink.show_only_login,
+          showOnlyLogin: updateDataWithLink.showOnlyLogin,
         }),
       ]),
     );
@@ -236,7 +236,7 @@ describe('WhitebookController (e2e)', () => {
     const updateDataWithPdf = {
       title: 'Updated Whitebook with PDF',
       content: 'Updated content of the whitebook with PDF',
-      show_only_login: false,
+      showOnlyLogin: false,
     };
     const pdf = new MemoryStoredFile();
     pdf.originalName = 'test.pdf';
@@ -245,10 +245,10 @@ describe('WhitebookController (e2e)', () => {
     const putResponseWithPdf = await request(app.getHttpServer())
       .put(`/whitebook/${uuid}`)
       .set('Cookie', [`Authentication=${testUtils.getTestAdminJwtToken()}`])
-      .attach('pdf_file', pdf.buffer, pdf.originalName)
+      .attach('pdfFile', pdf.buffer, pdf.originalName)
       .field('title', updateDataWithPdf.title)
       .field('content', updateDataWithPdf.content)
-      .field('show_only_login', updateDataWithPdf.show_only_login);
+      .field('showOnlyLogin', updateDataWithPdf.showOnlyLogin);
 
     expect(putResponseWithPdf.status).toBe(200);
     expect(putResponseWithPdf.type).toBe('application/json');
@@ -280,7 +280,7 @@ describe('WhitebookController (e2e)', () => {
       title: 'New Whitebook',
       content: 'Content of the new whitebook',
       link: 'https://www.example.com',
-      show_only_login: false,
+      showOnlyLogin: false,
     };
 
     const postRes = await request(app.getHttpServer())

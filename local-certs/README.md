@@ -6,7 +6,6 @@
 
 [NestJS - Localhost 환경에서 HTTPS 적용하기](https://lee-yo-han.github.io/nestjs-localhost-https) 포스트를 참고할 걸 권장드립니다. 아래의 내용은 위 포스트의 대충에 가깝습니다.
 
-
 ## Generate Self-signed certificates
 
 (요기 명령어가 아니라 아래 `mkcert` 명령어로 진행하는 것을 권장 합니다.)
@@ -36,13 +35,13 @@ subject=C=KR, ST=Seoul, L=Seoul, O=personal, OU=local, CN=haha, emailAddress=hoh
 `main.ts` 폴더에 아래 코드를 작성한다. 참고로 현재 POPO 코드에서는 아래 내용이 이미 반영 되어 있다. 따로 작업할 필요는 X
 
 ```ts
-import * as fs from "fs";
-import * as https from "https";
+import * as fs from 'fs';
+import * as https from 'https';
 
 async function bootstrap() {
   const httpsOptions = {
-    key: fs.readFileSync("./local-certs/localhost-key.pem"),
-    cert: fs.readFileSync("./local-certs/localhost.pem"),
+    key: fs.readFileSync('./local-certs/localhost-key.pem'),
+    cert: fs.readFileSync('./local-certs/localhost.pem'),
   };
   const app = await NestFactory.create(AppModule, {
     httpsOptions,
@@ -96,6 +95,7 @@ $ mkcert -key-file localhost-key.pem -cert-file localhost.pem localhost 127.0.0.
 프론트에서도 동일한 명령어를 실행해야 한다.
 
 해당 명령어는 다음을 모두 커버한다:
+
 - localhost (도메인으로 요청 시)
 - 127.0.0.1 (IPv4로 요청 시)
 - ::1 (IPv6로 요청 시)

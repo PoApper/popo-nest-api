@@ -9,8 +9,8 @@ export class Affiliate extends Base {
   @Column({ nullable: false })
   title: string;
 
-  @Column('text', { nullable: true })
-  content_short: string;
+  @Column('text', { name: 'content_short', nullable: true })
+  contentShort: string;
 
   @Column('text', { nullable: false })
   content: string;

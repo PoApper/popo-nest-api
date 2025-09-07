@@ -131,11 +131,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -149,13 +149,13 @@ describe('ReservePlaceModule - Integration Test', () => {
 
     it('should create a place reservation', async () => {
       const dto: CreateReservePlaceDto = {
-        place_id: testPlace.uuid,
+        placeId: testPlace.uuid,
         phone: '010-1234-5678',
         title: 'Test Reservation',
         description: 'Test reservation description',
         date: '20241201',
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       };
 
       const result = await reservePlaceController.createWithNameAndId(
@@ -164,26 +164,26 @@ describe('ReservePlaceModule - Integration Test', () => {
       );
 
       expect(result).toBeDefined();
-      expect(result.place_id).toBe(dto.place_id);
+      expect(result.placeId).toBe(dto.placeId);
       expect(result.phone).toBe(dto.phone);
       expect(result.title).toBe(dto.title);
       expect(result.description).toBe(dto.description);
       expect(result.date).toBe(dto.date);
-      expect(result.start_time).toBe(dto.start_time);
-      expect(result.end_time).toBe(dto.end_time);
-      expect(result.booker_id).toBe(testUserJwt.uuid);
+      expect(result.startTime).toBe(dto.startTime);
+      expect(result.endTime).toBe(dto.endTime);
+      expect(result.bookerId).toBe(testUserJwt.uuid);
       expect(result.status).toBe(ReservationStatus.in_process);
     });
 
     it('should check reservation possibility', async () => {
       const dto: CreateReservePlaceDto = {
-        place_id: testPlace.uuid,
+        placeId: testPlace.uuid,
         phone: '010-1234-5678',
         title: 'Test Reservation',
         description: 'Test reservation description',
         date: '20241201',
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       };
 
       await expect(
@@ -202,11 +202,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -219,25 +219,25 @@ describe('ReservePlaceModule - Integration Test', () => {
 
       // Create test reservations
       await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'Test Reservation 1',
         description: 'Test reservation description 1',
         date: '20241201',
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       });
 
       await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'Test Reservation 2',
         description: 'Test reservation description 2',
         date: '20241202',
-        start_time: '1000',
-        end_time: '1200',
+        startTime: '1000',
+        endTime: '1200',
       });
     });
 
@@ -303,11 +303,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -320,25 +320,25 @@ describe('ReservePlaceModule - Integration Test', () => {
 
       // Create test reservations for the user
       await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'My Reservation 1',
         description: 'My reservation description 1',
         date: '20241201',
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       });
 
       await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'My Reservation 2',
         description: 'My reservation description 2',
         date: '20241202',
-        start_time: '1000',
-        end_time: '1200',
+        startTime: '1000',
+        endTime: '1200',
       });
     });
 
@@ -356,7 +356,7 @@ describe('ReservePlaceModule - Integration Test', () => {
       expect(result.total).toBeGreaterThanOrEqual(2);
 
       result.items.forEach((reservation) => {
-        expect(reservation.booker_id).toBe(testUserJwt.uuid);
+        expect(reservation.bookerId).toBe(testUserJwt.uuid);
       });
     });
 
@@ -385,11 +385,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -402,14 +402,14 @@ describe('ReservePlaceModule - Integration Test', () => {
 
       // Create test reservations for the user
       await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'User Reservation 1',
         description: 'User reservation description 1',
         date: '20241201',
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       });
     });
 
@@ -423,7 +423,7 @@ describe('ReservePlaceModule - Integration Test', () => {
       expect(result.length).toBeGreaterThanOrEqual(1);
 
       result.forEach((reservation) => {
-        expect(reservation.booker_id).toBe(testUserJwt.uuid);
+        expect(reservation.bookerId).toBe(testUserJwt.uuid);
       });
     });
   });
@@ -438,11 +438,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -455,14 +455,14 @@ describe('ReservePlaceModule - Integration Test', () => {
 
       // Create test reservations for the place
       await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'Place Reservation 1',
         description: 'Place reservation description 1',
         date: '20241201',
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       });
     });
 
@@ -474,7 +474,7 @@ describe('ReservePlaceModule - Integration Test', () => {
       expect(result.length).toBeGreaterThanOrEqual(1);
 
       result.forEach((reservation) => {
-        expect(reservation.place_id).toBe(testPlace.uuid);
+        expect(reservation.placeId).toBe(testPlace.uuid);
       });
     });
   });
@@ -489,11 +489,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -506,14 +506,14 @@ describe('ReservePlaceModule - Integration Test', () => {
 
       // Create test reservations for the place
       await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'Place Name Reservation 1',
         description: 'Place name reservation description 1',
         date: '20241201',
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       });
     });
 
@@ -550,11 +550,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -567,14 +567,14 @@ describe('ReservePlaceModule - Integration Test', () => {
 
       // Create test reservations for the place
       await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'Place Name Date Reservation 1',
         description: 'Place name date reservation description 1',
         date: '20241201',
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       });
     });
 
@@ -601,11 +601,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
     });
 
@@ -629,11 +629,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -646,14 +646,14 @@ describe('ReservePlaceModule - Integration Test', () => {
 
       // Create test reservation
       testReservation = await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'Status Test Reservation',
         description: 'Status test reservation description',
         date: '20241201',
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       });
     });
 
@@ -709,11 +709,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -728,14 +728,14 @@ describe('ReservePlaceModule - Integration Test', () => {
       testReservations = [];
       for (let i = 0; i < 3; i++) {
         const reservation = await reservePlaceService.save({
-          place_id: testPlace.uuid,
-          booker_id: testUserJwt.uuid,
+          placeId: testPlace.uuid,
+          bookerId: testUserJwt.uuid,
           phone: '010-1234-5678',
           title: `Batch Test Reservation ${i + 1}`,
           description: `Batch test reservation description ${i + 1}`,
           date: `2024120${i + 1}`, // Different dates
-          start_time: '1400',
-          end_time: '1600',
+          startTime: '1400',
+          endTime: '1600',
         });
         testReservations.push(reservation);
       }
@@ -743,7 +743,7 @@ describe('ReservePlaceModule - Integration Test', () => {
 
     it('should accept all reservations in the list', async () => {
       const dto: AcceptPlaceReservationListDto = {
-        uuid_list: testReservations.map((r) => r.uuid),
+        uuidList: testReservations.map((r) => r.uuid),
       };
 
       await reservePlaceController.acceptAllStatus(dto, 'false');
@@ -760,7 +760,7 @@ describe('ReservePlaceModule - Integration Test', () => {
       const sendEmailSpy = jest.spyOn(mailService, 'sendReservationPatchMail');
 
       const dto: AcceptPlaceReservationListDto = {
-        uuid_list: testReservations.map((r) => r.uuid),
+        uuidList: testReservations.map((r) => r.uuid),
       };
 
       await reservePlaceController.acceptAllStatus(dto, 'true');
@@ -780,11 +780,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -797,14 +797,14 @@ describe('ReservePlaceModule - Integration Test', () => {
 
       // Create test reservation with future date
       testReservation = await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'Delete Test Reservation',
         description: 'Delete test reservation description',
         date: '20251201', // Future date
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       });
     });
 
@@ -851,14 +851,14 @@ describe('ReservePlaceModule - Integration Test', () => {
     it('should throw BadRequestException when trying to delete past reservation', async () => {
       // Create a past reservation
       const pastReservation = await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'Past Reservation',
         description: 'Past reservation description',
         date: '20200101', // Past date
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       });
 
       await expect(
@@ -877,11 +877,11 @@ describe('ReservePlaceModule - Integration Test', () => {
         description: 'Test place description',
         location: 'Test location',
         region: PlaceRegion.student_hall,
-        staff_email: 'staff@test.com',
-        max_minutes: 120,
-        max_concurrent_reservation: 1,
-        opening_hours: '{"Monday":"09:00-18:00"}',
-        enable_auto_accept: PlaceEnableAutoAccept.inactive,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 120,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
       testUserJwt = {
@@ -894,25 +894,25 @@ describe('ReservePlaceModule - Integration Test', () => {
 
       // Create test reservations
       await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'Count Test Reservation 1',
         description: 'Count test reservation description 1',
         date: '20241201',
-        start_time: '1400',
-        end_time: '1600',
+        startTime: '1400',
+        endTime: '1600',
       });
 
       await reservePlaceService.save({
-        place_id: testPlace.uuid,
-        booker_id: testUserJwt.uuid,
+        placeId: testPlace.uuid,
+        bookerId: testUserJwt.uuid,
         phone: '010-1234-5678',
         title: 'Count Test Reservation 2',
         description: 'Count test reservation description 2',
         date: '20241202',
-        start_time: '1000',
-        end_time: '1200',
+        startTime: '1000',
+        endTime: '1200',
       });
     });
 

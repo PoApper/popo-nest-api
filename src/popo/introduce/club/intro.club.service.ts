@@ -9,48 +9,45 @@ import { CreateIntroClubDto } from './intro.club.dto';
 export class IntroClubService {
   constructor(
     @InjectRepository(IntroClub)
-    private readonly introClub_repository: Repository<IntroClub>,
+    private readonly introClubRepo: Repository<IntroClub>,
   ) {}
 
   save(dto: CreateIntroClubDto) {
-    return this.introClub_repository.save(dto);
+    return this.introClubRepo.save(dto);
   }
 
   updateImageUrl(uuid: string, imageUrl: string) {
-    return this.introClub_repository.update(
-      { uuid: uuid },
-      { image_url: imageUrl },
-    );
+    return this.introClubRepo.update({ uuid: uuid }, { imageUrl: imageUrl });
   }
 
   find(findOptions?: object) {
-    return this.introClub_repository.find(findOptions);
+    return this.introClubRepo.find(findOptions);
   }
 
   findOneByUuid(uuid: string) {
-    return this.introClub_repository.findOneBy({ uuid: uuid });
+    return this.introClubRepo.findOneBy({ uuid: uuid });
   }
 
   findOneByUuidOrFail(uuid: string) {
-    return this.introClub_repository.findOneByOrFail({ uuid: uuid });
+    return this.introClubRepo.findOneByOrFail({ uuid: uuid });
   }
 
   findOneByName(name: string) {
-    return this.introClub_repository.findOneBy({ name: name });
+    return this.introClubRepo.findOneBy({ name: name });
   }
 
   async update(uuid: string, dto: CreateIntroClubDto) {
     await this.findOneByUuidOrFail(uuid);
 
-    return this.introClub_repository.update({ uuid: uuid }, dto);
+    return this.introClubRepo.update({ uuid: uuid }, dto);
   }
 
   async remove(uuid: string) {
     await this.findOneByUuidOrFail(uuid);
-    return this.introClub_repository.delete({ uuid: uuid });
+    return this.introClubRepo.delete({ uuid: uuid });
   }
 
   updateViewCount(uuid: string, views: number) {
-    return this.introClub_repository.update({ uuid: uuid }, { views: views });
+    return this.introClubRepo.update({ uuid: uuid }, { views: views });
   }
 }

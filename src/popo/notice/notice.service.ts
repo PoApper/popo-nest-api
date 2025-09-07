@@ -25,8 +25,8 @@ export class NoticeService {
     return this.noticeRepo.save(dto);
   }
 
-  updateImageUrl(id: number, image_url: string) {
-    return this.noticeRepo.update({ id: id }, { image_url: image_url });
+  updateImageUrl(id: number, imageUrl: string) {
+    return this.noticeRepo.update({ id: id }, { imageUrl: imageUrl });
   }
 
   find() {
@@ -37,8 +37,8 @@ export class NoticeService {
     const now = moment().tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss');
     return this.noticeRepo.find({
       where: {
-        start_datetime: LessThan(now),
-        end_datetime: MoreThanOrEqual(now),
+        startDatetime: LessThan(now),
+        endDatetime: MoreThanOrEqual(now),
       },
     });
   }
@@ -68,7 +68,7 @@ export class NoticeService {
     const notice = await this.noticeRepo.findOneByOrFail({ id: id });
     return this.noticeRepo.update(
       { id: id },
-      { click_count: notice.click_count + 1 },
+      { clickCount: notice.clickCount + 1 },
     );
   }
 

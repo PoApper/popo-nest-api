@@ -12,8 +12,8 @@ export class Discount extends Base {
   @Column({ nullable: true })
   region: string;
 
-  @Column({ nullable: true })
-  open_hour: string;
+  @Column({ name: 'open_hour', nullable: true })
+  openHour: string;
 
   @Column({ nullable: true })
   phone: string;

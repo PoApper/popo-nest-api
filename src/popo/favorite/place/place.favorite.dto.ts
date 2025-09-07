@@ -1,4 +1,4 @@
 export class FavoritePlaceDto {
-  readonly user_id: string;
-  readonly place_id: string;
+  readonly userId: string;
+  readonly placeId: string;
 }

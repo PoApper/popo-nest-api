@@ -55,7 +55,7 @@ export class NotificationService {
       const placeReservations = await this.reservePlaceRepository.find({
         where: {
           date: date,
-          start_time: targetTime,
+          startTime: targetTime,
           status: ReservationStatus.accept,
         },
         relations: ['booker', 'place'],
@@ -65,7 +65,7 @@ export class NotificationService {
         if (reservation.booker) {
           const body = `${reservation.place?.name || '예약된 장소'}에 대한 예약이 15분 후에 시작됩니다.`;
           await this.fcmService.sendPushNotificationByUserUuid(
-            reservation.booker_id,
+            reservation.bookerId,
             '장소 예약 알림',
             body,
             {
@@ -75,7 +75,7 @@ export class NotificationService {
           );
 
           this.logger.debug(
-            `장소 예약 알림 전송 성공. userUuid: ${reservation.booker_id}, body: ${body}`,
+            `장소 예약 알림 전송 성공. userUuid: ${reservation.bookerId}, body: ${body}`,
           );
         }
       }
@@ -92,7 +92,7 @@ export class NotificationService {
       const equipReservations = await this.reserveEquipRepository.find({
         where: {
           date: date,
-          start_time: targetTime,
+          startTime: targetTime,
           status: ReservationStatus.accept,
         },
         relations: ['booker'],
@@ -106,7 +106,7 @@ export class NotificationService {
 
         if (reservation.booker) {
           await this.fcmService.sendPushNotificationByUserUuid(
-            reservation.booker_id,
+            reservation.bookerId,
             '장비 예약 알림',
             body,
             {
@@ -116,7 +116,7 @@ export class NotificationService {
           );
 
           this.logger.debug(
-            `장비 예약 알림 전송 성공. userUuid: ${reservation.booker_id}, body: ${body}`,
+            `장비 예약 알림 전송 성공. userUuid: ${reservation.bookerId}, body: ${body}`,
           );
         }
       }

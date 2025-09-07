@@ -26,14 +26,14 @@ export class EquipService {
       name: dto.name,
       description: dto.description,
       fee: dto.fee,
-      equip_owner: dto.equip_owner,
-      staff_email: dto.staff_email,
-      max_minutes: dto.max_minutes,
+      equipOwner: dto.equipOwner,
+      staffEmail: dto.staffEmail,
+      maxMinutes: dto.maxMinutes,
     });
   }
 
-  updateImageUrl(uuid: string, image_url: string) {
-    return this.equipRepo.update({ uuid: uuid }, { image_url: image_url });
+  updateImageUrl(uuid: string, imageUrl: string) {
+    return this.equipRepo.update({ uuid: uuid }, { imageUrl: imageUrl });
   }
 
   find(findOptions?: object) {
@@ -64,7 +64,7 @@ export class EquipService {
 
   async findAllByOwner(owner: EquipOwner) {
     return this.equipRepo.find({
-      where: { equip_owner: owner },
+      where: { equipOwner: owner },
       order: { updatedAt: 'DESC' },
     });
   }
@@ -78,14 +78,14 @@ export class EquipService {
     const equipment = await this.findOneByUuidOrFail(uuid);
     return this.equipRepo.update(
       { uuid: uuid },
-      { total_reservation_count: equipment.total_reservation_count + delta },
+      { totalReservationCount: equipment.totalReservationCount + delta },
     );
   }
 
-  updateReservationCount(uuid: string, reservation_count: number) {
+  updateReservationCount(uuid: string, reservationCount: number) {
     return this.equipRepo.update(
       { uuid: uuid },
-      { total_reservation_count: reservation_count },
+      { totalReservationCount: reservationCount },
     );
   }
 

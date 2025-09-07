@@ -60,9 +60,7 @@ export class ReservePlaceController {
     @User() user: JwtPayload,
     @Body() dto: CreateReservePlaceDto,
   ) {
-    const existPlace = await this.placeService.findOneByUuidOrFail(
-      dto.place_id,
-    );
+    const existPlace = await this.placeService.findOneByUuidOrFail(dto.placeId);
 
     await this.reservePlaceService.checkReservationPossible(
       dto,
@@ -71,15 +69,15 @@ export class ReservePlaceController {
     );
 
     const new_reservation = await this.reservePlaceService.save(
-      Object.assign(dto, { booker_id: user.uuid }),
+      Object.assign(dto, { bookerId: user.uuid }),
     );
 
     // update place reservation count
-    await this.placeService.updateReservationCountByDelta(dto.place_id, +1);
+    await this.placeService.updateReservationCountByDelta(dto.placeId, +1);
 
     // Send e-mail to staff
     await this.mailService.sendPlaceReserveCreateMailToStaff(
-      existPlace.staff_email,
+      existPlace.staffEmail,
       existPlace,
       new_reservation,
     );
@@ -143,12 +141,12 @@ export class ReservePlaceController {
     @Query('take') take: number,
   ) {
     const findOption = {
-      where: { booker_id: user.uuid },
-      order: { date: 'DESC', start_time: 'DESC' },
+      where: { bookerId: user.uuid },
+      order: { date: 'DESC', startTime: 'DESC' },
     };
 
     const total = await this.reservePlaceService.count({
-      booker_id: user.uuid,
+      bookerId: user.uuid,
     });
 
     findOption['skip'] = skip ?? 0;
@@ -165,8 +163,8 @@ export class ReservePlaceController {
   @Get('user/:uuid')
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reservePlaceService.find({
-      where: { booker_id: uuid },
-      order: { date: 'DESC', start_time: 'DESC' },
+      where: { bookerId: uuid },
+      order: { date: 'DESC', startTime: 'DESC' },
     });
     return this.reservePlaceService.joinPlace(reservations);
   }
@@ -177,20 +175,20 @@ export class ReservePlaceController {
   @Roles(UserType.admin)
   async getUserReservationByAdmin(@Param('uuid') uuid: string) {
     const reservations = await this.reservePlaceService.find({
-      where: { booker_id: uuid },
-      order: { date: 'DESC', start_time: 'DESC' },
+      where: { bookerId: uuid },
+      order: { date: 'DESC', startTime: 'DESC' },
     });
     return this.reservePlaceService.joinPlace(reservations);
   }
 
   @ApiCookieAuth()
-  @Get('place/:place_uuid')
+  @Get('place/:placeUuid')
   @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
-  async getByPlace(@Param('place_uuid') place_uuid: string) {
+  async getByPlace(@Param('placeUuid') placeUuid: string) {
     return this.reservePlaceService.find({
-      where: { place_id: place_uuid },
-      order: { date: 'DESC', start_time: 'DESC' },
+      where: { placeId: placeUuid },
+      order: { date: 'DESC', startTime: 'DESC' },
     });
   }
 
@@ -226,7 +224,7 @@ export class ReservePlaceController {
     const placeList = await this.placeService.find();
     for (const place of placeList) {
       const reservationCount = await this.reservePlaceService.count({
-        place_id: place.uuid,
+        placeId: place.uuid,
       });
       await this.placeService.updateReservationCount(
         place.uuid,
@@ -245,9 +243,9 @@ export class ReservePlaceController {
     @Query('sendEmail') sendEmail?: string,
   ) {
     const reservations: ReservePlace[] = [];
-    for (const reservation_uuid of body.uuid_list) {
+    for (const reservationUuid of body.uuidList) {
       const reservation =
-        await this.reservePlaceService.findOneByUuidOrFail(reservation_uuid);
+        await this.reservePlaceService.findOneByUuidOrFail(reservationUuid);
       reservations.push(reservation);
     }
 
@@ -257,12 +255,12 @@ export class ReservePlaceController {
     for (const reservation of reservations) {
       await this.reservePlaceService.checkReservationPossible(
         {
-          place_id: reservation.place_id,
+          placeId: reservation.placeId,
           date: reservation.date,
-          start_time: reservation.start_time,
-          end_time: reservation.end_time,
+          startTime: reservation.startTime,
+          endTime: reservation.endTime,
         },
-        reservation.booker_id,
+        reservation.bookerId,
         true,
       );
       const response = await this.reservePlaceService.updateStatus(
@@ -299,12 +297,12 @@ export class ReservePlaceController {
     if (status == ReservationStatus.accept) {
       await this.reservePlaceService.checkReservationPossible(
         {
-          place_id: reservation.place_id,
+          placeId: reservation.placeId,
           date: reservation.date,
-          start_time: reservation.start_time,
-          end_time: reservation.end_time,
+          startTime: reservation.startTime,
+          endTime: reservation.endTime,
         },
-        reservation.booker_id,
+        reservation.bookerId,
         true,
       );
     }
@@ -333,13 +331,12 @@ export class ReservePlaceController {
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
       await this.reservePlaceService.remove(uuid);
     } else {
-      if (reservation.booker_id == user.uuid) {
+      if (reservation.bookerId === user.uuid) {
         // if the reservation is in the past, deny delete
-        const reservation_start_time =
-          reservation.date + reservation.start_time;
-        const current_time = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
+        const reservationStartTime = reservation.date + reservation.startTime;
+        const currentTime = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
 
-        if (reservation_start_time < current_time) {
+        if (reservationStartTime < currentTime) {
           throw new BadRequestException('Cannot delete past reservation');
         } else {
           await this.reservePlaceService.remove(uuid);
@@ -351,7 +348,7 @@ export class ReservePlaceController {
 
     // update place reservation count
     await this.placeService.updateReservationCountByDelta(
-      reservation.place_id,
+      reservation.placeId,
       -1,
     );
   }

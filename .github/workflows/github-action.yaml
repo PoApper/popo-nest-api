@@ -108,7 +108,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: true
-          provenance: false  # Disable image index metadata
+          provenance: false # Disable image index metadata
 
   redeploy_dev_service:
     name: Redeploy Dev Service

@@ -6,11 +6,11 @@ export class PlaceDto {
   readonly description: string;
   readonly location: string;
   readonly region: PlaceRegion;
-  readonly staff_email: string;
-  readonly max_minutes: number;
-  readonly max_concurrent_reservation: number;
-  readonly opening_hours: string;
-  readonly enable_auto_accept: PlaceEnableAutoAccept;
+  readonly staffEmail: string;
+  readonly maxMinutes: number;
+  readonly maxConcurrentReservation: number;
+  readonly openingHours: string;
+  readonly enableAutoAccept: PlaceEnableAutoAccept;
 }
 
 export class PlaceImageDto {

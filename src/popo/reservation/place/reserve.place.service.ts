@@ -38,24 +38,24 @@ export class ReservePlaceService {
 
   // TODO: delete this code, after concurrent check logic is fully validated
   async isReservationOverlap(
-    place_id: string,
+    placeId: string,
     date: string,
-    start_time: string,
-    end_time: string,
+    startTime: string,
+    endTime: string,
   ): Promise<ReservePlace | null> {
     const booked_reservations = await this.find({
       where: {
-        place_id: place_id,
+        placeId: placeId,
         date: date,
         status: ReservationStatus.accept,
-        start_time: LessThan(end_time),
-        end_time: MoreThan(start_time),
+        startTime: LessThan(endTime),
+        endTime: MoreThan(startTime),
       },
     });
 
     for (const reservation of booked_reservations) {
       const isOverlap =
-        reservation.start_time < end_time && start_time < reservation.end_time;
+        reservation.startTime < endTime && startTime < reservation.endTime;
 
       if (isOverlap) {
         return reservation;
@@ -65,29 +65,29 @@ export class ReservePlaceService {
   }
 
   async isReservationConcurrent(
-    place_id: string,
-    max_concurrent_reservation: number,
+    placeId: string,
+    maxConcurrentReservation: number,
     date: string,
-    start_time: string,
-    end_time: string,
+    startTime: string,
+    endTime: string,
   ): Promise<boolean> {
     const booked_reservations = await this.reservePlaceRepo.find({
       where: {
-        place_id: place_id,
+        placeId: placeId,
         date: date,
         status: ReservationStatus.accept,
-        start_time: LessThan(end_time),
-        end_time: MoreThan(start_time),
+        startTime: LessThan(endTime),
+        endTime: MoreThan(startTime),
       },
       order: {
-        start_time: 'ASC',
+        startTime: 'ASC',
       },
     });
 
     function _get_concurrent_cnt_at_time(time: string) {
       let cnt = 0;
       for (const reservation of booked_reservations) {
-        if (reservation.start_time <= time && time <= reservation.end_time) {
+        if (reservation.startTime <= time && time <= reservation.endTime) {
           cnt += 1;
         }
       }
@@ -95,33 +95,33 @@ export class ReservePlaceService {
     }
 
     // 1. check start time reservation is possible
-    if (_get_concurrent_cnt_at_time(start_time) >= max_concurrent_reservation) {
+    if (_get_concurrent_cnt_at_time(startTime) >= maxConcurrentReservation) {
       return false;
     }
 
     // 2. check end time reservation is possible
-    if (_get_concurrent_cnt_at_time(end_time) >= max_concurrent_reservation) {
+    if (_get_concurrent_cnt_at_time(endTime) >= maxConcurrentReservation) {
       return false;
     }
 
-    // 3. check middle time reservation is possible: they should be less than max_concurrent_reservation
+    // 3. check middle time reservation is possible: they should be less than maxConcurrentReservation
     for (const reservation of booked_reservations) {
       // handled on case 1
-      if (reservation.start_time < start_time) continue;
+      if (reservation.startTime < startTime) continue;
 
       // handled on case 2
-      if (reservation.end_time > end_time) continue;
+      if (reservation.endTime > endTime) continue;
 
       if (
-        _get_concurrent_cnt_at_time(reservation.start_time) >=
-        max_concurrent_reservation
+        _get_concurrent_cnt_at_time(reservation.startTime) >=
+        maxConcurrentReservation
       ) {
         return false;
       }
 
       if (
-        _get_concurrent_cnt_at_time(reservation.end_time) >=
-        max_concurrent_reservation
+        _get_concurrent_cnt_at_time(reservation.endTime) >=
+        maxConcurrentReservation
       ) {
         return false;
       }
@@ -132,16 +132,16 @@ export class ReservePlaceService {
 
   async checkReservationPossible(
     dto: DeepPartial<CreateReservePlaceDto>,
-    booker_id: string,
+    bookerId: string,
     isPatch: boolean = true,
   ) {
-    const { place_id, date, start_time, end_time } = dto;
+    const { placeId, date, startTime, endTime } = dto;
 
     if (dto.title === '' || dto.phone === '' || dto.description === '') {
       throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
     }
 
-    const targetPlace = await this.placeService.findOneByUuidOrFail(place_id);
+    const targetPlace = await this.placeService.findOneByUuidOrFail(placeId);
 
     // TODO: delete this code, after concurrent check logic is fully validated
     // Reservation Overlap Check
@@ -159,33 +159,33 @@ export class ReservePlaceService {
 
     // Reservation Concurrent Check
     const isConcurrentPossible = await this.isReservationConcurrent(
-      place_id,
-      targetPlace.max_concurrent_reservation,
+      placeId,
+      targetPlace.maxConcurrentReservation,
       date,
-      start_time,
-      end_time,
+      startTime,
+      endTime,
     );
     if (!isConcurrentPossible) {
       throw new BadRequestException(
-        `"${targetPlace.name}" 장소에 이미 승인된 ${targetPlace.max_concurrent_reservation}개 예약이 있어 ${date} ${start_time} ~ ${end_time}에는 예약이 불가능 합니다.`,
+        `"${targetPlace.name}" 장소에 이미 승인된 ${targetPlace.maxConcurrentReservation}개 예약이 있어 ${date} ${startTime} ~ ${endTime}에는 예약이 불가능 합니다.`,
       );
     }
 
     // Reservation Duration Check
     const newReservationMinutes = calculateReservationDurationMinutes(
-      start_time,
-      end_time,
+      startTime,
+      endTime,
     );
     if (
-      targetPlace.max_minutes &&
-      newReservationMinutes > targetPlace.max_minutes
+      targetPlace.maxMinutes &&
+      newReservationMinutes > targetPlace.maxMinutes
     ) {
       throw new BadRequestException(
-        `${Message.OVER_MAX_RESERVATION_TIME}: "${targetPlace.name}" 장소는 하루 최대 ${targetPlace.max_minutes}분 동안 예약할 수 있습니다. 신규 예약은 ${newReservationMinutes}분으로 최대 예약 시간을 초과합니다.`,
+        `${Message.OVER_MAX_RESERVATION_TIME}: "${targetPlace.name}" 장소는 하루 최대 ${targetPlace.maxMinutes}분 동안 예약할 수 있습니다. 신규 예약은 ${newReservationMinutes}분으로 최대 예약 시간을 초과합니다.`,
       );
     }
 
-    const booker = await this.userService.findOneByUuidOrFail(booker_id);
+    const booker = await this.userService.findOneByUuidOrFail(bookerId);
 
     if (
       targetPlace.region === PlaceRegion.residential_college &&
@@ -201,8 +201,8 @@ export class ReservePlaceService {
 
     const reservationsOfDay = await this.reservePlaceRepo.find({
       where: {
-        booker_id: booker_id,
-        place_id: place_id,
+        bookerId: bookerId,
+        placeId: placeId,
         date: date,
         status: In(
           isPatch
@@ -215,19 +215,19 @@ export class ReservePlaceService {
     let totalReservationMinutes = 0;
     for (const reservation of reservationsOfDay) {
       const reservationDuration = calculateReservationDurationMinutes(
-        reservation.start_time,
-        reservation.end_time,
+        reservation.startTime,
+        reservation.endTime,
       );
       totalReservationMinutes += reservationDuration;
     }
 
     if (
       totalReservationMinutes + newReservationMinutes >
-      targetPlace.max_minutes
+      targetPlace.maxMinutes
     ) {
       throw new BadRequestException(
         `${Message.OVER_MAX_RESERVATION_TIME}: ` +
-          `"${targetPlace.name}" 장소에 대해 하루 최대 예약 가능한 ${targetPlace.max_minutes}분 중에서 ` +
+          `"${targetPlace.name}" 장소에 대해 하루 최대 예약 가능한 ${targetPlace.maxMinutes}분 중에서 ` +
           `오늘(${date}) ${totalReservationMinutes}분을 이미 예약했습니다. ` +
           `신규로 ${newReservationMinutes}분을 예약하는 것은 불가능합니다.`,
       );
@@ -236,11 +236,11 @@ export class ReservePlaceService {
 
   async save(dto: CreateReservePlaceDto) {
     const targetPlace = await this.placeService.findOneByUuidOrFail(
-      dto.place_id,
+      dto.placeId,
     );
 
     let saveDto = Object.assign({}, dto);
-    if (targetPlace.enable_auto_accept === PlaceEnableAutoAccept.active) {
+    if (targetPlace.enableAutoAccept === PlaceEnableAutoAccept.active) {
       saveDto = Object.assign(dto, { status: ReservationStatus.accept });
     }
 
@@ -270,7 +270,7 @@ export class ReservePlaceService {
     }
 
     const findOption = {
-      place_id: existPlace.uuid,
+      placeId: existPlace.uuid,
     };
 
     if (startDate) {
@@ -286,7 +286,7 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
     return this.reservePlaceRepo.findBy({
-      place_id: existPlace.uuid,
+      placeId: existPlace.uuid,
       date: date,
     });
   }
@@ -306,7 +306,7 @@ export class ReservePlaceService {
     );
 
     const existUser = await this.userService.findOneByUuid(
-      existReserve.booker_id,
+      existReserve.bookerId,
     );
 
     return {
@@ -325,7 +325,7 @@ export class ReservePlaceService {
 
     for (const reservation of reservations) {
       const booker = await this.userService.findOneByUuidWithInfo(
-        reservation.booker_id,
+        reservation.bookerId,
       );
       if (booker) {
         reservation.booker = booker;
@@ -338,7 +338,7 @@ export class ReservePlaceService {
   async joinPlace(reservations) {
     const refinedReservations = [];
     for (const reservation of reservations) {
-      const place = await this.placeService.findOneByUuid(reservation.place_id);
+      const place = await this.placeService.findOneByUuid(reservation.placeId);
       if (place) {
         reservation.place = place;
         refinedReservations.push(reservation);

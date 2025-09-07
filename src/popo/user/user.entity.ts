@@ -55,21 +55,15 @@ export class User extends Base {
    * Database Relation
    */
 
-  @OneToMany(
-    () => ReserveEquip,
-    (equip_reservation) => equip_reservation.booker,
-  )
-  equip_reservation: ReserveEquip[];
+  @OneToMany(() => ReserveEquip, (equipReservation) => equipReservation.booker)
+  equipReservation: ReserveEquip[];
 
-  @OneToMany(
-    () => ReservePlace,
-    (place_reservation) => place_reservation.booker,
-  )
-  place_reservation: ReservePlace[];
+  @OneToMany(() => ReservePlace, (placeReservation) => placeReservation.booker)
+  placeReservation: ReservePlace[];
 
-  @OneToMany(() => FcmKey, (fcm_key) => fcm_key.user)
+  @OneToMany(() => FcmKey, (fcmKey) => fcmKey.user)
   @ApiHideProperty()
-  push_keys: FcmKey[];
+  pushKeys: FcmKey[];
 
   @OneToOne(() => Nickname, (nickname) => nickname.user)
   nickname: Nickname;

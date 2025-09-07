@@ -20,5 +20,6 @@ module.exports = {
     'dist',
     'coverage',
     'src/database/migrations/**',
+    'src/database/data-source.*.ts',
   ],
 };

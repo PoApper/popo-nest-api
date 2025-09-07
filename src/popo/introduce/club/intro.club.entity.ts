@@ -2,8 +2,6 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { ClubType } from './intro.club.meta';
 import { Base } from '../../../common/base.entity';
 
-// TODO: Prod DB 안정화 후 엔티티들 camelCase로 변경
-
 @Entity()
 export class IntroClub extends Base {
   @PrimaryGeneratedColumn('uuid')
@@ -13,7 +11,7 @@ export class IntroClub extends Base {
   name: string;
 
   @Column({ name: 'short_desc', nullable: false })
-  short_desc: string;
+  shortDesc: string;
 
   @Column('text', { nullable: true })
   content: string;
@@ -28,23 +26,23 @@ export class IntroClub extends Base {
   contact: string;
 
   @Column({ name: 'club_type', nullable: false })
-  club_type: ClubType;
+  clubType: ClubType;
 
   @Column({ name: 'image_url', nullable: true })
-  image_url: string;
+  imageUrl: string;
 
   @Column({ default: 0 })
   views: number;
 
   @Column({ name: 'homepage_url', nullable: true })
-  homepage_url: string;
+  homepageUrl: string;
 
   @Column({ name: 'facebook_url', nullable: true })
-  facebook_url: string;
+  facebookUrl: string;
 
   @Column({ name: 'instagram_url', nullable: true })
-  instagram_url: string;
+  instagramUrl: string;
 
   @Column({ name: 'youtube_url', nullable: true })
-  youtube_url: string;
+  youtubeUrl: string;
 }

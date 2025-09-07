@@ -21,18 +21,18 @@ export class IntroAssociation extends Base {
   @Column({ nullable: false })
   contact: string;
 
-  @Column({ nullable: true })
-  image_url: string;
+  @Column({ name: 'image_url', nullable: true })
+  imageUrl: string;
 
   @Column({ default: 0 })
   views: number;
 
-  @Column({ nullable: true })
-  homepage_url: string;
+  @Column({ name: 'homepage_url', nullable: true })
+  homepageUrl: string;
 
-  @Column({ nullable: true })
-  facebook_url: string;
+  @Column({ name: 'facebook_url', nullable: true })
+  facebookUrl: string;
 
-  @Column({ nullable: true })
-  instagram_url: string;
+  @Column({ name: 'instagram_url', nullable: true })
+  instagramUrl: string;
 }

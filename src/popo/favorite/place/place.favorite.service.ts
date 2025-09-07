@@ -19,7 +19,7 @@ export class FavoritePlaceService {
 
   async save(dto: FavoritePlaceDto) {
     const existingFavorites = await this.favoritePlaceRepo.find({
-      where: { user_id: dto.user_id },
+      where: { userId: dto.userId },
     });
 
     if (existingFavorites.length >= 3) {
@@ -37,17 +37,17 @@ export class FavoritePlaceService {
     return this.favoritePlaceRepo.findOneBy({ uuid: uuid });
   }
 
-  async findAllByUserId(user_id: string) {
+  async findAllByUserId(userId: string) {
     const userFavorites = await this.favoritePlaceRepo.find({
-      where: { user_id: user_id },
+      where: { userId: userId },
     });
 
     return userFavorites;
   }
 
-  async getFavoritePlaceCount(place_id: string) {
+  async getFavoritePlaceCount(placeId: string) {
     const favoritePlaceCount = await this.favoritePlaceRepo.count({
-      where: { place_id: place_id },
+      where: { placeId: placeId },
     });
     return favoritePlaceCount;
   }

@@ -30,25 +30,24 @@ export class ReserveEquipService {
   ) {}
 
   async isReservationOverlap(
-    uuid_list: string[],
+    uuidList: string[],
     date: string,
-    start_time: string,
-    end_time: string,
+    startTime: string,
+    endTime: string,
   ): Promise<boolean> {
     const booked_reservations = await this.find({
       where: {
         date: date,
         status: ReservationStatus.accept,
-        start_time: LessThan(end_time),
-        end_time: MoreThan(start_time),
+        startTime: LessThan(endTime),
+        endTime: MoreThan(startTime),
       },
     });
 
     for (const reservation of booked_reservations) {
-      if (reservation.equipments.some((equip) => uuid_list.includes(equip))) {
+      if (reservation.equipments.some((equip) => uuidList.includes(equip))) {
         const isOverlap =
-          reservation.start_time < end_time &&
-          start_time < reservation.end_time;
+          reservation.startTime < endTime && startTime < reservation.endTime;
 
         if (isOverlap) {
           return true;
@@ -58,8 +57,8 @@ export class ReserveEquipService {
     return false;
   }
 
-  async save(dto: CreateReserveEquipDto, booker_id: string) {
-    const { equipments, date, start_time, end_time, owner } = dto;
+  async save(dto: CreateReserveEquipDto, bookerId: string) {
+    const { equipments, date, startTime, endTime, owner } = dto;
 
     if (
       !dto.equipments.length ||
@@ -78,8 +77,8 @@ export class ReserveEquipService {
     const isReservationOverlap = await this.isReservationOverlap(
       equipments,
       date,
-      start_time,
-      end_time,
+      startTime,
+      endTime,
     );
     if (isReservationOverlap) {
       throw new BadRequestException(Message.OVERLAP_RESERVATION);
@@ -88,7 +87,7 @@ export class ReserveEquipService {
     // Reservation Duration Check
     const reservationsOfDay = await this.reserveEquipRepo.find({
       where: {
-        booker_id: booker_id,
+        bookerId: bookerId,
         date: date,
         owner: owner,
         status: In([ReservationStatus.accept, ReservationStatus.in_process]),
@@ -96,17 +95,17 @@ export class ReserveEquipService {
     });
 
     const newReservationMinutes = calculateReservationDurationMinutes(
-      dto.start_time,
-      dto.end_time,
+      dto.startTime,
+      dto.endTime,
     );
 
     for (const targetEquipment of targetEquipments) {
       if (
-        targetEquipment.max_minutes &&
-        newReservationMinutes > targetEquipment.max_minutes
+        targetEquipment.maxMinutes &&
+        newReservationMinutes > targetEquipment.maxMinutes
       ) {
         throw new BadRequestException(
-          `${Message.OVER_MAX_RESERVATION_TIME}: ${targetEquipment.name} max ${targetEquipment.max_minutes} mins, new ${newReservationMinutes} mins`,
+          `${Message.OVER_MAX_RESERVATION_TIME}: ${targetEquipment.name} max ${targetEquipment.maxMinutes} mins, new ${newReservationMinutes} mins`,
         );
       }
 
@@ -114,17 +113,17 @@ export class ReserveEquipService {
       for (const reservation of reservationsOfDay) {
         if (!reservation.equipments.includes(targetEquipment.uuid)) continue;
         const reservationDuration = calculateReservationDurationMinutes(
-          reservation.start_time,
-          reservation.end_time,
+          reservation.startTime,
+          reservation.endTime,
         );
         totalReservationMinutes += reservationDuration;
       }
       if (
         totalReservationMinutes + newReservationMinutes >
-        targetEquipment.max_minutes
+        targetEquipment.maxMinutes
       ) {
         throw new BadRequestException(
-          `${Message.OVER_MAX_RESERVATION_TIME}: ${targetEquipment.name} max ${targetEquipment.max_minutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
+          `${Message.OVER_MAX_RESERVATION_TIME}: ${targetEquipment.name} max ${targetEquipment.maxMinutes} mins, today ${totalReservationMinutes} mins, new ${newReservationMinutes} mins`,
         );
       }
     }
@@ -132,9 +131,9 @@ export class ReserveEquipService {
     return this.reserveEquipRepo.save(dto);
   }
 
-  countEquipmentReservations(equipment_id: string) {
+  countEquipmentReservations(equipmentId: string) {
     return this.reserveEquipRepo.count({
-      where: { equipments: Like(`%${equipment_id}%`) },
+      where: { equipments: Like(`%${equipmentId}%`) },
     });
   }
 
@@ -169,7 +168,7 @@ export class ReserveEquipService {
     );
 
     const existUser = await this.userService.findOneByUuid(
-      existReserve.booker_id,
+      existReserve.bookerId,
     );
 
     return {
@@ -184,7 +183,7 @@ export class ReserveEquipService {
 
     for (const reservation of reservations) {
       const booker = await this.userService.findOneByUuidWithInfo(
-        reservation.booker_id,
+        reservation.bookerId,
       );
       if (booker) {
         reservation.booker = booker;
@@ -197,14 +196,14 @@ export class ReserveEquipService {
   async joinEquips(reservations) {
     const refinedReservations = [];
     for (const reservation of reservations) {
-      const equipments_list = [];
-      for (const equip_uuid of reservation.equipments) {
-        const equipment = await this.equipService.findOneByUuid(equip_uuid);
+      const equipmentsList = [];
+      for (const equipUuid of reservation.equipments) {
+        const equipment = await this.equipService.findOneByUuid(equipUuid);
         if (equipment) {
-          equipments_list.push(equipment);
+          equipmentsList.push(equipment);
         }
       }
-      reservation.equipments = equipments_list;
+      reservation.equipments = equipmentsList;
       refinedReservations.push(reservation);
     }
     return refinedReservations;

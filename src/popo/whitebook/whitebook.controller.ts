@@ -34,21 +34,21 @@ export class WhitebookController {
   @Post()
   @Roles(UserType.admin)
   @UseGuards(RolesGuard)
-  @FileBody('pdf_file')
+  @FileBody('pdfFile')
   async create(@Body() dto: WhitebookDto) {
-    if (dto.pdf_file) {
-      const pdf_url = await this.fileService.uploadFile(
+    if (dto.pdfFile) {
+      const pdfUrl = await this.fileService.uploadFile(
         `whitebook/${dto.title}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
-        dto.pdf_file,
+        dto.pdfFile,
       );
-      dto.link = pdf_url;
+      dto.link = pdfUrl;
     }
 
-    const dtoWithoutPdfFile: Omit<WhitebookDto, 'pdf_file'> = {
+    const dtoWithoutPdfFile: Omit<WhitebookDto, 'pdfFile'> = {
       title: dto.title,
       content: dto.content,
       link: dto.link,
-      show_only_login: dto.show_only_login,
+      showOnlyLogin: dto.showOnlyLogin,
     };
 
     return this.whitebookService.save(dtoWithoutPdfFile);
@@ -57,8 +57,8 @@ export class WhitebookController {
   @Public()
   @Get()
   getAll(@Query('orderBy') orderBy: string) {
-    if (orderBy === 'click_count') {
-      return this.whitebookService.findAll({ click_count: 'DESC' });
+    if (orderBy === 'clickCount') {
+      return this.whitebookService.findAll({ clickCount: 'DESC' });
     } else if (orderBy === 'updatedAt') {
       return this.whitebookService.findAll({ updatedAt: 'DESC' });
     } else if (orderBy === 'createdAt') {
@@ -71,8 +71,8 @@ export class WhitebookController {
   @ApiCookieAuth()
   @Get('with-login')
   getAllForLoginUser(@Query('orderBy') orderBy: string) {
-    if (orderBy === 'click_count') {
-      return this.whitebookService.findAll({ click_count: 'DESC' }, true);
+    if (orderBy === 'clickCount') {
+      return this.whitebookService.findAll({ clickCount: 'DESC' }, true);
     } else if (orderBy === 'updatedAt') {
       return this.whitebookService.findAll({ updatedAt: 'DESC' }, true);
     } else if (orderBy === 'createdAt') {
@@ -92,21 +92,21 @@ export class WhitebookController {
   @Put(':uuid')
   @UseGuards(RolesGuard)
   @Roles(UserType.admin)
-  @FileBody('pdf_file')
+  @FileBody('pdfFile')
   async update(@Param('uuid') uuid: string, @Body() dto: WhitebookDto) {
-    if (dto.pdf_file) {
-      const pdf_url = await this.fileService.uploadFile(
+    if (dto.pdfFile) {
+      const pdfUrl = await this.fileService.uploadFile(
         `whitebook/${dto.title}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
-        dto.pdf_file,
+        dto.pdfFile,
       );
-      dto.link = pdf_url;
+      dto.link = pdfUrl;
     }
 
-    const dtoWithoutPdfFile: Omit<WhitebookDto, 'pdf_file'> = {
+    const dtoWithoutPdfFile: Omit<WhitebookDto, 'pdfFile'> = {
       title: dto.title,
       content: dto.content,
       link: dto.link,
-      show_only_login: dto.show_only_login,
+      showOnlyLogin: dto.showOnlyLogin,
     };
 
     return this.whitebookService.update(uuid, dtoWithoutPdfFile);
