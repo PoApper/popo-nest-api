@@ -112,7 +112,7 @@ export class MailService {
           <p>
             장소 ${place.name}에 대한 예약
             "<strong>${reservation.title}</strong>"
-            (${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가
+            (${reservation.date} - ${reservation.startTime} ~ ${reservation.endTime})이/가
             생성 되었습니다.
           </p>
           <p>- <b>POPO, POstechian's Portal</b> 드림 -</p>
@@ -169,7 +169,7 @@ export class MailService {
             <p>
               장소 ${place.name}에 대한 예약
               "<strong>${reservation.title}</strong>"
-              (${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가
+              (${reservation.date} - ${reservation.startTime} ~ ${reservation.endTime})이/가
               생성 되었습니다.
             </p>
             <p>장소 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>
@@ -212,7 +212,7 @@ export class MailService {
           <div>
             <img src="cid:popoLogo"/>
           </div>
-          <p>장비 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.start_time} ~ ${reservation.end_time})이/가 생성 되었습니다.</p>
+          <p>장비 예약 "<strong>${reservation.title}</strong>"(${reservation.date} - ${reservation.startTime} ~ ${reservation.endTime})이/가 생성 되었습니다.</p>
           <p>예약한 장비의 예약비를 확인해주세요.</p>
           <p>- <b>POPO, POstechian's Portal</b> 드림 -</p>
           <p>😱본인의 예약 아니라면, 즉시 POPO 관리팀에게 연락바랍니다.😱</p>
@@ -268,7 +268,7 @@ export class MailService {
             .map((equip) => equip.name)
             .join(', ')}에 대한 예약 "<strong>${reservation.title}</strong>"(${
             reservation.date
-          } - ${reservation.start_time} ~ ${
+          } - ${reservation.startTime} ~ ${
             reservation.end_time
           })이/가 생성 되었습니다.</p>
           <p>장비 예약 담당자 님은 예약을 확인하고 처리해주세요 🙏</p>

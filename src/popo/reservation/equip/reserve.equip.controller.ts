@@ -125,7 +125,7 @@ export class ReserveEquipController {
   ) {
     const findOption = {
       where: { bookerId: user.uuid },
-      order: { date: 'DESC', start_time: 'DESC' },
+      order: { date: 'DESC', startTime: 'DESC' },
     };
 
     const total = await this.reserveEquipService.count({
@@ -147,7 +147,7 @@ export class ReserveEquipController {
   async getUserReservation(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
       where: { bookerId: uuid },
-      order: { date: 'DESC', start_time: 'DESC' },
+      order: { date: 'DESC', startTime: 'DESC' },
     });
     return this.reserveEquipService.joinEquips(reservations);
   }
@@ -159,7 +159,7 @@ export class ReserveEquipController {
   async getUserReservationByAdmin(@Param('uuid') uuid: string) {
     const reservations = await this.reserveEquipService.find({
       where: { bookerId: uuid },
-      order: { date: 'DESC', start_time: 'DESC' },
+      order: { date: 'DESC', startTime: 'DESC' },
     });
     return this.reserveEquipService.joinEquips(reservations);
   }
