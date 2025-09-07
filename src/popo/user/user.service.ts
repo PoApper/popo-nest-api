@@ -80,14 +80,23 @@ export class UserService {
   }
 
   searchCountByKeyword(keyword = '') {
-    const qb = this.userRepo.createQueryBuilder();
+    const qb = this.userRepo.createQueryBuilder('user');
 
     return qb
       .select('COUNT(*) AS count')
-      .where(`LOWER(name) LIKE '%${keyword}%'`)
-      .orWhere(`LOWER(email) LIKE '%${keyword}%'`)
-      .orWhere(`LOWER(userType) LIKE '%${keyword}%'`)
-      .orderBy('lastLoginAt', 'DESC')
+      .where(`LOWER(user.name) LIKE :keyword`, {
+        keyword: `%${keyword}%`,
+      })
+      .orWhere(`LOWER(user.email) LIKE :keyword`, {
+        keyword: `%${keyword}%`,
+      })
+      .orWhere(`LOWER(user.userType) LIKE :keyword`, {
+        keyword: `%${keyword}%`,
+      })
+      .orWhere(`LOWER(user.userType) LIKE :keyword`, {
+        keyword: `%${keyword}%`,
+      })
+      .orderBy('user.lastLoginAt', 'DESC')
       .getRawOne();
   }
 
