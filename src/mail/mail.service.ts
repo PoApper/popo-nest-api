@@ -3,20 +3,20 @@ import { MailerService } from '@nestjs-modules/mailer';
 import * as EmailValidator from 'email-validator';
 import { Equip } from '../popo/equip/equip.entity';
 import { Place } from '../popo/place/place.entity';
-
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class MailService {
-  constructor(private readonly mailerService: MailerService) {}
+  constructor(
+    private readonly mailerService: MailerService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async sendVerificationMail(recipient_email: string, uuid: string) {
-    const host_domain =
-      process.env.NODE_ENV === 'prod'
-        ? 'popo.poapper.club'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'localhost';
-    
-    const subject = host_domain == 'popo.poapper.club' ? '[POPO] 가입 인증' : '[POPO-DEV] 가입 인증';
+    const host_domain = this.getHostDomain();
+    const subject =
+      host_domain == 'popo.poapper.club'
+        ? '[POPO] 가입 인증'
+        : '[POPO-DEV] 가입 인증';
 
     await this.mailerService.sendMail({
       to: recipient_email,
@@ -55,14 +55,12 @@ export class MailService {
   }
 
   async sendPasswordResetMail(recipient_email: string, temp_password: string) {
-    const host_domain =
-      process.env.NODE_ENV === 'prod'
-        ? 'popo.poapper.club'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'localhost';
-    
-    const subject = host_domain == 'popo.poapper.club' ? '[POPO] 비밀번호 초기화' : '[POPO-DEV] 비밀번호 초기화';
+    const host_domain = this.getHostDomain();
+    const subject =
+      host_domain == 'popo.poapper.club'
+        ? '[POPO] 비밀번호 초기화'
+        : '[POPO-DEV] 비밀번호 초기화';
+
     await this.mailerService.sendMail({
       to: recipient_email,
       from: process.env.POPO_MAIL_ADDRESS,
@@ -104,14 +102,12 @@ export class MailService {
     if (!EmailValidator.validate(recipient_email)) {
       throw new BadRequestException(`invalid booker email: ${recipient_email}`);
     }
-    const host_domain =
-      process.env.NODE_ENV === 'prod'
-        ? 'popo.poapper.club'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'localhost';
-    
-    const subject = host_domain == 'popo.poapper.club' ? `[POPO] ${place.name}에 대한 장소 예약이 생성되었습니다.` : `[POPO-DEV] ${place.name}에 대한 장소 예약이 생성되었습니다.`;
+    const host_domain = this.getHostDomain();
+    const subject =
+      host_domain == 'popo.poapper.club'
+        ? `[POPO] ${place.name}에 대한 장소 예약이 생성되었습니다.`
+        : `[POPO-DEV] ${place.name}에 대한 장소 예약이 생성되었습니다.`;
+
     await this.mailerService.sendMail({
       to: recipient_email,
       from: process.env.POPO_MAIL_ADDRESS,
@@ -164,14 +160,12 @@ export class MailService {
       return;
     }
 
-    const host_domain =
-      process.env.NODE_ENV === 'prod'
-        ? 'popo.poapper.club'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'localhost';
-    
-    const subject = host_domain == 'popo.poapper.club' ? `[POPO] ${place.name}에 대한 장소 예약이 생성되었습니다. (담당자용)` : `[POPO-DEV] ${place.name}에 대한 장소 예약이 생성되었습니다. (담당자용)`;
+    const host_domain = this.getHostDomain();
+    const subject =
+      host_domain == 'popo.poapper.club'
+        ? `[POPO] ${place.name}에 대한 장소 예약이 생성되었습니다. (담당자용)`
+        : `[POPO-DEV] ${place.name}에 대한 장소 예약이 생성되었습니다. (담당자용)`;
+
     // prod 환경에서는 기존 로직대로 담당자에게 메일 발송
     recipient_email = EmailValidator.validate(recipient_email)
       ? recipient_email
@@ -223,14 +217,12 @@ export class MailService {
     if (!EmailValidator.validate(recipient_email)) {
       throw new BadRequestException(`invalid booker email: ${recipient_email}`);
     }
-    const host_domain =
-      process.env.NODE_ENV === 'prod'
-        ? 'popo.poapper.club'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'localhost';
-    
-    const subject = host_domain == 'popo.poapper.club' ? `[POPO] 장비 예약이 생성되었습니다.` : `[POPO-DEV] 장비 예약이 생성되었습니다.`;
+    const host_domain = this.getHostDomain();
+    const subject =
+      host_domain == 'popo.poapper.club'
+        ? `[POPO] 장비 예약이 생성되었습니다.`
+        : `[POPO-DEV] 장비 예약이 생성되었습니다.`;
+
     await this.mailerService.sendMail({
       to: recipient_email,
       from: process.env.POPO_MAIL_ADDRESS,
@@ -279,14 +271,12 @@ export class MailService {
       return;
     }
 
-    const host_domain =
-      process.env.NODE_ENV === 'prod'
-        ? 'popo.poapper.club'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'localhost';
-    
-    const subject = host_domain == 'popo.poapper.club' ? `[POPO] 장비 예약이 생성되었습니다. (담당자용)` : `[POPO-DEV] 장비 예약이 생성되었습니다. (담당자용)`;
+    const host_domain = this.getHostDomain();
+    const subject =
+      host_domain == 'popo.poapper.club'
+        ? `[POPO] 장비 예약이 생성되었습니다. (담당자용)`
+        : `[POPO-DEV] 장비 예약이 생성되었습니다. (담당자용)`;
+
     // prod 환경에서는 기존 로직대로 담당자에게 메일 발송
     recipient_email = EmailValidator.validate(recipient_email)
       ? recipient_email
@@ -330,14 +320,12 @@ export class MailService {
   }
 
   async sendReservationPatchMail(email: string, title: string, status: string) {
-    const host_domain =
-      process.env.NODE_ENV === 'prod'
-        ? 'popo.poapper.club'
-        : process.env.NODE_ENV === 'dev'
-          ? 'popo-dev.poapper.club'
-          : 'localhost';
-    
-    const subject = host_domain == 'popo.poapper.club' ? `[POPO] ${title} 예약이 ${status} 되었습니다!` : `[POPO-DEV] ${title} 예약이 ${status} 되었습니다!`;
+    const host_domain = this.getHostDomain();
+    const subject =
+      host_domain == 'popo.poapper.club'
+        ? `[POPO] ${title} 예약이 ${status} 되었습니다!`
+        : `[POPO-DEV] ${title} 예약이 ${status} 되었습니다!`;
+
     await this.mailerService.sendMail({
       to: email,
       from: process.env.POPO_MAIL_ADDRESS,
@@ -368,5 +356,13 @@ export class MailService {
       ],
     });
     console.log(`success to mailing: ${email}`);
+  }
+
+  private getHostDomain() {
+    return this.configService.get('NODE_ENV') === 'prod'
+      ? 'popo.poapper.club'
+      : this.configService.get('NODE_ENV') === 'dev'
+        ? 'popo-dev.poapper.club'
+        : 'localhost';
   }
 }
