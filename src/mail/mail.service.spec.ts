@@ -2,10 +2,14 @@ import { Test } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { MailerService } from '@nestjs-modules/mailer';
+import { ConfigService } from '@nestjs/config';
 
 describe('MailService', () => {
   let mailService: MailService;
   const mailerMock = { sendMail: jest.fn().mockResolvedValue({}) };
+  const configMock = {
+    get: jest.fn((key: string) => (key === 'NODE_ENV' ? 'dev' : undefined)),
+  } as unknown as ConfigService;
 
   beforeEach(async () => {
     jest.resetModules();
@@ -17,6 +21,7 @@ describe('MailService', () => {
       providers: [
         MailService,
         { provide: MailerService, useValue: mailerMock },
+        { provide: ConfigService, useValue: configMock },
       ],
     }).compile();
 
@@ -106,8 +111,7 @@ describe('MailService', () => {
     );
   });
 
-  it('sendPlaceReserveCreateMailToStaff does not send when NODE_ENV !== prod', async () => {
-    process.env.NODE_ENV = 'dev';
+  it('sendPlaceReserveCreateMailToStaff sends when recipient email is valid', async () => {
     await mailService.sendPlaceReserveCreateMailToStaff(
       'staff@example.com',
       { name: '장소' } as any,
@@ -118,11 +122,13 @@ describe('MailService', () => {
         endTime: '11:00',
       } as any,
     );
-    expect(mailerMock.sendMail).not.toHaveBeenCalled();
+    expect(mailerMock.sendMail).toHaveBeenCalledTimes(1);
   });
 
   it('sendPlaceReserveCreateMailToStaff sends in prod with valid recipient', async () => {
-    process.env.NODE_ENV = 'prod';
+    (configMock.get as any).mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'prod' : undefined,
+    );
     jest.clearAllMocks();
     await mailService.sendPlaceReserveCreateMailToStaff(
       'staff@example.com',
@@ -148,8 +154,7 @@ describe('MailService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('sendEquipReserveCreateMailToStaff does not send when NODE_ENV !== prod', async () => {
-    process.env.NODE_ENV = 'dev';
+  it('sendEquipReserveCreateMailToStaff sends when recipient email is valid', async () => {
     await mailService.sendEquipReserveCreateMailToStaff(
       'staff@example.com',
       [{ name: '장비A' }] as any,
@@ -160,11 +165,13 @@ describe('MailService', () => {
         end_time: '11:00',
       } as any,
     );
-    expect(mailerMock.sendMail).not.toHaveBeenCalled();
+    expect(mailerMock.sendMail).toHaveBeenCalledTimes(1);
   });
 
   it('sendEquipReserveCreateMailToStaff sends in prod (falls back to ADMIN_EMAIL if invalid)', async () => {
-    process.env.NODE_ENV = 'prod';
+    (configMock.get as any).mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'prod' : undefined,
+    );
     process.env.ADMIN_EMAIL = 'admin@example.com';
     jest.clearAllMocks();
     await mailService.sendEquipReserveCreateMailToStaff(
