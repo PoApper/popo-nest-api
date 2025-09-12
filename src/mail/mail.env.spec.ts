@@ -48,7 +48,9 @@ describe('MailService env/subject integration (real MailerModule)', () => {
       }),
     );
     expect(spy).toHaveBeenCalledWith(
-      expect.objectContaining({ subject: expect.stringContaining('테스트예약') }),
+      expect.objectContaining({
+        subject: expect.stringContaining('테스트예약'),
+      }),
     );
   });
 
@@ -66,5 +68,3 @@ describe('MailService env/subject integration (real MailerModule)', () => {
     expect(callArg.subject).toContain('테스트예약');
   });
 });
-
-
