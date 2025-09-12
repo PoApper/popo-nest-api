@@ -19,7 +19,8 @@
     "test:watch": "NODE_ENV=test jest --watch",
     "test:cov": "NODE_ENV=test jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "pc": "pre-commit run --all-files"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.740.0",
