@@ -18,6 +18,7 @@ import { FileService } from '../../file/file.service';
 import { FileBody } from '../../file/file-body.decorator';
 import { SettingService } from './setting.service';
 import { Public } from '../../common/public-guard.decorator';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('POPO 세팅')
 @Controller('setting')
@@ -25,6 +26,7 @@ export class SettingController {
   constructor(
     private readonly fileService: FileService,
     private readonly settingService: SettingService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Public()
@@ -38,7 +40,10 @@ export class SettingController {
   @Roles(UserType.admin, UserType.association)
   @Post()
   updatePopoSetting(@Body() dto: PopoSettingDto) {
-    const settingKey = 'popo-setting.json';
+    const settingKey =
+      this.configService.get('NODE_ENV') == 'prod'
+        ? 'popo-setting.json'
+        : 'popo-setting-dev.json';
     return this.fileService.uploadText(settingKey, JSON.stringify(dto));
   }
 

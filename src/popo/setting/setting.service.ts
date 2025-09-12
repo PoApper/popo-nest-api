@@ -40,9 +40,9 @@ export class SettingService {
       const user = await this.userRepo.findOneBy({ email: email }); // TODO: 이거 부하 오지것는데
       if (user) {
         row['status'] = 'registered';
-        row['user_name'] = user['name'];
-        row['user_type'] = user['userType'];
-        row['created_at'] = user['createdAt'];
+        row['userName'] = user['name'];
+        row['userType'] = user['userType'];
+        row['createdAt'] = user['createdAt'];
       } else {
         row['status'] = 'not_registered';
       }
@@ -66,7 +66,7 @@ export class SettingService {
       "SELECT TRIM(TRAILING '\r' FROM email) AS email FROM S3Object s",
     );
 
-    let updatedUserCnt = 0;
+    let updatedUserCount = 0;
     for (const row of queryRet) {
       const email = row['email'];
       if (!email) continue;
@@ -74,7 +74,7 @@ export class SettingService {
       const user = await this.userRepo.findOneBy({ email: email });
       if (!user) continue;
 
-      updatedUserCnt += 1;
+      updatedUserCount += 1;
       await this.userRepo.update(
         { email: email },
         { userType: UserType.rc_student },
@@ -82,8 +82,8 @@ export class SettingService {
     }
 
     return {
-      total_rc_user_count: queryRet.length,
-      updated_user_count: updatedUserCnt,
+      totalUserCount: queryRet.length,
+      updatedUserCount: updatedUserCount,
     };
   }
 }
