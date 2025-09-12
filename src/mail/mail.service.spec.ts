@@ -125,23 +125,7 @@ describe('MailService', () => {
     expect(mailerMock.sendMail).toHaveBeenCalledTimes(1);
   });
 
-  it('sendPlaceReserveCreateMailToStaff sends in prod with valid recipient', async () => {
-    (configMock.get as any).mockImplementation((key: string) =>
-      key === 'NODE_ENV' ? 'prod' : undefined,
-    );
-    jest.clearAllMocks();
-    await mailService.sendPlaceReserveCreateMailToStaff(
-      'staff@example.com',
-      { name: '장소' } as any,
-      {
-        title: '제목',
-        date: '2024-01-01',
-        startTime: '10:00',
-        endTime: '11:00',
-      } as any,
-    );
-    expect(mailerMock.sendMail).toHaveBeenCalledTimes(1);
-  });
+  // env-specific behavior is covered by mail.env.spec.ts
 
   it('sendEquipReserveCreateMailToBooker validates email', async () => {
     await expect(
@@ -168,10 +152,7 @@ describe('MailService', () => {
     expect(mailerMock.sendMail).toHaveBeenCalledTimes(1);
   });
 
-  it('sendEquipReserveCreateMailToStaff sends in prod (falls back to ADMIN_EMAIL if invalid)', async () => {
-    (configMock.get as any).mockImplementation((key: string) =>
-      key === 'NODE_ENV' ? 'prod' : undefined,
-    );
+  it('sendEquipReserveCreateMailToStaff falls back to ADMIN_EMAIL when recipient invalid', async () => {
     process.env.ADMIN_EMAIL = 'admin@example.com';
     jest.clearAllMocks();
     await mailService.sendEquipReserveCreateMailToStaff(
