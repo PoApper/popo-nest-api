@@ -15,7 +15,10 @@ describe('ReservePlaceController (mail integration)', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ReservePlaceController],
       providers: [
-        { provide: ReservePlaceService, useValue: createMock<ReservePlaceService>() },
+        {
+          provide: ReservePlaceService,
+          useValue: createMock<ReservePlaceService>(),
+        },
         { provide: PlaceService, useValue: createMock<PlaceService>() },
         { provide: MailService, useValue: createMock<MailService>() },
       ],
@@ -29,8 +32,18 @@ describe('ReservePlaceController (mail integration)', () => {
 
   it('should send emails to staff and booker when reservation is created', async () => {
     const user = { uuid: 'u1', email: 'booker@example.com' } as any;
-    const dto = { placeId: 'p1', date: '20240101', startTime: '1000', endTime: '1100', title: '회의' } as any;
-    const place = { uuid: 'p1', name: '회의실', staffEmail: 'staff@example.com' } as any;
+    const dto = {
+      placeId: 'p1',
+      date: '20240101',
+      startTime: '1000',
+      endTime: '1100',
+      title: '회의',
+    } as any;
+    const place = {
+      uuid: 'p1',
+      name: '회의실',
+      staffEmail: 'staff@example.com',
+    } as any;
     const saved = { uuid: 'r1', ...dto, bookerId: user.uuid } as any;
 
     placeService.findOneByUuidOrFail.mockResolvedValue(place);
@@ -55,5 +68,3 @@ describe('ReservePlaceController (mail integration)', () => {
     );
   });
 });
-
-

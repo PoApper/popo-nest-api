@@ -53,7 +53,11 @@ describe('MailService', () => {
   });
 
   it('sendReservationPatchMail builds expected payload', async () => {
-    await mailService.sendReservationPatchMail('user@example.com', '테스트예약', '승인');
+    await mailService.sendReservationPatchMail(
+      'user@example.com',
+      '테스트예약',
+      '승인',
+    );
     expect(mailerMock.sendMail).toHaveBeenCalledTimes(1);
     expect(mailerMock.sendMail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -67,7 +71,16 @@ describe('MailService', () => {
 
   it('sendPlaceReserveCreateMailToBooker validates email', async () => {
     await expect(
-      mailService.sendPlaceReserveCreateMailToBooker('invalid-email', { name: '장소' } as any, { title: '제목', date: '2024-01-01', startTime: '10:00', endTime: '11:00' } as any),
+      mailService.sendPlaceReserveCreateMailToBooker(
+        'invalid-email',
+        { name: '장소' } as any,
+        {
+          title: '제목',
+          date: '2024-01-01',
+          startTime: '10:00',
+          endTime: '11:00',
+        } as any,
+      ),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
@@ -75,7 +88,12 @@ describe('MailService', () => {
     await mailService.sendPlaceReserveCreateMailToBooker(
       'user@example.com',
       { name: '장소' } as any,
-      { title: '제목', date: '2024-01-01', startTime: '10:00', endTime: '11:00' } as any,
+      {
+        title: '제목',
+        date: '2024-01-01',
+        startTime: '10:00',
+        endTime: '11:00',
+      } as any,
     );
     expect(mailerMock.sendMail).toHaveBeenCalledTimes(1);
     expect(mailerMock.sendMail).toHaveBeenCalledWith(
@@ -93,7 +111,12 @@ describe('MailService', () => {
     await mailService.sendPlaceReserveCreateMailToStaff(
       'staff@example.com',
       { name: '장소' } as any,
-      { title: '제목', date: '2024-01-01', startTime: '10:00', endTime: '11:00' } as any,
+      {
+        title: '제목',
+        date: '2024-01-01',
+        startTime: '10:00',
+        endTime: '11:00',
+      } as any,
     );
     expect(mailerMock.sendMail).not.toHaveBeenCalled();
   });
@@ -104,14 +127,24 @@ describe('MailService', () => {
     await mailService.sendPlaceReserveCreateMailToStaff(
       'staff@example.com',
       { name: '장소' } as any,
-      { title: '제목', date: '2024-01-01', startTime: '10:00', endTime: '11:00' } as any,
+      {
+        title: '제목',
+        date: '2024-01-01',
+        startTime: '10:00',
+        endTime: '11:00',
+      } as any,
     );
     expect(mailerMock.sendMail).toHaveBeenCalledTimes(1);
   });
 
   it('sendEquipReserveCreateMailToBooker validates email', async () => {
     await expect(
-      mailService.sendEquipReserveCreateMailToBooker('invalid-email', { title: '제목', date: '2024-01-01', startTime: '10:00', endTime: '11:00' } as any),
+      mailService.sendEquipReserveCreateMailToBooker('invalid-email', {
+        title: '제목',
+        date: '2024-01-01',
+        startTime: '10:00',
+        endTime: '11:00',
+      } as any),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
@@ -120,7 +153,12 @@ describe('MailService', () => {
     await mailService.sendEquipReserveCreateMailToStaff(
       'staff@example.com',
       [{ name: '장비A' }] as any,
-      { title: '제목', date: '2024-01-01', startTime: '10:00', end_time: '11:00' } as any,
+      {
+        title: '제목',
+        date: '2024-01-01',
+        startTime: '10:00',
+        end_time: '11:00',
+      } as any,
     );
     expect(mailerMock.sendMail).not.toHaveBeenCalled();
   });
@@ -132,7 +170,12 @@ describe('MailService', () => {
     await mailService.sendEquipReserveCreateMailToStaff(
       'invalid-email',
       [{ name: '장비A' }] as any,
-      { title: '제목', date: '2024-01-01', startTime: '10:00', end_time: '11:00' } as any,
+      {
+        title: '제목',
+        date: '2024-01-01',
+        startTime: '10:00',
+        end_time: '11:00',
+      } as any,
     );
     expect(mailerMock.sendMail).toHaveBeenCalledTimes(1);
     expect(mailerMock.sendMail).toHaveBeenCalledWith(
@@ -140,5 +183,3 @@ describe('MailService', () => {
     );
   });
 });
-
-
