@@ -1,3 +1,5 @@
+# 해당 파일은 Portainer에서 사용되는 Paxi Stack을 복사 붙여넣기 한 파일로, 참고용입니다.
+# 해당 파일을 수정해도 반영되지 않습니다. Portainer에 직접 들어가 수정해야 합니다.
 version: '3.3'
 services:
   popo-nest-dev:
@@ -5,18 +7,19 @@ services:
     ports:
       - 6000:4000
     secrets:
-      - source: poapper_popo_dev_dotenv_1
+      - source: poapper_popo_dev_dotenv_2
         target: /usr/src/app/.env
     deploy:
       placement:
         constraints:
           - node.role == manager
   popo-nest-prod:
+    # 업데이트 시 prod 태그 현재 릴리즈로 잘 설정 되어있는지 확인!!
     image: 151345152001.dkr.ecr.ap-northeast-2.amazonaws.com/popo-nest-api:vX.X.X
     ports:
       - 4000:4000
     secrets:
-      - source: poapper_popo_dotenv_1
+      - source: poapper_popo_dotenv_prod_1
         target: /usr/src/app/.env
     deploy:
       placement:
@@ -24,7 +27,7 @@ services:
           - node.role == manager
 
 secrets:
-  poapper_popo_dev_dotenv_1:
+  poapper_popo_dev_dotenv_2:
     external: true
-  poapper_popo_dotenv_1:
+  poapper_popo_dotenv_prod_1:
     external: true
