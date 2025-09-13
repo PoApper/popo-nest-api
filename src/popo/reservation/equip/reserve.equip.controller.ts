@@ -39,10 +39,7 @@ export class ReserveEquipController {
   @Post()
   async post(@User() user: JwtPayload, @Body() dto: CreateReserveEquipDto) {
     const saveDto = Object.assign(dto, { bookerId: user.uuid });
-    const newReservation = await this.reserveEquipService.save(
-      saveDto,
-      user.uuid,
-    );
+    const newReservation = await this.reserveEquipService.save(saveDto);
 
     const existEquips = await this.equipService.findByIds(dto.equipments);
 
