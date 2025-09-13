@@ -68,9 +68,8 @@ export class ReservePlaceController {
       false,
     );
 
-    const new_reservation = await this.reservePlaceService.save(
-      Object.assign(dto, { bookerId: user.uuid }),
-    );
+    const saveDto = Object.assign(dto, { bookerId: user.uuid });
+    const new_reservation = await this.reservePlaceService.save(saveDto);
 
     // update place reservation count
     await this.placeService.updateReservationCountByDelta(dto.placeId, +1);

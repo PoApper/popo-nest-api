@@ -57,7 +57,7 @@ export class ReserveEquipService {
     return false;
   }
 
-  async save(dto: CreateReserveEquipDto, bookerId: string) {
+  async save(dto: CreateReserveEquipDto) {
     const { equipments, date, startTime, endTime, owner } = dto;
 
     if (
@@ -87,7 +87,7 @@ export class ReserveEquipService {
     // Reservation Duration Check
     const reservationsOfDay = await this.reserveEquipRepo.find({
       where: {
-        bookerId: bookerId,
+        bookerId: dto.bookerId,
         date: date,
         owner: owner,
         status: In([ReservationStatus.accept, ReservationStatus.in_process]),
