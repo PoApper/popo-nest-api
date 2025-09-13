@@ -63,11 +63,11 @@ export class AuthController {
   @Get('me/reservation')
   async getOwnReservations(@User() user: JwtPayload) {
     const existPlaceReserve = await this.reservePlaceService.find({
-      where: { booker_id: user.uuid },
+      where: { bookerId: user.uuid },
       order: { createdAt: 'DESC' },
     });
     const existEquipReserve = await this.reserveEquipService.find({
-      where: { booker_id: user.uuid },
+      where: { bookerId: user.uuid },
       order: { createdAt: 'DESC' },
     });
 
