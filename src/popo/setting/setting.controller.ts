@@ -32,7 +32,11 @@ export class SettingController {
   @Public()
   @Get()
   async getSetting() {
-    return this.fileService.getText('popo-setting.json');
+    const settingKey =
+      this.configService.get('NODE_ENV') == 'prod'
+        ? 'popo-setting.json'
+        : 'popo-setting-dev.json';
+    return this.fileService.getText(settingKey);
   }
 
   @ApiCookieAuth()
