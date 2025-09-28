@@ -124,6 +124,23 @@ jobs:
             exit 1
           fi
           echo "✅ Deployment successful! HTTP Response: $RESPONSE"
+      # 머신에 사용되지 않는 이미지 쌓여서 디스크 부족해지는 것을 방지하기 위해 삭제
+      - name: Clean up old Docker images on EC2 (only for dev)
+        if: success()
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.POPO_EC2_HOSTNAME }}
+          username: ${{ secrets.POPO_EC2_USERNAME }}
+          key: ${{ secrets.POPO_EC2_SSH_KEY }}
+          script: |
+            echo "::group::컨테이너 확인"
+            docker ps -a
+            echo "::endgroup::"
+            echo "::group::이미지 확인"
+            docker images
+            echo "::endgroup::"
+            echo "사용하지 않는 이미지 및 컨테이너 제거"
+            docker system prune -af
 
   deploy_health_check:
     name: Check Application Status
