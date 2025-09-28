@@ -80,7 +80,7 @@ export class AuthController {
   @Public()
   @Post(['login', 'login/admin'])
   @UseGuards(LocalAuthGuard)
-  async logIn(@Req() req: Request, @Res() res: Response) {
+  async logIn(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const path = req.path;
     const user = req.user as JwtPayload;
 
@@ -98,12 +98,12 @@ export class AuthController {
     const existUser = await this.userService.findOneByUuidOrFail(user.uuid);
     await this.userService.updateLogin(existUser.uuid);
 
-    return res.send(user);
+    return user;
   }
 
   @ApiCookieAuth()
   @Get('logout')
-  async logOut(@User() user: JwtPayload, @Res() res: Response) {
+  async logOut(@User() user: JwtPayload, @Res({ passthrough: true }) res: Response) {
     await this.userService.updateLogin(user.uuid);
     await this.userService.updateRefreshToken(user.uuid, null, null);
 
@@ -199,7 +199,7 @@ export class AuthController {
   })
   @Public()
   @Post('refresh')
-  async refresh(@Req() req: Request, @Res() res: Response) {
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const accessTokenInCookie = req.cookies?.Authentication;
     const refreshTokenInCookie = req.cookies?.Refresh;
 
@@ -231,7 +231,7 @@ export class AuthController {
 
     this.setCookies(res, accessToken, refreshToken);
 
-    return res.send(user);
+    return user;
   }
 
   private setCookies(
