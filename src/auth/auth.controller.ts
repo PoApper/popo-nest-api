@@ -111,7 +111,6 @@ export class AuthController {
     await this.userService.updateRefreshToken(user.uuid, null, null);
 
     this.clearCookies(res);
-    res.sendStatus(200);
 
     return { message: 'Successfully logged out' };
   }
