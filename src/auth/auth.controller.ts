@@ -303,7 +303,8 @@ export class AuthController {
     const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
     const allChars = lowercase + uppercase + numbers + specialChars;
 
-    let password = 'poapper_';
+    const prefix = 'poapper_';
+    let password = '';
 
     // Ensure at least one character from each category
     password += lowercase[crypto.randomInt(0, lowercase.length)];
@@ -316,6 +317,15 @@ export class AuthController {
       password += allChars[crypto.randomInt(0, allChars.length)];
     }
 
-    return password;
+    // Shuffle the password to avoid predictable patterns
+    // Using Fisher-Yates shuffle algorithm for uniform distribution
+    const chars = password.split('');
+    for (let i = chars.length - 1; i > 0; i--) {
+      const j = crypto.randomInt(0, i + 1);
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    password = chars.join('');
+
+    return prefix + password;
   }
 }
