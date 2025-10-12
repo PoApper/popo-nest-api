@@ -300,7 +300,7 @@ export class AuthController {
     const lowercase = 'abcdefghijklmnopqrstuvwxyz';
     const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const numbers = '0123456789';
-    const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const specialChars = '!@#$%^&*()_+-=?';
     const allChars = lowercase + uppercase + numbers + specialChars;
 
     const prefix = 'poapper_';
