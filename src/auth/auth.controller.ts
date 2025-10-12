@@ -25,6 +25,7 @@ import { JwtPayload } from './strategies/jwt.payload';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
 import { jwtConstants } from './constants';
 import * as ms from 'ms';
+import * as crypto from 'crypto';
 import { Public } from '../common/public-guard.decorator';
 import { User } from 'src/popo/common/user.decorator';
 
@@ -159,8 +160,7 @@ export class AuthController {
       );
     }
 
-    // generate 8-length random password
-    const temp_password = 'poapper_' + Math.random().toString(36).slice(-8);
+    const temp_password = this.generateSecurePassword(12);
 
     await this.userService.updatePasswordByEmail(
       existUser.email,
@@ -294,5 +294,28 @@ export class AuthController {
       domain: domain,
       sameSite: 'lax',
     });
+  }
+
+  private generateSecurePassword(length: number): string {
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const allChars = lowercase + uppercase + numbers + specialChars;
+
+    let password = 'poapper_';
+
+    // Ensure at least one character from each category
+    password += lowercase[crypto.randomInt(0, lowercase.length)];
+    password += uppercase[crypto.randomInt(0, uppercase.length)];
+    password += numbers[crypto.randomInt(0, numbers.length)];
+    password += specialChars[crypto.randomInt(0, specialChars.length)];
+
+    // Fill the rest with random characters
+    for (let i = password.length; i < length; i++) {
+      password += allChars[crypto.randomInt(0, allChars.length)];
+    }
+
+    return password;
   }
 }
