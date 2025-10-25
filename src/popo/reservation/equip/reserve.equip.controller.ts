@@ -229,6 +229,21 @@ export class ReserveEquipController {
     @Param('status') status: ReservationStatus,
     @Query('sendEmail') sendEmail?: boolean,
   ) {
+    const reservation = await this.reserveEquipService.findOneByUuidOrFail(uuid);
+
+    // When accepting, validate overlap against already accepted reservations
+    if (status === ReservationStatus.accept) {
+      const isOverlap = await this.reserveEquipService.isReservationOverlap(
+        reservation.equipments,
+        reservation.date,
+        reservation.startTime,
+        reservation.endTime,
+      );
+      if (isOverlap) {
+        throw new BadRequestException('Reservation time overlapped.');
+      }
+    }
+
     const response = await this.reserveEquipService.updateStatus(uuid, status);
 
     if (sendEmail) {
