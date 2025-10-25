@@ -1,12 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThan, Like, MoreThan, Repository } from 'typeorm';
+import { In, Like, Repository } from 'typeorm';
 import { ReserveEquip } from './reserve.equip.entity';
 import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
 import { EquipService } from '../../equip/equip.service';
 import { ReservationStatus } from '../reservation.meta';
-import { calculateReservationDurationMinutes, timeStringToMinutes } from '../../../utils/reservation-utils';
+import {
+  calculateReservationDurationMinutes,
+  timeStringToMinutes,
+} from '../../../utils/reservation-utils';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",

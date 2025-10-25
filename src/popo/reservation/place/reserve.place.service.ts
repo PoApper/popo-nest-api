@@ -14,7 +14,10 @@ import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
 import { PlaceEnableAutoAccept, PlaceRegion } from '../../place/place.meta';
-import { calculateReservationDurationMinutes, timeStringToMinutes } from '../../../utils/reservation-utils';
+import {
+  calculateReservationDurationMinutes,
+  timeStringToMinutes,
+} from '../../../utils/reservation-utils';
 import { UserType } from 'src/popo/user/user.meta';
 
 const Message = {

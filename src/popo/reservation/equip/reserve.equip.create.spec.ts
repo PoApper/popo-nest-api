@@ -39,13 +39,20 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot({ load: [configurations], envFilePath: ['.env.test'] }),
+        ConfigModule.forRoot({
+          load: [configurations],
+          envFilePath: ['.env.test'],
+        }),
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
           inject: [ConfigService],
-          useFactory: (configService: ConfigService) => configService.get('database'),
+          useFactory: (configService: ConfigService) =>
+            configService.get('database'),
         }),
-        JwtModule.register({ secret: 'SECRET', signOptions: { expiresIn: '1h' } }),
+        JwtModule.register({
+          secret: 'SECRET',
+          signOptions: { expiresIn: '1h' },
+        }),
         ReserveEquipModule,
         UserModule,
         EquipModule,
@@ -58,7 +65,9 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    controller = moduleFixture.get<ReserveEquipController>(ReserveEquipController);
+    controller = moduleFixture.get<ReserveEquipController>(
+      ReserveEquipController,
+    );
     equipService = moduleFixture.get<EquipService>(EquipService);
     mailService = moduleFixture.get<MailService>(MailService);
     jwtService = moduleFixture.get<JwtService>(JwtService);
@@ -73,33 +82,63 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
     await testUtils.initializeTestUsers();
 
     const user = testUtils.getTestUser();
-    testUserJwt = { uuid: user.uuid, email: user.email, name: user.name, nickname: '', userType: user.userType };
+    testUserJwt = {
+      uuid: user.uuid,
+      email: user.email,
+      name: user.name,
+      nickname: '',
+      userType: user.userType,
+    };
 
     // create equipments to use
     equipment = await equipService.save({
-      name: 'Tripod', description: 'tripod', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com',
-      maxMinutes: 180, fee: 10000,
+      name: 'Tripod',
+      description: 'tripod',
+      equipOwner: EquipOwner.dongyeon,
+      staffEmail: 'staff@test.com',
+      maxMinutes: 180,
+      fee: 10000,
     });
     equipmentB = await equipService.save({
-      name: 'Mic', description: 'mic', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com',
-      maxMinutes: 180, fee: 5000,
+      name: 'Mic',
+      description: 'mic',
+      equipOwner: EquipOwner.dongyeon,
+      staffEmail: 'staff@test.com',
+      maxMinutes: 180,
+      fee: 5000,
     });
     equipmentC = await equipService.save({
-        name: 'Light', description: 'light', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com',
-        maxMinutes: 180, fee: 7000,
-      });
+      name: 'Light',
+      description: 'light',
+      equipOwner: EquipOwner.dongyeon,
+      staffEmail: 'staff@test.com',
+      maxMinutes: 180,
+      fee: 7000,
+    });
     equipmentD = await equipService.save({
-      name: 'Slider', description: 'slider', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com',
-      maxMinutes: 180, fee: 15000,
+      name: 'Slider',
+      description: 'slider',
+      equipOwner: EquipOwner.dongyeon,
+      staffEmail: 'staff@test.com',
+      maxMinutes: 180,
+      fee: 15000,
     });
 
     // mock side-effects for speed
     if (mailService) {
-      jest.spyOn(mailService, 'sendEquipReserveCreateMailToStaff').mockResolvedValue(undefined);
-      jest.spyOn(mailService, 'sendEquipReserveCreateMailToBooker').mockResolvedValue(undefined);
-      jest.spyOn(mailService, 'sendReservationPatchMail').mockResolvedValue(undefined);
+      jest
+        .spyOn(mailService, 'sendEquipReserveCreateMailToStaff')
+        .mockResolvedValue(undefined);
+      jest
+        .spyOn(mailService, 'sendEquipReserveCreateMailToBooker')
+        .mockResolvedValue(undefined);
+      jest
+        .spyOn(mailService, 'sendReservationPatchMail')
+        .mockResolvedValue(undefined);
     }
-    jest.spyOn(equipService, 'updateReservationCountByDelta').mockResolvedValue(undefined as any);
+    jest
+      .spyOn(equipService, 'updateReservationCountByDelta')
+      .mockResolvedValue(undefined as any);
   });
 
   afterAll(async () => {
@@ -112,23 +151,86 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
 
   describe('Allowed (30-min, single equipment)', () => {
     it('10:00-10:30 then 10:30-11:00 allowed', async () => {
-      await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '1000', endTime: '1030' });
-      const res = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'B', description: 'B', date: '20251224', startTime: '1030', endTime: '1100' });
+      await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1030',
+      });
+      const res = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'B',
+        description: 'B',
+        date: '20251224',
+        startTime: '1030',
+        endTime: '1100',
+      });
       expect(res.status).toBe(ReservationStatus.in_process); // equipment defaults to in_process
     });
 
     it('21:00-22:00, 22:00-23:00, 23:00-24:00 sequential allowed', async () => {
-      await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '2100', endTime: '2200' });
-      await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'B', description: 'B', date: '20251224', startTime: '2200', endTime: '2300' });
-      const res = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'C', description: 'C', date: '20251224', startTime: '2300', endTime: '0000' });
+      await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '2100',
+        endTime: '2200',
+      });
+      await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'B',
+        description: 'B',
+        date: '20251224',
+        startTime: '2200',
+        endTime: '2300',
+      });
+      const res = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'C',
+        description: 'C',
+        date: '20251224',
+        startTime: '2300',
+        endTime: '0000',
+      });
       expect(res.status).toBe(ReservationStatus.in_process);
     });
   });
 
   describe('Admin acceptance (overlap vs non-overlap)', () => {
     it('Overlapping request should fail on admin accept', async () => {
-      const a = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '1000', endTime: '1100' });
-      const b = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'X', description: 'X', date: '20251224', startTime: '0930', endTime: '1030' });
+      const a = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1100',
+      });
+      const b = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'X',
+        description: 'X',
+        date: '20251224',
+        startTime: '0930',
+        endTime: '1030',
+      });
       expect(a.status).toBe(ReservationStatus.in_process);
       expect(b.status).toBe(ReservationStatus.in_process);
 
@@ -136,99 +238,279 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
       await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
       // then attempting to accept overlapping one should throw
       await expect(
-        controller.patchStatus(b.uuid, ReservationStatus.accept, false)
+        controller.patchStatus(b.uuid, ReservationStatus.accept, false),
       ).rejects.toThrow();
     });
 
     it('Non-overlapping request should be accepted by admin', async () => {
-      const a = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '1000', endTime: '1100' });
-      const b = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'Y', description: 'Y', date: '20251224', startTime: '1100', endTime: '1200' });
+      const a = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1100',
+      });
+      const b = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'Y',
+        description: 'Y',
+        date: '20251224',
+        startTime: '1100',
+        endTime: '1200',
+      });
       await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
       await expect(
-        controller.patchStatus(b.uuid, ReservationStatus.accept, false)
+        controller.patchStatus(b.uuid, ReservationStatus.accept, false),
       ).resolves.toBeUndefined();
     });
 
     it('Midnight overlap should fail on accept: 23:00-24:00 vs 22:30-23:30', async () => {
-      const a = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '2300', endTime: '0000' });
-      const b = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'M', description: 'M', date: '20251224', startTime: '2230', endTime: '2330' });
+      const a = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '2300',
+        endTime: '0000',
+      });
+      const b = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'M',
+        description: 'M',
+        date: '20251224',
+        startTime: '2230',
+        endTime: '2330',
+      });
       await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
       await expect(
-        controller.patchStatus(b.uuid, ReservationStatus.accept, false)
+        controller.patchStatus(b.uuid, ReservationStatus.accept, false),
       ).rejects.toThrow();
     });
   });
 
   describe('Creation rejection when overlapping with an accepted reservation', () => {
     it('Normal create → accept → front-overlap create should fail', async () => {
-      const a = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '1000', endTime: '1100' });
+      const a = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1100',
+      });
       await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
       await expect(
-        create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'X', description: 'X', date: '20251224', startTime: '0930', endTime: '1030' })
+        create({
+          equipments: [equipment.uuid],
+          owner: EquipOwner.dongyeon,
+          phone: '010',
+          title: 'X',
+          description: 'X',
+          date: '20251224',
+          startTime: '0930',
+          endTime: '1030',
+        }),
       ).rejects.toThrow();
     });
 
     it('Normal create → accept → back-overlap create should fail', async () => {
-      const a = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '1000', endTime: '1100' });
+      const a = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1100',
+      });
       await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
       await expect(
-        create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'Y', description: 'Y', date: '20251224', startTime: '1030', endTime: '1130' })
+        create({
+          equipments: [equipment.uuid],
+          owner: EquipOwner.dongyeon,
+          phone: '010',
+          title: 'Y',
+          description: 'Y',
+          date: '20251224',
+          startTime: '1030',
+          endTime: '1130',
+        }),
       ).rejects.toThrow();
     });
 
     it('Normal create → accept → inside create should fail', async () => {
-      const a = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '1000', endTime: '1200' });
+      const a = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1200',
+      });
       await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
       await expect(
-        create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'Z', description: 'Z', date: '20251224', startTime: '1030', endTime: '1100' })
+        create({
+          equipments: [equipment.uuid],
+          owner: EquipOwner.dongyeon,
+          phone: '010',
+          title: 'Z',
+          description: 'Z',
+          date: '20251224',
+          startTime: '1030',
+          endTime: '1100',
+        }),
       ).rejects.toThrow();
     });
 
     it('Normal create → accept → wrapping create should fail', async () => {
-      const a = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '1000', endTime: '1100' });
+      const a = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1100',
+      });
       await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
       await expect(
-        create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'W', description: 'W', date: '20251224', startTime: '0930', endTime: '1130' })
+        create({
+          equipments: [equipment.uuid],
+          owner: EquipOwner.dongyeon,
+          phone: '010',
+          title: 'W',
+          description: 'W',
+          date: '20251224',
+          startTime: '0930',
+          endTime: '1130',
+        }),
       ).rejects.toThrow();
     });
 
     it('Normal create → accept → non-overlap create succeeds and can be accepted', async () => {
-      const a = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '1000', endTime: '1100' });
+      const a = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1100',
+      });
       await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
-      const b = await create({ equipments: [equipment.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'B', description: 'B', date: '20251224', startTime: '1100', endTime: '1200' });
+      const b = await create({
+        equipments: [equipment.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'B',
+        description: 'B',
+        date: '20251224',
+        startTime: '1100',
+        endTime: '1200',
+      });
       await expect(
-        controller.patchStatus(b.uuid, ReservationStatus.accept, false)
+        controller.patchStatus(b.uuid, ReservationStatus.accept, false),
       ).resolves.toBeUndefined();
     });
   });
 
   describe('Multi-equipment concurrency', () => {
     it('Accept A+B, then request C+D same time should succeed on accept', async () => {
-      const ab = await create({ equipments: [equipment.uuid, equipmentB.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'AB', description: 'AB', date: '20251224', startTime: '1000', endTime: '1100' });
+      const ab = await create({
+        equipments: [equipment.uuid, equipmentB.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'AB',
+        description: 'AB',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1100',
+      });
       await controller.patchStatus(ab.uuid, ReservationStatus.accept, false);
 
-      const cd = await create({ equipments: [equipmentC.uuid, equipmentD.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'CD', description: 'CD', date: '20251224', startTime: '1030', endTime: '1130' });
+      const cd = await create({
+        equipments: [equipmentC.uuid, equipmentD.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'CD',
+        description: 'CD',
+        date: '20251224',
+        startTime: '1030',
+        endTime: '1130',
+      });
       await expect(
-        controller.patchStatus(cd.uuid, ReservationStatus.accept, false)
+        controller.patchStatus(cd.uuid, ReservationStatus.accept, false),
       ).resolves.toBeUndefined();
     });
 
     it('Creation should fail immediately if any requested equipment is already accepted overlapping', async () => {
-      const ab = await create({ equipments: [equipment.uuid, equipmentB.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'AB', description: 'AB', date: '20251224', startTime: '1000', endTime: '1100' });
+      const ab = await create({
+        equipments: [equipment.uuid, equipmentB.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'AB',
+        description: 'AB',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1100',
+      });
       await controller.patchStatus(ab.uuid, ReservationStatus.accept, false);
 
       // A+C overlaps with A 10:30-11:30 → creation should be rejected
       await expect(
-        create({ equipments: [equipment.uuid, equipmentC.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'AC', description: 'AC', date: '20251224', startTime: '1030', endTime: '1130' })
+        create({
+          equipments: [equipment.uuid, equipmentC.uuid],
+          owner: EquipOwner.dongyeon,
+          phone: '010',
+          title: 'AC',
+          description: 'AC',
+          date: '20251224',
+          startTime: '1030',
+          endTime: '1130',
+        }),
       ).rejects.toThrow();
     });
 
     it('Accepting B+C should fail if B+C is overlapping with A+B', async () => {
-      const ab = await create({ equipments: [equipment.uuid, equipmentB.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'AB', description: 'AB', date: '20251224', startTime: '1000', endTime: '1100' });
-      const bc = await create({ equipments: [equipmentB.uuid, equipmentC.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'BC', description: 'BC', date: '20251224', startTime: '1030', endTime: '1130' });
+      const ab = await create({
+        equipments: [equipment.uuid, equipmentB.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'AB',
+        description: 'AB',
+        date: '20251224',
+        startTime: '1000',
+        endTime: '1100',
+      });
+      const bc = await create({
+        equipments: [equipmentB.uuid, equipmentC.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'BC',
+        description: 'BC',
+        date: '20251224',
+        startTime: '1030',
+        endTime: '1130',
+      });
       await controller.patchStatus(ab.uuid, ReservationStatus.accept, false);
       await expect(
-        controller.patchStatus(bc.uuid, ReservationStatus.accept, false)
+        controller.patchStatus(bc.uuid, ReservationStatus.accept, false),
       ).rejects.toThrow();
     });
   });

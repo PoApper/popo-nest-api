@@ -229,7 +229,8 @@ export class ReserveEquipController {
     @Param('status') status: ReservationStatus,
     @Query('sendEmail') sendEmail?: boolean,
   ) {
-    const reservation = await this.reserveEquipService.findOneByUuidOrFail(uuid);
+    const reservation =
+      await this.reserveEquipService.findOneByUuidOrFail(uuid);
 
     // When accepting, validate overlap against already accepted reservations
     if (status === ReservationStatus.accept) {
