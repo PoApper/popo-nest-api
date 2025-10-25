@@ -367,6 +367,55 @@ describe('ReservePlace - Create (concurrency, policies, midnight)', () => {
     });
   });
 
+  describe('maxMinutes per reservation (single too long)', () => {
+    it('a single reservation longer than maxMinutes should be rejected', async () => {
+      const place = await placeService.save({
+        name: 'SingleTooLong', description: 'desc', location: 'loc',
+        region: PlaceRegion.student_hall, staffEmail: 'staff@test.com',
+        maxMinutes: 60, maxConcurrentReservation: 1,
+        openingHours: '{"Everyday":"00:00-24:00"}', enableAutoAccept: PlaceEnableAutoAccept.active,
+      });
+
+      await expect(
+        create({ placeId: place.uuid, phone: '010', title: 'TooLong', description: 'Too long', date: '20251224', startTime: '1000', endTime: '1130' })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('maxMinutes cumulative', () => {
+    it('second request should be rejected when sum exceeds maxMinutes', async () => {
+      const place = await placeService.save({
+        name: 'MaxMinutes Cumulative', description: 'desc', location: 'loc',
+        region: PlaceRegion.student_hall, staffEmail: 'staff@test.com',
+        maxMinutes: 90, maxConcurrentReservation: 1,
+        openingHours: '{"Everyday":"00:00-24:00"}', enableAutoAccept: PlaceEnableAutoAccept.active,
+      });
+
+      const a = await create({ placeId: place.uuid, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '1000', endTime: '1100' }); // 60
+      expect(a.status).toBe(ReservationStatus.accept);
+
+      await expect(
+        create({ placeId: place.uuid, phone: '010', title: 'B', description: 'B', date: '20251224', startTime: '1130', endTime: '1230' })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('maxMinutes across midnight', () => {
+    it('23:00-24:00 on D and 00:00-01:00 on D+1 are both allowed with maxMinutes=60', async () => {
+      const place = await placeService.save({
+        name: 'MaxMinutes Across Midnight', description: 'desc', location: 'loc',
+        region: PlaceRegion.student_hall, staffEmail: 'staff@test.com',
+        maxMinutes: 60, maxConcurrentReservation: 1,
+        openingHours: '{"Everyday":"00:00-24:00"}', enableAutoAccept: PlaceEnableAutoAccept.active,
+      });
+
+      const a = await create({ placeId: place.uuid, phone: '010', title: 'Late', description: 'Late', date: '20251224', startTime: '2300', endTime: '0000' });
+      const b = await create({ placeId: place.uuid, phone: '010', title: 'Early', description: 'Early', date: '20251225', startTime: '0000', endTime: '0100' });
+      expect(a.status).toBe(ReservationStatus.accept);
+      expect(b.status).toBe(ReservationStatus.accept);
+    });
+  });
+
   describe('RC only place', () => {
     it('non-RC student rejected', async () => {
       const place = await placeService.save({

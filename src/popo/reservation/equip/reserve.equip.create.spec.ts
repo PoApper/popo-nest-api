@@ -20,6 +20,7 @@ import { MailService } from 'src/mail/mail.service';
 import { EquipOwner } from 'src/popo/equip/equip.meta';
 import { UserService } from 'src/popo/user/user.service';
 import { Equip } from 'src/popo/equip/equip.entity';
+import { ReserveEquipService } from './reserve.equip.service';
 
 describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
   let app: INestApplication;
@@ -29,6 +30,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
   let jwtService: JwtService;
   let testUtils: TestUtils;
   let userService: UserService;
+  let reserveEquipService: ReserveEquipService;
 
   let testUserJwt: JwtPayload;
   let equipment: Equip;
@@ -72,6 +74,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
     mailService = moduleFixture.get<MailService>(MailService);
     jwtService = moduleFixture.get<JwtService>(JwtService);
     userService = moduleFixture.get<UserService>(UserService);
+    reserveEquipService = moduleFixture.get<ReserveEquipService>(ReserveEquipService);
 
     testUtils = new TestUtils(userService, jwtService);
   });
@@ -264,9 +267,11 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         endTime: '1200',
       });
       await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
-      await expect(
-        controller.patchStatus(b.uuid, ReservationStatus.accept, false),
-      ).resolves.toBeUndefined();
+      await controller.patchStatus(b.uuid, ReservationStatus.accept, false);
+      const afterA = await reserveEquipService.findOneByUuidOrFail(a.uuid);
+      const afterB = await reserveEquipService.findOneByUuidOrFail(b.uuid);
+      expect(afterA.status).toBe(ReservationStatus.accept);
+      expect(afterB.status).toBe(ReservationStatus.accept);
     });
 
     it('Midnight overlap should fail on accept: 23:00-24:00 vs 22:30-23:30', async () => {
@@ -424,9 +429,56 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1100',
         endTime: '1200',
       });
+
+      await controller.patchStatus(b.uuid, ReservationStatus.accept, false);
+
+      const afterA = await reserveEquipService.findOneByUuidOrFail(a.uuid);
+      const afterB = await reserveEquipService.findOneByUuidOrFail(b.uuid);
+      expect(afterA.status).toBe(ReservationStatus.accept);
+      expect(afterB.status).toBe(ReservationStatus.accept);
+    });
+  });
+
+  describe('maxMinutes per reservation (single too long)', () => {
+    it('a single reservation longer than maxMinutes should be rejected', async () => {
+      // use a dedicated equipment with 60-minute budget
+      const tmpEquip = await equipService.save({
+        name: 'Timer60', description: '60min budget', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com', maxMinutes: 60, fee: 1000,
+      });
       await expect(
-        controller.patchStatus(b.uuid, ReservationStatus.accept, false),
-      ).resolves.toBeUndefined();
+        create({ equipments: [tmpEquip.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'TooLong', description: 'Too long', date: '20251224', startTime: '1000', endTime: '1130' })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('maxMinutes cumulative', () => {
+    it('second request should be rejected when sum exceeds maxMinutes', async () => {
+      const tmpEquip = await equipService.save({
+        name: 'Cum90', description: '90min budget', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com', maxMinutes: 90, fee: 1000,
+      });
+      const a = await create({ equipments: [tmpEquip.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'A', description: 'A', date: '20251224', startTime: '1000', endTime: '1100' }); // 60
+      expect(a.status).toBe(ReservationStatus.in_process);
+      await expect(
+        create({ equipments: [tmpEquip.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'B', description: 'B', date: '20251224', startTime: '1130', endTime: '1230' }) // +60 => 120 > 90
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('maxMinutes across midnight', () => {
+    it('23:00-24:00 on D and 00:00-01:00 on D+1 are both allowed with maxMinutes=60', async () => {
+      const tmpEquip = await equipService.save({
+        name: 'Midnight60', description: 'night budget', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com', maxMinutes: 60, fee: 1000,
+      });
+      const a = await create({ equipments: [tmpEquip.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'Late', description: 'Late', date: '20251224', startTime: '2300', endTime: '0000' });
+      const b = await create({ equipments: [tmpEquip.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'Early', description: 'Early', date: '20251225', startTime: '0000', endTime: '0100' });
+      expect(a.status).toBe(ReservationStatus.in_process);
+      expect(b.status).toBe(ReservationStatus.in_process);
+      await controller.patchStatus(b.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
+      const afterA = await reserveEquipService.findOneByUuidOrFail(a.uuid);
+      const afterB = await reserveEquipService.findOneByUuidOrFail(b.uuid);
+      expect(afterA.status).toBe(ReservationStatus.accept);
+      expect(afterB.status).toBe(ReservationStatus.accept);
     });
   });
 
@@ -454,9 +506,9 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1030',
         endTime: '1130',
       });
-      await expect(
-        controller.patchStatus(cd.uuid, ReservationStatus.accept, false),
-      ).resolves.toBeUndefined();
+      await controller.patchStatus(cd.uuid, ReservationStatus.accept, false);
+      const afterCD = await reserveEquipService.findOneByUuidOrFail(cd.uuid);
+      expect(afterCD.status).toBe(ReservationStatus.accept);
     });
 
     it('Creation should fail immediately if any requested equipment is already accepted overlapping', async () => {
