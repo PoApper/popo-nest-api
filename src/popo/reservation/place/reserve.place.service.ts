@@ -14,7 +14,7 @@ import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
 import { PlaceEnableAutoAccept, PlaceRegion } from '../../place/place.meta';
-import { calculateReservationDurationMinutes } from '../../../utils/reservation-utils';
+import { calculateReservationDurationMinutes, timeStringToMinutes } from '../../../utils/reservation-utils';
 import { UserType } from 'src/popo/user/user.meta';
 
 const Message = {
@@ -71,23 +71,25 @@ export class ReservePlaceService {
     startTime: string,
     endTime: string,
   ): Promise<boolean> {
+    // Fetch all accepted reservations for that day and place,
+    // and compute overlaps in minutes to correctly handle end='0000' (24:00)
     const booked_reservations = await this.reservePlaceRepo.find({
       where: {
         placeId: placeId,
         date: date,
         status: ReservationStatus.accept,
-        startTime: LessThan(endTime),
-        endTime: MoreThan(startTime),
       },
-      order: {
-        startTime: 'ASC',
-      },
+      order: { startTime: 'ASC' },
     });
 
     function _get_concurrent_cnt_at_time(time: string) {
       let cnt = 0;
+      const t = timeStringToMinutes(time, false);
       for (const reservation of booked_reservations) {
-        if (reservation.startTime <= time && time <= reservation.endTime) {
+        const s = timeStringToMinutes(reservation.startTime, false);
+        const e = timeStringToMinutes(reservation.endTime, true);
+        // Use half-open interval [s, e) to avoid double counting boundary equals
+        if (s <= t && t < e) {
           cnt += 1;
         }
       }
@@ -106,22 +108,19 @@ export class ReservePlaceService {
 
     // 3. check middle time reservation is possible: they should be less than maxConcurrentReservation
     for (const reservation of booked_reservations) {
+      const s = reservation.startTime;
+      const e = reservation.endTime;
+
       // handled on case 1
-      if (reservation.startTime < startTime) continue;
+      if (s < startTime) continue;
 
       // handled on case 2
-      if (reservation.endTime > endTime) continue;
+      if (e > endTime) continue;
 
+      // startTime ~ endTime 사이에 "기존 예약 개수"가 maxConcurrentReservation 이상인지 확인
       if (
-        _get_concurrent_cnt_at_time(reservation.startTime) >=
-        maxConcurrentReservation
-      ) {
-        return false;
-      }
-
-      if (
-        _get_concurrent_cnt_at_time(reservation.endTime) >=
-        maxConcurrentReservation
+        _get_concurrent_cnt_at_time(s) >= maxConcurrentReservation ||
+        _get_concurrent_cnt_at_time(e) >= maxConcurrentReservation
       ) {
         return false;
       }

@@ -6,7 +6,7 @@ import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
 import { EquipService } from '../../equip/equip.service';
 import { ReservationStatus } from '../reservation.meta';
-import { calculateReservationDurationMinutes } from '../../../utils/reservation-utils';
+import { calculateReservationDurationMinutes, timeStringToMinutes } from '../../../utils/reservation-utils';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -39,15 +39,17 @@ export class ReserveEquipService {
       where: {
         date: date,
         status: ReservationStatus.accept,
-        startTime: LessThan(endTime),
-        endTime: MoreThan(startTime),
       },
     });
 
     for (const reservation of booked_reservations) {
       if (reservation.equipments.some((equip) => uuidList.includes(equip))) {
-        const isOverlap =
-          reservation.startTime < endTime && startTime < reservation.endTime;
+        // Determine overlap using minute-based half-open intervals [s,e)
+        const s = timeStringToMinutes(reservation.startTime, false);
+        const e = timeStringToMinutes(reservation.endTime, true);
+        const ns = timeStringToMinutes(startTime, false);
+        const ne = timeStringToMinutes(endTime, true);
+        const isOverlap = Math.max(s, ns) < Math.min(e, ne);
 
         if (isOverlap) {
           return true;
