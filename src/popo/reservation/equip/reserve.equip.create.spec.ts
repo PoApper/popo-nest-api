@@ -7,7 +7,6 @@ import { DataSource } from 'typeorm';
 import configurations from 'src/config/configurations';
 import { ReserveEquipModule } from './reserve.equip.module';
 import { ReserveEquipController } from './reserve.equip.controller';
-import { ReserveEquipService } from './reserve.equip.service';
 import { UserModule } from 'src/popo/user/user.module';
 import { EquipModule } from 'src/popo/equip/equip.module';
 import { EquipService } from 'src/popo/equip/equip.service';
@@ -20,11 +19,11 @@ import { ReservationStatus } from '../reservation.meta';
 import { MailService } from 'src/mail/mail.service';
 import { EquipOwner } from 'src/popo/equip/equip.meta';
 import { UserService } from 'src/popo/user/user.service';
+import { Equip } from 'src/popo/equip/equip.entity';
 
 describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
   let app: INestApplication;
   let controller: ReserveEquipController;
-  let service: ReserveEquipService;
   let equipService: EquipService;
   let mailService: MailService;
   let jwtService: JwtService;
@@ -32,7 +31,10 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
   let userService: UserService;
 
   let testUserJwt: JwtPayload;
-  let equipment: any;
+  let equipment: Equip;
+  let equipmentB: Equip;
+  let equipmentC: Equip;
+  let equipmentD: Equip;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -57,7 +59,6 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
     await app.init();
 
     controller = moduleFixture.get<ReserveEquipController>(ReserveEquipController);
-    service = moduleFixture.get<ReserveEquipService>(ReserveEquipService);
     equipService = moduleFixture.get<EquipService>(EquipService);
     mailService = moduleFixture.get<MailService>(MailService);
     jwtService = moduleFixture.get<JwtService>(JwtService);
@@ -74,10 +75,22 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
     const user = testUtils.getTestUser();
     testUserJwt = { uuid: user.uuid, email: user.email, name: user.name, nickname: '', userType: user.userType };
 
-    // create a single equipment to use
+    // create equipments to use
     equipment = await equipService.save({
       name: 'Tripod', description: 'tripod', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com',
       maxMinutes: 180, fee: 10000,
+    });
+    equipmentB = await equipService.save({
+      name: 'Mic', description: 'mic', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com',
+      maxMinutes: 180, fee: 5000,
+    });
+    equipmentC = await equipService.save({
+        name: 'Light', description: 'light', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com',
+        maxMinutes: 180, fee: 7000,
+      });
+    equipmentD = await equipService.save({
+      name: 'Slider', description: 'slider', equipOwner: EquipOwner.dongyeon, staffEmail: 'staff@test.com',
+      maxMinutes: 180, fee: 15000,
     });
 
     // mock side-effects for speed
@@ -188,6 +201,35 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
       ).resolves.toBeUndefined();
     });
   });
+
+  describe('Multi-equipment concurrency', () => {
+    it('Accept A+B, then request C+D same time should succeed on accept', async () => {
+      const ab = await create({ equipments: [equipment.uuid, equipmentB.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'AB', description: 'AB', date: '20251224', startTime: '1000', endTime: '1100' });
+      await controller.patchStatus(ab.uuid, ReservationStatus.accept, false);
+
+      const cd = await create({ equipments: [equipmentC.uuid, equipmentD.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'CD', description: 'CD', date: '20251224', startTime: '1030', endTime: '1130' });
+      await expect(
+        controller.patchStatus(cd.uuid, ReservationStatus.accept, false)
+      ).resolves.toBeUndefined();
+    });
+
+    it('Creation should fail immediately if any requested equipment is already accepted overlapping', async () => {
+      const ab = await create({ equipments: [equipment.uuid, equipmentB.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'AB', description: 'AB', date: '20251224', startTime: '1000', endTime: '1100' });
+      await controller.patchStatus(ab.uuid, ReservationStatus.accept, false);
+
+      // A+C overlaps with A 10:30-11:30 → creation should be rejected
+      await expect(
+        create({ equipments: [equipment.uuid, equipmentC.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'AC', description: 'AC', date: '20251224', startTime: '1030', endTime: '1130' })
+      ).rejects.toThrow();
+    });
+
+    it('Accepting B+C should fail if B+C is overlapping with A+B', async () => {
+      const ab = await create({ equipments: [equipment.uuid, equipmentB.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'AB', description: 'AB', date: '20251224', startTime: '1000', endTime: '1100' });
+      const bc = await create({ equipments: [equipmentB.uuid, equipmentC.uuid], owner: EquipOwner.dongyeon, phone: '010', title: 'BC', description: 'BC', date: '20251224', startTime: '1030', endTime: '1130' });
+      await controller.patchStatus(ab.uuid, ReservationStatus.accept, false);
+      await expect(
+        controller.patchStatus(bc.uuid, ReservationStatus.accept, false)
+      ).rejects.toThrow();
+    });
+  });
 });
-
-
