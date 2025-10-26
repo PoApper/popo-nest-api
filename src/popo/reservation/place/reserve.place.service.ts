@@ -1,14 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
-import {
-  DeepPartial,
-  In,
-  LessThan,
-  MoreThan,
-  MoreThanOrEqual,
-  Repository,
-} from 'typeorm';
+import { DeepPartial, In, MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
@@ -39,34 +32,6 @@ export class ReservePlaceService {
     private readonly placeService: PlaceService,
   ) {}
 
-  // TODO: delete this code, after concurrent check logic is fully validated
-  async isReservationOverlap(
-    placeId: string,
-    date: string,
-    startTime: string,
-    endTime: string,
-  ): Promise<ReservePlace | null> {
-    const booked_reservations = await this.find({
-      where: {
-        placeId: placeId,
-        date: date,
-        status: ReservationStatus.accept,
-        startTime: LessThan(endTime),
-        endTime: MoreThan(startTime),
-      },
-    });
-
-    for (const reservation of booked_reservations) {
-      const isOverlap =
-        reservation.startTime < endTime && startTime < reservation.endTime;
-
-      if (isOverlap) {
-        return reservation;
-      }
-    }
-    return null;
-  }
-
   async isReservationConcurrent(
     placeId: string,
     maxConcurrentReservation: number,
@@ -95,7 +60,7 @@ export class ReservePlaceService {
     for (const r of accepted) {
       const s = timeStringToMinutes(r.startTime, false);
       const e = timeStringToMinutes(r.endTime, true);
-      // 요청받은 예약과 겹쳐서 고려해야 하는 예약만 넣음 
+      // 요청받은 예약과 겹쳐서 고려해야 하는 예약만 넣음
       const cs = Math.max(s, S);
       const ce = Math.min(e, E);
       if (cs < ce) {
@@ -108,7 +73,7 @@ export class ReservePlaceService {
     events.push({ t: E, label: EventLabel.END });
 
     // 시간 순으로 정렬, END(-1)가 START(+1)보다 앞에 와서 END와 START가 겹쳐도 처리 가능하도록 함
-    events.sort((a, b) => (a.t - b.t) || (a.label - b.label));
+    events.sort((a, b) => a.t - b.t || a.label - b.label);
 
     let cnt = 0;
     for (const ev of events) {
@@ -130,20 +95,6 @@ export class ReservePlaceService {
     }
 
     const targetPlace = await this.placeService.findOneByUuidOrFail(placeId);
-
-    // TODO: delete this code, after concurrent check logic is fully validated
-    // Reservation Overlap Check
-    // const isReservationOverlap = await this.isReservationOverlap(
-    //   place_id,
-    //   date,
-    //   start_time,
-    //   end_time,
-    // );
-    // if (isReservationOverlap) {
-    //   throw new BadRequestException(
-    //     `${Message.OVERLAP_RESERVATION}: ${isReservationOverlap.date} ${isReservationOverlap.start_time} ~ ${isReservationOverlap.end_time}`
-    //   );
-    // }
 
     // Reservation Concurrent Check
     const isConcurrentPossible = await this.isReservationConcurrent(

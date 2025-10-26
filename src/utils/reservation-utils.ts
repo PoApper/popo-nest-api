@@ -1,3 +1,4 @@
+// TODO: reserve.place.entity 의 endTime이 0000 이 아닌 2400으로 저장된다면 이 함수 지워도 됨
 export function timeStringToMinutes(time: string, isEnd = false): number {
   // Normalize '0000' at end boundary to represent 24:00 (end of day)
   if (isEnd && time === '0000') {
