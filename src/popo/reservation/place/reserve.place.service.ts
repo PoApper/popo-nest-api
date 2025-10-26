@@ -60,7 +60,10 @@ export class ReservePlaceService {
     for (const r of accepted) {
       const s = timeStringToMinutes(r.startTime, false);
       const e = timeStringToMinutes(r.endTime, true);
-      // 요청받은 예약과 겹쳐서 고려해야 하는 예약만 넣음
+      // 기존 예약을 [S, E) 구간으로 클리핑하여 이벤트 리스트를 줄임.
+      // 이 최적화는 [S, E) 밖의 이벤트가 동시 예약 개수에 영향을 주지 않으므로 올바르며,
+      // 요청받은 예약과 겹치는 부분만 고려하는 것과 동일한 결과를 보장함.
+      // TODO: reserve.place.entity 의 endTime이 0000 이 아닌 2400으로 저장되도록 바뀐다면, 이런 로직 필요없이 DB find()에서 필터링 가능
       const cs = Math.max(s, S);
       const ce = Math.min(e, E);
       if (cs < ce) {
