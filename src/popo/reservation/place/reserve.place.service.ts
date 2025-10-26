@@ -1,20 +1,16 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
-import {
-  DeepPartial,
-  In,
-  LessThan,
-  MoreThan,
-  MoreThanOrEqual,
-  Repository,
-} from 'typeorm';
+import { DeepPartial, In, MoreThanOrEqual, Repository } from 'typeorm';
 import { CreateReservePlaceDto } from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
 import { PlaceEnableAutoAccept, PlaceRegion } from '../../place/place.meta';
-import { calculateReservationDurationMinutes } from '../../../utils/reservation-utils';
+import {
+  calculateReservationDurationMinutes,
+  timeStringToMinutes,
+} from '../../../utils/reservation-utils';
 import { UserType } from 'src/popo/user/user.meta';
 
 const Message = {
@@ -36,34 +32,6 @@ export class ReservePlaceService {
     private readonly placeService: PlaceService,
   ) {}
 
-  // TODO: delete this code, after concurrent check logic is fully validated
-  async isReservationOverlap(
-    placeId: string,
-    date: string,
-    startTime: string,
-    endTime: string,
-  ): Promise<ReservePlace | null> {
-    const booked_reservations = await this.find({
-      where: {
-        placeId: placeId,
-        date: date,
-        status: ReservationStatus.accept,
-        startTime: LessThan(endTime),
-        endTime: MoreThan(startTime),
-      },
-    });
-
-    for (const reservation of booked_reservations) {
-      const isOverlap =
-        reservation.startTime < endTime && startTime < reservation.endTime;
-
-      if (isOverlap) {
-        return reservation;
-      }
-    }
-    return null;
-  }
-
   async isReservationConcurrent(
     placeId: string,
     maxConcurrentReservation: number,
@@ -71,62 +39,50 @@ export class ReservePlaceService {
     startTime: string,
     endTime: string,
   ): Promise<boolean> {
-    const booked_reservations = await this.reservePlaceRepo.find({
-      where: {
-        placeId: placeId,
-        date: date,
-        status: ReservationStatus.accept,
-        startTime: LessThan(endTime),
-        endTime: MoreThan(startTime),
-      },
-      order: {
-        startTime: 'ASC',
-      },
+    // 라인스위핑으로 동시 예약 개수 체크
+
+    const accepted = await this.reservePlaceRepo.find({
+      where: { placeId: placeId, date: date, status: ReservationStatus.accept },
+      order: { startTime: 'ASC' },
     });
 
-    function _get_concurrent_cnt_at_time(time: string) {
-      let cnt = 0;
-      for (const reservation of booked_reservations) {
-        if (reservation.startTime <= time && time <= reservation.endTime) {
-          cnt += 1;
-        }
-      }
-      return cnt;
+    const S = timeStringToMinutes(startTime, false);
+    const E = timeStringToMinutes(endTime, true); // 0000 => 1440
+
+    enum EventLabel {
+      END = -1,
+      START = 1,
     }
+    type Event = { t: number; label: EventLabel };
 
-    // 1. check start time reservation is possible
-    if (_get_concurrent_cnt_at_time(startTime) >= maxConcurrentReservation) {
-      return false;
-    }
+    const events: Event[] = [];
 
-    // 2. check end time reservation is possible
-    if (_get_concurrent_cnt_at_time(endTime) >= maxConcurrentReservation) {
-      return false;
-    }
-
-    // 3. check middle time reservation is possible: they should be less than maxConcurrentReservation
-    for (const reservation of booked_reservations) {
-      // handled on case 1
-      if (reservation.startTime < startTime) continue;
-
-      // handled on case 2
-      if (reservation.endTime > endTime) continue;
-
-      if (
-        _get_concurrent_cnt_at_time(reservation.startTime) >=
-        maxConcurrentReservation
-      ) {
-        return false;
-      }
-
-      if (
-        _get_concurrent_cnt_at_time(reservation.endTime) >=
-        maxConcurrentReservation
-      ) {
-        return false;
+    for (const r of accepted) {
+      const s = timeStringToMinutes(r.startTime, false);
+      const e = timeStringToMinutes(r.endTime, true);
+      // 기존 예약을 [S, E) 구간으로 클리핑하여 이벤트 리스트를 줄임.
+      // 이 최적화는 [S, E) 밖의 이벤트가 동시 예약 개수에 영향을 주지 않으므로 올바르며,
+      // 요청받은 예약과 겹치는 부분만 고려하는 것과 동일한 결과를 보장함.
+      // TODO: reserve.place.entity 의 endTime이 0000 이 아닌 2400으로 저장되도록 바뀐다면, 이런 로직 필요없이 DB find()에서 필터링 가능
+      const cs = Math.max(s, S);
+      const ce = Math.min(e, E);
+      if (cs < ce) {
+        events.push({ t: cs, label: EventLabel.START });
+        events.push({ t: ce, label: EventLabel.END });
       }
     }
 
+    events.push({ t: S, label: EventLabel.START });
+    events.push({ t: E, label: EventLabel.END });
+
+    // 시간 순으로 정렬, END(-1)가 START(+1)보다 앞에 와서 END와 START가 겹쳐도 처리 가능하도록 함
+    events.sort((a, b) => a.t - b.t || a.label - b.label);
+
+    let cnt = 0;
+    for (const ev of events) {
+      cnt += ev.label;
+      if (cnt > maxConcurrentReservation) return false;
+    }
     return true;
   }
 
@@ -142,20 +98,6 @@ export class ReservePlaceService {
     }
 
     const targetPlace = await this.placeService.findOneByUuidOrFail(placeId);
-
-    // TODO: delete this code, after concurrent check logic is fully validated
-    // Reservation Overlap Check
-    // const isReservationOverlap = await this.isReservationOverlap(
-    //   place_id,
-    //   date,
-    //   start_time,
-    //   end_time,
-    // );
-    // if (isReservationOverlap) {
-    //   throw new BadRequestException(
-    //     `${Message.OVERLAP_RESERVATION}: ${isReservationOverlap.date} ${isReservationOverlap.start_time} ~ ${isReservationOverlap.end_time}`
-    //   );
-    // }
 
     // Reservation Concurrent Check
     const isConcurrentPossible = await this.isReservationConcurrent(
