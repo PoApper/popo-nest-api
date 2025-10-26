@@ -36,6 +36,7 @@ export class ReservePlace extends Base {
   @Column({ name: 'start_time', nullable: false })
   startTime: string; // HHmm
 
+  // TODO: 자정에 종료될 때 0000 이 아닌 2400으로 저장하도록 수정. 이 부분 때문에 동시성 체크 로직이 복잡해짐
   @Column({ name: 'end_time', nullable: false })
   endTime: string; // HHmm
 

@@ -28,7 +28,9 @@ export class PlaceService {
       region: dto.region,
       staffEmail: dto.staffEmail,
       maxMinutes: dto.maxMinutes,
+      maxConcurrentReservation: dto.maxConcurrentReservation,
       openingHours: dto.openingHours,
+      enableAutoAccept: dto.enableAutoAccept,
     };
     return this.placeRepo.save(saveDto);
   }
