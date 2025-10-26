@@ -74,61 +74,47 @@ export class ReservePlaceService {
     startTime: string,
     endTime: string,
   ): Promise<boolean> {
-    // Fetch all accepted reservations for that day and place,
-    // and compute overlaps in minutes to correctly handle end='0000' (24:00)
-    const booked_reservations = await this.reservePlaceRepo.find({
-      where: {
-        placeId: placeId,
-        date: date,
-        status: ReservationStatus.accept,
-      },
+    // 라인스위핑으로 동시 예약 개수 체크
+
+    const accepted = await this.reservePlaceRepo.find({
+      where: { placeId: placeId, date: date, status: ReservationStatus.accept },
       order: { startTime: 'ASC' },
     });
 
-    function _get_concurrent_cnt_at_time(time: string) {
-      let cnt = 0;
-      const t = timeStringToMinutes(time, false);
-      for (const reservation of booked_reservations) {
-        const s = timeStringToMinutes(reservation.startTime, false);
-        const e = timeStringToMinutes(reservation.endTime, true);
-        // Use half-open interval [s, e) to avoid double counting boundary equals
-        if (s <= t && t < e) {
-          cnt += 1;
-        }
-      }
-      return cnt;
+    const S = timeStringToMinutes(startTime, false);
+    const E = timeStringToMinutes(endTime, true); // 0000 => 1440
+
+    enum EventLabel {
+      END = -1,
+      START = 1,
     }
+    type Event = { t: number; label: EventLabel };
 
-    // 1. check start time reservation is possible
-    if (_get_concurrent_cnt_at_time(startTime) >= maxConcurrentReservation) {
-      return false;
-    }
+    const events: Event[] = [];
 
-    // 2. check end time reservation is possible
-    if (_get_concurrent_cnt_at_time(endTime) >= maxConcurrentReservation) {
-      return false;
-    }
-
-    // 3. check middle time reservation is possible: they should be less than maxConcurrentReservation
-    for (const reservation of booked_reservations) {
-      const s = reservation.startTime;
-      const e = reservation.endTime;
-
-      // handled on case 1
-      if (s < startTime) continue;
-
-      // handled on case 2
-      if (e > endTime) continue;
-
-      // startTime ~ endTime 사이에 "기존 예약 개수"가 maxConcurrentReservation 이상인지 확인
-      if (
-        _get_concurrent_cnt_at_time(s) >= maxConcurrentReservation ||
-        _get_concurrent_cnt_at_time(e) >= maxConcurrentReservation
-      ) {
-        return false;
+    for (const r of accepted) {
+      const s = timeStringToMinutes(r.startTime, false);
+      const e = timeStringToMinutes(r.endTime, true);
+      // 요청받은 예약과 겹쳐서 고려해야 하는 예약만 넣음 
+      const cs = Math.max(s, S);
+      const ce = Math.min(e, E);
+      if (cs < ce) {
+        events.push({ t: cs, label: EventLabel.START });
+        events.push({ t: ce, label: EventLabel.END });
       }
     }
 
+    events.push({ t: S, label: EventLabel.START });
+    events.push({ t: E, label: EventLabel.END });
+
+    // 시간 순으로 정렬, END(-1)가 START(+1)보다 앞에 와서 END와 START가 겹쳐도 처리 가능하도록 함
+    events.sort((a, b) => (a.t - b.t) || (a.label - b.label));
+
+    let cnt = 0;
+    for (const ev of events) {
+      cnt += ev.label;
+      if (cnt > maxConcurrentReservation) return false;
+    }
     return true;
   }
 
