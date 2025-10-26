@@ -186,6 +186,39 @@ describe('ReservePlace - Create (concurrency, policies, midnight)', () => {
       });
       expect(res.status).toBe(ReservationStatus.accept);
     });
+
+    it('23:00-24:00, 21:00-22:00, 22:00-23:00 are sequentially allowed', async () => {
+      await create({
+        placeId: placeAuto.uuid,
+        phone: '010',
+        title: 'A',
+        description: 'A',
+        date: '20251224',
+        startTime: '2300',
+        endTime: '0000',
+      });
+      const res1 = await create({
+        placeId: placeAuto.uuid,
+        phone: '010',
+        title: 'B',
+        description: 'B',
+        date: '20251224',
+        startTime: '2100',
+        endTime: '2200',
+      });
+      expect(res1.status).toBe(ReservationStatus.accept);
+
+      const res2 = await create({
+        placeId: placeAuto.uuid,
+        phone: '010',
+        title: 'C',
+        description: 'C',
+        date: '20251224',
+        startTime: '2200',
+        endTime: '2300',
+      });
+      expect(res2.status).toBe(ReservationStatus.accept);
+    });
   });
 
   // ---- Rejected overlap cases ----
