@@ -14,9 +14,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Docker-2CA5E0?style=flat-square&logo=Docker&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Docker-2CA5E0?logo=Docker&logoColor=white"/>
   <img src="https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white">
-  <img src="https://img.shields.io/badge/NestJS-11.0.x-E0234E?logo=nestjs&logoColor=white">
+  <img src="https://img.shields.io/badge/NestJS-10.x-E0234E?logo=nestjs&logoColor=white">
 </p>
 
 ## About
