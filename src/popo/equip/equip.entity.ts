@@ -28,6 +28,15 @@ export class Equip extends Base {
   @Column({ name: 'max_minutes', default: 24 * 60 })
   maxMinutes: number;
 
+  @Column('text', {
+    name: 'opening_hours',
+    nullable: false,
+    default: '{"Everyday":"00:00-24:00"}',
+  })
+  openingHours: string;
+  // if null, there's no rule for opening hours.
+  // checking opening hours is implemented on the frontend side.
+
   @Column({ name: 'total_reservation_count', default: 0 })
   totalReservationCount: number;
 }
