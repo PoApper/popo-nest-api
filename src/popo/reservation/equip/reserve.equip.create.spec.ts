@@ -102,6 +102,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
       staffEmail: 'staff@test.com',
       maxMinutes: 180,
       fee: 10000,
+      openingHours: '{"Everyday":"00:00-24:00"}',
     });
     equipmentB = await equipService.save({
       name: 'Mic',
@@ -110,6 +111,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
       staffEmail: 'staff@test.com',
       maxMinutes: 180,
       fee: 5000,
+      openingHours: '{"Everyday":"00:00-24:00"}',
     });
     equipmentC = await equipService.save({
       name: 'Light',
@@ -118,6 +120,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
       staffEmail: 'staff@test.com',
       maxMinutes: 180,
       fee: 7000,
+      openingHours: '{"Everyday":"00:00-24:00"}',
     });
     equipmentD = await equipService.save({
       name: 'Slider',
@@ -126,6 +129,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
       staffEmail: 'staff@test.com',
       maxMinutes: 180,
       fee: 15000,
+      openingHours: '{"Everyday":"00:00-24:00"}',
     });
 
     // mock side-effects for speed
@@ -450,6 +454,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 60,
         fee: 1000,
+        openingHours: '{"Everyday":"00:00-24:00"}',
       });
       await expect(
         create({
@@ -475,6 +480,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 90,
         fee: 1000,
+        openingHours: '{"Everyday":"00:00-24:00"}',
       });
       const a = await create({
         equipments: [tmpEquip.uuid],
@@ -511,6 +517,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 60,
         fee: 1000,
+        openingHours: '{"Everyday":"00:00-24:00"}',
       });
       const a = await create({
         equipments: [tmpEquip.uuid],

@@ -29,6 +29,7 @@ export class EquipService {
       equipOwner: dto.equipOwner,
       staffEmail: dto.staffEmail,
       maxMinutes: dto.maxMinutes,
+      openingHours: dto.openingHours,
     });
   }
 
