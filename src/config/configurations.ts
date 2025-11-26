@@ -1,5 +1,6 @@
 export default () => {
   const isTest = process.env.NODE_ENV === 'test';
+  const isProd = process.env.NODE_ENV === 'prod';
   // RSA 키 줄바꿈 처리
   const rawPrivateKey = process.env.FIREBASE_PRIVATE_KEY ?? '';
   const isEscaped = rawPrivateKey.includes('\\n');
@@ -23,6 +24,13 @@ export default () => {
       synchronize: isTest ? true : process.env.DATABASE_SYNC === 'true', // 테스트 환경에서는 항상 true
       dropSchema: isTest, // ✅ 테스트 시 DB 초기화
       charset: isTest ? undefined : 'utf8mb4', // 테스트 환경인 SQLite는 기본적으로 MYSQL의 utf8mb4까지 커버하므로 따로 설정 필요하지 않음
+
+      extra: isTest
+        ? undefined
+        : {
+            // 커넥션 제한 안하면 터미널이나 로컬 개발 환경에서 too many connections 맞을 수 있음
+            connectionLimit: isProd ? 10 : 1,
+          },
     },
     // Paxi의 FCM과 같은 설정 사용
     firebase: {
