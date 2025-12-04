@@ -8,6 +8,7 @@ export class EquipmentDto {
   readonly equipOwner: EquipOwner;
   readonly staffEmail: string;
   readonly maxMinutes?: number;
+  readonly openingHours: string;
 }
 
 export class EquipmentImageDto {
