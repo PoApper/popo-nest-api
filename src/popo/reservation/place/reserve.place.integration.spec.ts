@@ -802,7 +802,16 @@ describe('ReservePlaceModule - Integration Test', () => {
         phone: '010-1234-5678',
         title: 'Delete Test Reservation',
         description: 'Delete test reservation description',
-        date: '20251201', // Future date
+        date: (() => {
+          // generate future date
+          const d = new Date();
+          d.setDate(d.getDate() + 7);
+          return (
+            d.getFullYear() +
+            String(d.getMonth() + 1).padStart(2, '0') +
+            String(d.getDate()).padStart(2, '0')
+          );
+        })(), // Future date
         startTime: '1400',
         endTime: '1600',
       });
