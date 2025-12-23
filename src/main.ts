@@ -62,11 +62,17 @@ async function bootstrap() {
     },
   });
 
-  initializeFirebaseApp({
-    credential: firebaseCredential.cert(
-      configService.get('firebase') as ServiceAccount,
-    ),
-  });
+  // Firebase 설정이 있을 때만 초기화
+  const firebaseConfig = configService.get<ServiceAccount>('firebase');
+  if (firebaseConfig?.projectId) {
+    initializeFirebaseApp({
+      credential: firebaseCredential.cert(firebaseConfig),
+    });
+  } else {
+    console.log(
+      'Firebase configuration not found. Firebase features will be disabled.',
+    );
+  }
 
   await app.listen(4000);
 }
