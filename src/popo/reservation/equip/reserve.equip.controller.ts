@@ -201,7 +201,7 @@ export class ReserveEquipController {
     } else {
       if (reservation.bookerId == user.uuid) {
         // if the reservation is in the past, deny delete
-        const reservationStartTime = reservation.date + reservation.startTime;
+        const reservationStartTime = reservation.date + reservation.endTime;
         const currentTime = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
 
         if (reservationStartTime < currentTime) {
