@@ -332,10 +332,10 @@ export class ReservePlaceController {
     } else {
       if (reservation.bookerId === user.uuid) {
         // if the reservation is in the past, deny delete
-        const reservationStartTime = reservation.date + reservation.endTime;
+        const reservationEndTime = reservation.date + reservation.endTime;
         const currentTime = moment().tz('Asia/Seoul').format('YYYYMMDDHHmm');
 
-        if (reservationStartTime < currentTime) {
+        if (reservationEndTime < currentTime) {
           throw new BadRequestException('Cannot delete past reservation');
         } else {
           await this.reservePlaceService.remove(uuid);
