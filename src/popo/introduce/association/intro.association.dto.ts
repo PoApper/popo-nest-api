@@ -5,6 +5,7 @@ export class CreateIntroAssociationDto {
   readonly content: string;
   readonly location: string;
   readonly representative: string;
+  readonly categoryId: number;
   readonly contact: string;
   readonly homepageUrl: string;
   readonly facebookUrl: string;
