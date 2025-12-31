@@ -1,11 +1,12 @@
 import { IsFile, MaxFileSize, MemoryStoredFile } from 'nestjs-form-data';
+import { AssociationType } from './intro.association.meta';
 
 export class CreateIntroAssociationDto {
   readonly name: string;
+  readonly associationType: AssociationType;
   readonly content: string;
   readonly location: string;
   readonly representative: string;
-  readonly categoryId: number;
   readonly contact: string;
   readonly homepageUrl: string;
   readonly facebookUrl: string;
