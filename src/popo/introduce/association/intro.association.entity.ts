@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
 import { Base } from '../../../common/base.entity';
+import { AssociationType } from './intro.association.meta';
 
 @Entity()
 export class IntroAssociation extends Base {
@@ -20,6 +21,9 @@ export class IntroAssociation extends Base {
 
   @Column({ nullable: false })
   contact: string;
+
+  @Column({ name: 'association_type', nullable: false })
+  associationType: AssociationType;
 
   @Column({ name: 'image_url', nullable: true })
   imageUrl: string;
