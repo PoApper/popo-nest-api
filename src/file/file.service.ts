@@ -5,21 +5,48 @@ import {
   S3Client,
   SelectObjectContentCommand,
 } from '@aws-sdk/client-s3';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { Readable } from 'stream';
 
 @Injectable()
 export class FileService {
-  private readonly s3 = new S3Client({
-    region: process.env.S3_REGION,
-  });
-  private readonly bucket: string = process.env.S3_BUCKET_NAME;
-  private readonly PopoCdnUrl: string = process.env.S3_CF_DIST_URL;
+  private readonly logger = new Logger(FileService.name);
+  private readonly s3: S3Client | null;
+  private readonly bucket: string | null;
+  private readonly PopoCdnUrl: string | null;
+  private readonly isS3Enabled: boolean;
 
-  constructor() {}
+  constructor() {
+    // AWS 자격 증명이 있을 때만 S3Client 초기화
+    this.isS3Enabled =
+      !!process.env.AWS_ACCESS_KEY_ID &&
+      !!process.env.AWS_SECRET_ACCESS_KEY &&
+      !!process.env.S3_REGION &&
+      !!process.env.S3_BUCKET_NAME;
+
+    if (this.isS3Enabled) {
+      this.s3 = new S3Client({
+        region: process.env.S3_REGION,
+      });
+      this.bucket = process.env.S3_BUCKET_NAME;
+      this.PopoCdnUrl = process.env.S3_CF_DIST_URL || '';
+    } else {
+      this.s3 = null;
+      this.bucket = null;
+      this.PopoCdnUrl = null;
+      this.logger.warn(
+        'AWS S3 configuration not found. S3 features will be disabled.',
+      );
+    }
+  }
 
   async queryOnS3(key: string, query: string) {
+    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
+      this.logger.warn('S3 is not enabled. queryOnS3 operation skipped.');
+      return [];
+    }
+
     const res = await this.s3.send(
       new SelectObjectContentCommand({
         Bucket: this.bucket,
@@ -59,6 +86,11 @@ export class FileService {
   }
 
   async getText(key: string) {
+    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
+      this.logger.warn('S3 is not enabled. getText operation skipped.');
+      return '';
+    }
+
     const res = await this.s3.send(
       new GetObjectCommand({
         Bucket: this.bucket,
@@ -69,6 +101,11 @@ export class FileService {
   }
 
   async getFile(key: string) {
+    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
+      this.logger.warn('S3 is not enabled. getFile operation skipped.');
+      return Buffer.from('');
+    }
+
     const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
     const response = await this.s3.send(command);
     return new Promise<Buffer>((resolve, reject) => {
@@ -81,6 +118,11 @@ export class FileService {
   }
 
   async uploadText(key: string, text: string) {
+    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
+      this.logger.warn('S3 is not enabled. uploadText operation skipped.');
+      return `local://${key}`;
+    }
+
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -92,6 +134,11 @@ export class FileService {
   }
 
   async uploadFile(key: string, file: MemoryStoredFile) {
+    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
+      this.logger.warn('S3 is not enabled. uploadFile operation skipped.');
+      return `local://${key}`;
+    }
+
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -104,6 +151,11 @@ export class FileService {
   }
 
   deleteFile(key: string) {
+    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
+      this.logger.warn('S3 is not enabled. deleteFile operation skipped.');
+      return Promise.resolve();
+    }
+
     return this.s3.send(
       new DeleteObjectCommand({
         Bucket: this.bucket,
