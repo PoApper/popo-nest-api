@@ -61,6 +61,15 @@ export class IntroAssociationController {
   }
 
   @Public()
+  @Get('types')
+  getAssociationTypes() {
+    return Object.entries(AssociationType).map(([key, value]) => ({
+      key,
+      value,
+    }));
+  }
+
+  @Public()
   @Get('today')
   getTodayVisited() {
     return this.introAssociationService.find({
