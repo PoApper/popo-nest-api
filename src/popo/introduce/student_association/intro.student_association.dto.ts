@@ -3,11 +3,11 @@ import { IsFile, MaxFileSize, MemoryStoredFile } from 'nestjs-form-data';
 export class CreateIntroStudentAssociationDto {
   readonly name: string;
   readonly shortDesc: string;
+  readonly representative: string;
+  readonly contact: string;
   readonly content: string;
   readonly location: string;
-  readonly representative: string;
   readonly office: string;
-  readonly contact: string;
   readonly imageUrl: string;
   readonly homepageUrl: string;
   readonly facebookUrl: string;

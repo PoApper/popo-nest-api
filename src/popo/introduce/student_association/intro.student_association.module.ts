@@ -3,9 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { NestjsFormDataModule } from 'nestjs-form-data';
 
 import { IntroStudentAssociation } from './intro.student_association.entity';
-import { IntroStudentAssociationController } from './intro.student_association.controller';
 import { IntroStudentAssociationService } from './intro.student_association.service';
 import { FileModule } from '../../../file/file.module';
+import { IntroStudentAssociationController } from './intro.student_association.controller';
 
 @Module({
   imports: [

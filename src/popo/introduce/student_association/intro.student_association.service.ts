@@ -50,6 +50,9 @@ export class IntroStudentAssociationService {
   }
 
   updateViewCount(uuid: string, views: number) {
-    return this.introStudentAssociationRepo.update({ uuid: uuid }, { views: views });
+    return this.introStudentAssociationRepo.update(
+      { uuid: uuid },
+      { views: views },
+    );
   }
 }
