@@ -22,6 +22,7 @@ import { FileBody } from '../../../file/file-body.decorator';
 import { ClubImageDto } from '../club/intro.club.dto';
 import { FileService } from '../../../file/file.service';
 import { Public } from '../../../common/public-guard.decorator';
+import { AssociationType } from './intro.association.meta';
 
 @ApiTags('Introduce - Association')
 @Controller('introduce/association')
@@ -60,6 +61,15 @@ export class IntroAssociationController {
   }
 
   @Public()
+  @Get('types')
+  getAssociationTypes() {
+    return Object.entries(AssociationType).map(([key, value]) => ({
+      key,
+      value,
+    }));
+  }
+
+  @Public()
   @Get('today')
   getTodayVisited() {
     return this.introAssociationService.find({
@@ -69,6 +79,17 @@ export class IntroAssociationController {
           moment().endOf('day').toDate(),
         ),
       },
+    });
+  }
+
+  @Public()
+  @Get('associationType/:associationType')
+  getByAssociationType(
+    @Param('associationType') associationType: AssociationType,
+  ) {
+    return this.introAssociationService.find({
+      where: { associationType: associationType },
+      order: { name: 'ASC' },
     });
   }
 
