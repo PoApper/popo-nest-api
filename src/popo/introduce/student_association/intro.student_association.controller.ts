@@ -55,7 +55,7 @@ export class IntroStudentAssociationController {
     @Body() dto: StudentAssociationImageDto,
   ) {
     const image_url = await this.fileService.uploadFile(
-      `association/${uuid}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
+      `student_association/${uuid}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
       dto.image,
     );
     await this.introStudentAssociationService.updateImageUrl(uuid, image_url);
