@@ -18,10 +18,17 @@ export class FileService {
   private readonly isS3Enabled: boolean;
 
   constructor() {
-    // AWS 자격 증명이 있을 때만 S3Client 초기화
+    const isLocal = process.env.NODE_ENV === 'local';
+    
+    // 로컬 환경: AWS 자격 증명 필요
+    // dev/prod 환경: IAM 역할 사용 (자격 증명 불필요)
+    const hasCredentials = isLocal
+      ? !!process.env.AWS_ACCESS_KEY_ID && !!process.env.AWS_SECRET_ACCESS_KEY
+      : true; // dev/prod에서는 자격 증명 체크 생략
+
+    // S3 설정 확인
     this.isS3Enabled =
-      !!process.env.AWS_ACCESS_KEY_ID &&
-      !!process.env.AWS_SECRET_ACCESS_KEY &&
+      hasCredentials &&
       !!process.env.S3_REGION &&
       !!process.env.S3_BUCKET_NAME;
 
