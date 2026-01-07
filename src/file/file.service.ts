@@ -48,9 +48,21 @@ export class FileService {
     }
   }
 
-  async queryOnS3(key: string, query: string) {
+  /**
+   * S3가 활성화되어 있는지 확인하는 공통 메서드
+   * @param operationName 로그에 표시할 작업 이름
+   * @returns S3가 활성화되어 있으면 true, 아니면 false
+   */
+  private checkS3Enabled(operationName: string): boolean {
     if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. queryOnS3 operation skipped.');
+      this.logger.warn(`S3 is not enabled. ${operationName} operation skipped.`);
+      return false;
+    }
+    return true;
+  }
+
+  async queryOnS3(key: string, query: string) {
+    if (!this.checkS3Enabled('queryOnS3')) {
       return [];
     }
 
@@ -93,8 +105,7 @@ export class FileService {
   }
 
   async getText(key: string) {
-    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. getText operation skipped.');
+    if (!this.checkS3Enabled('getText')) {
       return '';
     }
 
@@ -108,8 +119,7 @@ export class FileService {
   }
 
   async getFile(key: string) {
-    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. getFile operation skipped.');
+    if (!this.checkS3Enabled('getFile')) {
       return Buffer.from('');
     }
 
@@ -125,8 +135,7 @@ export class FileService {
   }
 
   async uploadText(key: string, text: string) {
-    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. uploadText operation skipped.');
+    if (!this.checkS3Enabled('uploadText')) {
       return `local://${key}`;
     }
 
@@ -141,8 +150,7 @@ export class FileService {
   }
 
   async uploadFile(key: string, file: MemoryStoredFile) {
-    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. uploadFile operation skipped.');
+    if (!this.checkS3Enabled('uploadFile')) {
       return `local://${key}`;
     }
 
@@ -158,8 +166,7 @@ export class FileService {
   }
 
   deleteFile(key: string) {
-    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. deleteFile operation skipped.');
+    if (!this.checkS3Enabled('deleteFile')) {
       return Promise.resolve();
     }
 
