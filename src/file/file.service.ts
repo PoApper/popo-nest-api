@@ -18,7 +18,7 @@ export class FileService {
   private readonly isS3Enabled: boolean;
 
   constructor() {
-    const isLocal = process.env.NODE_ENV === 'local';
+    const isLocal = !process.env.NODE_ENV || process.env.NODE_ENV === 'local';
 
     // 로컬 환경: AWS 자격 증명 필요
     // dev/prod 환경: IAM 역할 사용 (자격 증명 불필요)
