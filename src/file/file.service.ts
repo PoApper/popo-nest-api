@@ -19,7 +19,7 @@ export class FileService {
 
   constructor() {
     const isLocal = process.env.NODE_ENV === 'local';
-    
+
     // 로컬 환경: AWS 자격 증명 필요
     // dev/prod 환경: IAM 역할 사용 (자격 증명 불필요)
     const hasCredentials = isLocal
@@ -28,9 +28,7 @@ export class FileService {
 
     // S3 설정 확인
     this.isS3Enabled =
-      hasCredentials &&
-      !!process.env.S3_REGION &&
-      !!process.env.S3_BUCKET_NAME;
+      hasCredentials && !!process.env.S3_REGION && !!process.env.S3_BUCKET_NAME;
 
     if (this.isS3Enabled) {
       this.s3 = new S3Client({
@@ -55,7 +53,9 @@ export class FileService {
    */
   private checkS3Enabled(operationName: string): boolean {
     if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn(`S3 is not enabled. ${operationName} operation skipped.`);
+      this.logger.warn(
+        `S3 is not enabled. ${operationName} operation skipped.`,
+      );
       return false;
     }
     return true;
