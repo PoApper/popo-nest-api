@@ -18,12 +18,17 @@ export class FileService {
   private readonly isS3Enabled: boolean;
 
   constructor() {
-    // AWS 자격 증명이 있을 때만 S3Client 초기화
+    const isLocal = !process.env.NODE_ENV || process.env.NODE_ENV === 'local';
+
+    // 로컬 환경: AWS 자격 증명 필요
+    // dev/prod 환경: IAM 역할 사용 (자격 증명 불필요)
+    const hasCredentials = isLocal
+      ? !!process.env.AWS_ACCESS_KEY_ID && !!process.env.AWS_SECRET_ACCESS_KEY
+      : true; // dev/prod에서는 자격 증명 체크 생략
+
+    // S3 설정 확인
     this.isS3Enabled =
-      !!process.env.AWS_ACCESS_KEY_ID &&
-      !!process.env.AWS_SECRET_ACCESS_KEY &&
-      !!process.env.S3_REGION &&
-      !!process.env.S3_BUCKET_NAME;
+      hasCredentials && !!process.env.S3_REGION && !!process.env.S3_BUCKET_NAME;
 
     if (this.isS3Enabled) {
       this.s3 = new S3Client({
@@ -41,9 +46,23 @@ export class FileService {
     }
   }
 
-  async queryOnS3(key: string, query: string) {
+  /**
+   * S3가 활성화되어 있는지 확인하는 공통 메서드
+   * @param operationName 로그에 표시할 작업 이름
+   * @returns S3가 활성화되어 있으면 true, 아니면 false
+   */
+  private checkS3Enabled(operationName: string): boolean {
     if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. queryOnS3 operation skipped.');
+      this.logger.warn(
+        `S3 is not enabled. ${operationName} operation skipped.`,
+      );
+      return false;
+    }
+    return true;
+  }
+
+  async queryOnS3(key: string, query: string) {
+    if (!this.checkS3Enabled('queryOnS3')) {
       return [];
     }
 
@@ -86,8 +105,7 @@ export class FileService {
   }
 
   async getText(key: string) {
-    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. getText operation skipped.');
+    if (!this.checkS3Enabled('getText')) {
       return '';
     }
 
@@ -101,8 +119,7 @@ export class FileService {
   }
 
   async getFile(key: string) {
-    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. getFile operation skipped.');
+    if (!this.checkS3Enabled('getFile')) {
       return Buffer.from('');
     }
 
@@ -118,8 +135,7 @@ export class FileService {
   }
 
   async uploadText(key: string, text: string) {
-    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. uploadText operation skipped.');
+    if (!this.checkS3Enabled('uploadText')) {
       return `local://${key}`;
     }
 
@@ -134,8 +150,7 @@ export class FileService {
   }
 
   async uploadFile(key: string, file: MemoryStoredFile) {
-    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. uploadFile operation skipped.');
+    if (!this.checkS3Enabled('uploadFile')) {
       return `local://${key}`;
     }
 
@@ -151,8 +166,7 @@ export class FileService {
   }
 
   deleteFile(key: string) {
-    if (!this.isS3Enabled || !this.s3 || !this.bucket) {
-      this.logger.warn('S3 is not enabled. deleteFile operation skipped.');
+    if (!this.checkS3Enabled('deleteFile')) {
       return Promise.resolve();
     }
 
