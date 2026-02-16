@@ -3,4 +3,5 @@ export enum AssociationType {
   autonomous = '자치기구',
   media = '언론기구',
   specialized = '전문기구',
+  others = '기타',
 }
