@@ -315,7 +315,7 @@ export class ReservePlaceController {
         await this.mailService.sendReservationPatchMail(
           response.email,
           response.title,
-          ReservationStatus[status],
+          status,
         );
       }
     }
