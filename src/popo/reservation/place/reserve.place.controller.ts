@@ -240,6 +240,7 @@ export class ReservePlaceController {
   async acceptAllStatus(
     @Body() body: AcceptPlaceReservationListDto,
     @Query('sendEmail') sendEmail?: string,
+    @User() user?: JwtPayload,
   ) {
     const reservations: ReservePlace[] = [];
     for (const reservationUuid of body.uuidList) {
@@ -265,6 +266,8 @@ export class ReservePlaceController {
       const response = await this.reservePlaceService.updateStatus(
         reservation.uuid,
         ReservationStatus.accept,
+        user,
+        '일괄 승인',
       );
 
       if (sendEmail === 'true') {
@@ -289,6 +292,7 @@ export class ReservePlaceController {
     @Param('uuid') uuid: string,
     @Param('status') status: ReservationStatus,
     @Query('sendEmail') sendEmail?: string,
+    @User() user?: JwtPayload,
   ) {
     const reservation =
       await this.reservePlaceService.findOneByUuidOrFail(uuid);
@@ -306,7 +310,12 @@ export class ReservePlaceController {
       );
     }
 
-    const response = await this.reservePlaceService.updateStatus(uuid, status);
+    const response = await this.reservePlaceService.updateStatus(
+      uuid,
+      status,
+      user,
+      '단건 상태 변경',
+    );
 
     if (sendEmail === 'true') {
       // Send e-mail to client.
@@ -328,7 +337,7 @@ export class ReservePlaceController {
       await this.reservePlaceService.findOneByUuidOrFail(uuid);
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
-      await this.reservePlaceService.remove(uuid);
+      await this.reservePlaceService.remove(uuid, user);
     } else {
       if (reservation.bookerId === user.uuid) {
         // if the reservation is in the past, deny delete
@@ -338,7 +347,7 @@ export class ReservePlaceController {
         if (reservationEndTime < currentTime) {
           throw new BadRequestException('Cannot delete past reservation');
         } else {
-          await this.reservePlaceService.remove(uuid);
+          await this.reservePlaceService.remove(uuid, user);
         }
       } else {
         throw new UnauthorizedException('Unauthorized delete action');

@@ -197,7 +197,7 @@ export class ReserveEquipController {
     const reservation = await this.reserveEquipService.findOneByUuid(uuid);
 
     if (user.userType == UserType.admin || user.userType == UserType.staff) {
-      await this.reserveEquipService.remove(uuid);
+      await this.reserveEquipService.remove(uuid, user);
     } else {
       if (reservation.bookerId == user.uuid) {
         // if the reservation is in the past, deny delete
@@ -207,7 +207,7 @@ export class ReserveEquipController {
         if (reservationEndTime < currentTime) {
           throw new BadRequestException('Cannot delete past reservation');
         } else {
-          await this.reserveEquipService.remove(uuid);
+          await this.reserveEquipService.remove(uuid, user);
         }
       } else {
         throw new UnauthorizedException('Unauthorized delete action');
@@ -228,6 +228,7 @@ export class ReserveEquipController {
     @Param('uuid') uuid: string,
     @Param('status') status: ReservationStatus,
     @Query('sendEmail') sendEmail?: boolean,
+    @User() user?: JwtPayload,
   ) {
     const reservation =
       await this.reserveEquipService.findOneByUuidOrFail(uuid);
@@ -245,7 +246,12 @@ export class ReserveEquipController {
       }
     }
 
-    const response = await this.reserveEquipService.updateStatus(uuid, status);
+    const response = await this.reserveEquipService.updateStatus(
+      uuid,
+      status,
+      user,
+      '단건 상태 변경',
+    );
 
     if (sendEmail) {
       // Send e-mail to client.
