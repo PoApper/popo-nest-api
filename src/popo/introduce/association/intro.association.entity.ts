@@ -22,8 +22,12 @@ export class IntroAssociation extends Base {
   @Column({ nullable: false })
   contact: string;
 
-  @Column({ name: 'association_type', nullable: false })
-  associationType: AssociationType;
+  @Column({
+    name: 'association_type',
+    nullable: false,
+    default: AssociationType.others,
+  })
+  associationType: AssociationType = AssociationType.others;
 
   @Column({ name: 'image_url', nullable: true })
   imageUrl: string;
