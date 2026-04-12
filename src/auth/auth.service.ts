@@ -19,14 +19,19 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  private sanitizeForLog(value: string): string {
+    return value.replace(/[\r\n]/g, '');
+  }
+
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findOneByEmail(email);
 
     if (!user) {
       this.logger.warn(
-        ['[로그인 실패: 존재하지 않는 이메일]', `- 시도 이메일: ${email}`].join(
-          '\n',
-        ),
+        [
+          '[로그인 실패: 존재하지 않는 이메일]',
+          `- 시도 이메일: ${this.sanitizeForLog(email)}`,
+        ].join('\n'),
       );
       return null;
     }
@@ -39,7 +44,7 @@ export class AuthService {
       this.logger.warn(
         [
           '[로그인 실패: 비활성 계정]',
-          `- 이메일: ${email}`,
+          `- 이메일: ${this.sanitizeForLog(email)}`,
           `- 유저 UUID: ${user.uuid}`,
           `- 계정 상태: ${user.userStatus}`,
         ].join('\n'),
@@ -55,7 +60,7 @@ export class AuthService {
       this.logger.warn(
         [
           '[로그인 실패: 비밀번호 불일치]',
-          `- 이메일: ${email}`,
+          `- 이메일: ${this.sanitizeForLog(email)}`,
           `- 유저 UUID: ${user.uuid}`,
         ].join('\n'),
       );
@@ -147,6 +152,18 @@ export class AuthService {
       const user = await this.usersService.findOneByUuid(
         userInAccessToken.uuid,
       );
+
+      if (!user) {
+        this.logger.warn(
+          [
+            '[토큰 갱신 실패: 존재하지 않는 유저]',
+            `- 유저 UUID: ${userInAccessToken.uuid}`,
+            `- 이메일: ${userInAccessToken.email}`,
+          ].join('\n'),
+        );
+        return false;
+      }
+
       const hashedToken = this.hashToken(refreshToken);
 
       if (!user.hashedRefreshToken || user.hashedRefreshToken !== hashedToken) {
