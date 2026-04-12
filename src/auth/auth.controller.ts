@@ -136,7 +136,13 @@ export class AuthController {
   @Post(['signIn', 'register'])
   async register(@Body() createUserDto: CreateUserDto) {
     const saveUser = await this.userService.save(createUserDto);
-    console.log('유저 생성 성공!', saveUser.name, saveUser.email); // TODO: console.log 로깅으로 변경
+    this.logger.log(
+      [
+        '[회원가입 성공]',
+        `- 이메일: ${saveUser.email}`,
+        `- 유저 UUID: ${saveUser.uuid}`,
+      ].join('\n'),
+    );
 
     try {
       await this.mailService.sendVerificationMail(
@@ -144,9 +150,15 @@ export class AuthController {
         saveUser.uuid,
       );
     } catch (error) {
-      console.log('!! 유저 인증 메일 전송 실패 !!');
+      this.logger.error(
+        [
+          '[회원가입 실패: 인증 메일 전송 실패]',
+          `- 이메일: ${createUserDto.email}`,
+          `- 유저 UUID: ${saveUser.uuid}`,
+          `- 에러: ${error.message}`,
+        ].join('\n'),
+      );
       await this.userService.remove(saveUser.uuid);
-      console.log('잘못 생성된 유저 정보를 DB에서 삭제합니다.');
       throw new BadRequestException(Message.FAIL_VERIFICATION_EMAIL_SEND);
     }
     return saveUser;
