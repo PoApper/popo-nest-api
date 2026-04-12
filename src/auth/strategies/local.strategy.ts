@@ -15,10 +15,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     const user = await this.authService.validateUser(email, password);
     if (!user) {
       this.logger.warn(
-        [
-          '[인증 차단: 로그인 실패]',
-          `- 이메일: ${email}`,
-        ].join('\n'),
+        ['[인증 차단: 로그인 실패]', `- 이메일: ${email}`].join('\n'),
       );
       throw new UnauthorizedException();
     }

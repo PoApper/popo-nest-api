@@ -231,7 +231,10 @@ export class AuthController {
     @User() user: JwtPayload,
     @Body() body: PasswordUpdateRequest,
   ) {
-    const result = await this.userService.updatePasswordByEmail(user.email, body.password);
+    const result = await this.userService.updatePasswordByEmail(
+      user.email,
+      body.password,
+    );
 
     this.logger.log(
       [

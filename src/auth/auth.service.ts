@@ -24,10 +24,9 @@ export class AuthService {
 
     if (!user) {
       this.logger.warn(
-        [
-          '[로그인 실패: 존재하지 않는 이메일]',
-          `- 시도 이메일: ${email}`,
-        ].join('\n'),
+        ['[로그인 실패: 존재하지 않는 이메일]', `- 시도 이메일: ${email}`].join(
+          '\n',
+        ),
       );
       return null;
     }
@@ -211,10 +210,7 @@ export class AuthService {
       };
     } catch (error) {
       this.logger.warn(
-        [
-          '[Access Token 디코딩 실패]',
-          `- 에러: ${error.message}`,
-        ].join('\n'),
+        ['[Access Token 디코딩 실패]', `- 에러: ${error.message}`].join('\n'),
       );
       return null;
     }
