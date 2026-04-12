@@ -50,7 +50,16 @@ export class AuthController {
   ) {}
 
   private getUserAgent(req: Request): string {
-    return req.headers['user-agent'] || '(알 수 없음)';
+    const userAgent = req.headers['user-agent'];
+    if (!userAgent) {
+      return '(알 수 없음)';
+    }
+
+    const normalizedUserAgent = Array.isArray(userAgent)
+      ? userAgent.join(', ')
+      : String(userAgent);
+
+    return normalizedUserAgent.replace(/[\r\n]/g, '');
   }
 
   @ApiCookieAuth()
@@ -155,8 +164,9 @@ export class AuthController {
           '[회원가입 실패: 인증 메일 전송 실패]',
           `- 이메일: ${createUserDto.email}`,
           `- 유저 UUID: ${saveUser.uuid}`,
-          `- 에러: ${error.message}`,
+          `- 에러: ${error instanceof Error ? error.message : String(error)}`,
         ].join('\n'),
+        error instanceof Error ? error.stack : String(error),
       );
       await this.userService.remove(saveUser.uuid);
       throw new BadRequestException(Message.FAIL_VERIFICATION_EMAIL_SEND);
