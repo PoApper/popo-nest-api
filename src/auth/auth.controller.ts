@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Param,
   Post,
   Put,
@@ -20,7 +21,7 @@ import { CreateUserDto } from '../popo/user/user.dto';
 import { MailService } from '../mail/mail.service';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
-import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from './strategies/jwt.payload';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
 import { jwtConstants } from './constants';
@@ -38,6 +39,8 @@ const Message = {
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
@@ -45,6 +48,10 @@ export class AuthController {
     private readonly reserveEquipService: ReserveEquipService,
     private readonly mailService: MailService,
   ) {}
+
+  private getUserAgent(req: Request): string {
+    return req.headers['user-agent'] || '(알 수 없음)';
+  }
 
   @ApiCookieAuth()
   @Get(['verifyToken', 'verifyToken/admin', 'me'])
@@ -81,6 +88,15 @@ export class AuthController {
   @Public()
   @Post(['login', 'login/admin'])
   @UseGuards(LocalAuthGuard)
+  @ApiBody({
+    schema: {
+      properties: {
+        email: { type: 'string' },
+        password: { type: 'string' },
+      },
+      required: ['email', 'password'],
+    },
+  })
   async logIn(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const path = req.path;
     const user = req.user as JwtPayload;
