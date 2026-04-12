@@ -133,6 +133,14 @@ export class AuthService {
 
       // 2. 리프레시 토큰의 payload가 액세스 토큰의 정보와 일치하는지 검증
       if (userInRefreshToken.uuid !== userInAccessToken.uuid) {
+        this.logger.warn(
+          [
+            '[토큰 갱신 실패: UUID 불일치]',
+            `- Access Token UUID: ${userInAccessToken.uuid}`,
+            `- Refresh Token UUID: ${userInRefreshToken.uuid}`,
+            `- 이메일: ${userInAccessToken.email}`,
+          ].join('\n'),
+        );
         return false;
       }
 
@@ -143,6 +151,14 @@ export class AuthService {
       const hashedToken = this.hashToken(refreshToken);
 
       if (!user.hashedRefreshToken || user.hashedRefreshToken !== hashedToken) {
+        this.logger.warn(
+          [
+            '[토큰 갱신 실패: Refresh Token 해시 불일치]',
+            `- 유저 UUID: ${userInAccessToken.uuid}`,
+            `- 이메일: ${userInAccessToken.email}`,
+            `- DB에 토큰 존재 여부: ${!!user.hashedRefreshToken}`,
+          ].join('\n'),
+        );
         return false;
       }
 
@@ -151,12 +167,28 @@ export class AuthService {
         !user.refreshTokenExpiresAt ||
         user.refreshTokenExpiresAt <= new Date()
       ) {
+        this.logger.warn(
+          [
+            '[토큰 갱신 실패: Refresh Token 만료]',
+            `- 유저 UUID: ${userInAccessToken.uuid}`,
+            `- 이메일: ${userInAccessToken.email}`,
+            `- 만료 시각: ${user.refreshTokenExpiresAt?.toISOString() ?? '(없음)'}`,
+          ].join('\n'),
+        );
         return false;
       }
 
       return true;
     } catch (error) {
       // 토큰 검증 실패 (만료되었거나 서명이 잘못된 경우)
+      this.logger.warn(
+        [
+          '[토큰 갱신 실패: Refresh Token 서명 검증 실패]',
+          `- 유저 UUID: ${userInAccessToken.uuid}`,
+          `- 이메일: ${userInAccessToken.email}`,
+          `- 에러: ${error.message}`,
+        ].join('\n'),
+      );
       return false;
     }
   }
@@ -178,6 +210,12 @@ export class AuthService {
         userType: payload.userType,
       };
     } catch (error) {
+      this.logger.warn(
+        [
+          '[Access Token 디코딩 실패]',
+          `- 에러: ${error.message}`,
+        ].join('\n'),
+      );
       return null;
     }
   }
