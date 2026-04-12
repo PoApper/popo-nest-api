@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { UserService } from '../popo/user/user.service';
@@ -12,6 +12,8 @@ import * as ms from 'ms';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UserService,
     private readonly jwtService: JwtService,
@@ -21,6 +23,12 @@ export class AuthService {
     const user = await this.usersService.findOneByEmail(email);
 
     if (!user) {
+      this.logger.warn(
+        [
+          '[로그인 실패: 존재하지 않는 이메일]',
+          `- 시도 이메일: ${email}`,
+        ].join('\n'),
+      );
       return null;
     }
 
@@ -29,6 +37,14 @@ export class AuthService {
     if (user.userStatus == UserStatus.password_reset) {
       await this.usersService.updateUserStatus(user.uuid, UserStatus.activated);
     } else if (user.userStatus != UserStatus.activated) {
+      this.logger.warn(
+        [
+          '[로그인 실패: 비활성 계정]',
+          `- 이메일: ${email}`,
+          `- 유저 UUID: ${user.uuid}`,
+          `- 계정 상태: ${user.userStatus}`,
+        ].join('\n'),
+      );
       throw new UnauthorizedException('Not activated account.');
     }
 
@@ -37,6 +53,13 @@ export class AuthService {
       const nickname = await this.usersService.getNickname(user.uuid);
       return { ...user, nickname: nickname.nickname };
     } else {
+      this.logger.warn(
+        [
+          '[로그인 실패: 비밀번호 불일치]',
+          `- 이메일: ${email}`,
+          `- 유저 UUID: ${user.uuid}`,
+        ].join('\n'),
+      );
       return null;
     }
   }
