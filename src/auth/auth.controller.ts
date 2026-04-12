@@ -177,12 +177,25 @@ export class AuthController {
     const existUser = await this.userService.findOneByEmail(body.email);
 
     if (!existUser) {
+      this.logger.warn(
+        [
+          '[비밀번호 초기화 실패: 존재하지 않는 이메일]',
+          `- 시도 이메일: ${body.email}`,
+        ].join('\n'),
+      );
       throw new BadRequestException(
         '해당 이메일로 가입한 유저가 존재하지 않습니다.',
       );
     }
 
     if (existUser.userStatus === UserStatus.password_reset) {
+      this.logger.warn(
+        [
+          '[비밀번호 초기화 실패: 이미 초기화된 계정]',
+          `- 이메일: ${body.email}`,
+          `- 유저 UUID: ${existUser.uuid}`,
+        ].join('\n'),
+      );
       throw new BadRequestException(
         '이미 비빌번호를 초기화 했습니다. 신규 비밀번호를 메일에서 확인해주세요.',
       );
@@ -202,6 +215,14 @@ export class AuthController {
       existUser.email,
       temp_password,
     );
+
+    this.logger.log(
+      [
+        '[비밀번호 초기화 성공]',
+        `- 이메일: ${existUser.email}`,
+        `- 유저 UUID: ${existUser.uuid}`,
+      ].join('\n'),
+    );
   }
 
   @ApiCookieAuth()
@@ -210,7 +231,17 @@ export class AuthController {
     @User() user: JwtPayload,
     @Body() body: PasswordUpdateRequest,
   ) {
-    return this.userService.updatePasswordByEmail(user.email, body.password);
+    const result = await this.userService.updatePasswordByEmail(user.email, body.password);
+
+    this.logger.log(
+      [
+        '[비밀번호 변경]',
+        `- 이메일: ${user.email}`,
+        `- 유저 UUID: ${user.uuid}`,
+      ].join('\n'),
+    );
+
+    return result;
   }
 
   @ApiCookieAuth()
