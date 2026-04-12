@@ -238,6 +238,14 @@ export class AuthController {
     const refreshTokenInCookie = req.cookies?.Refresh;
 
     if (!accessTokenInCookie || !refreshTokenInCookie) {
+      this.logger.warn(
+        [
+          '[토큰 갱신 실패: 쿠키 누락]',
+          `- Access Token 존재: ${!!accessTokenInCookie}`,
+          `- Refresh Token 존재: ${!!refreshTokenInCookie}`,
+          `- User-Agent: ${this.getUserAgent(req)}`,
+        ].join('\n'),
+      );
       this.clearCookies(res);
       throw new UnauthorizedException('Missing access token or refresh token');
     }
@@ -245,6 +253,12 @@ export class AuthController {
     // 만료된 access token을 디코딩 (JWT 가드 우회)
     const user = this.authService.decodeExpiredAccessToken(accessTokenInCookie);
     if (!user) {
+      this.logger.warn(
+        [
+          '[토큰 갱신 실패: Access Token 디코딩 실패]',
+          `- User-Agent: ${this.getUserAgent(req)}`,
+        ].join('\n'),
+      );
       this.clearCookies(res);
       throw new UnauthorizedException('Invalid access token');
     }
@@ -255,6 +269,14 @@ export class AuthController {
       refreshTokenInCookie,
     );
     if (!isValid) {
+      this.logger.warn(
+        [
+          '[토큰 갱신 실패: Refresh Token 검증 실패]',
+          `- 유저 UUID: ${user.uuid}`,
+          `- 이메일: ${user.email}`,
+          `- User-Agent: ${this.getUserAgent(req)}`,
+        ].join('\n'),
+      );
       await this.userService.updateRefreshToken(user.uuid, null, null);
       this.clearCookies(res);
       throw new UnauthorizedException('Invalid refresh token');
@@ -264,6 +286,15 @@ export class AuthController {
     const refreshToken = await this.authService.generateRefreshToken(user);
 
     this.setCookies(res, accessToken, refreshToken);
+
+    this.logger.log(
+      [
+        '[토큰 갱신 성공]',
+        `- 유저 UUID: ${user.uuid}`,
+        `- 이메일: ${user.email}`,
+        `- User-Agent: ${this.getUserAgent(req)}`,
+      ].join('\n'),
+    );
 
     return user;
   }
