@@ -217,6 +217,134 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
     });
   });
 
+  describe('openingHours policy', () => {
+    it('single equipment allows reservations inside opening hours', async () => {
+      const tmpEquip = await equipService.save({
+        name: 'Weekday Camera',
+        description: 'weekday camera',
+        equipOwner: EquipOwner.dongyeon,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        fee: 1000,
+        openingHours: '{"Monday":"09:00-18:00"}',
+      });
+
+      const res = await create({
+        equipments: [tmpEquip.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'Inside',
+        description: 'Inside',
+        date: '20251222',
+        startTime: '1000',
+        endTime: '1100',
+      });
+
+      expect(res.status).toBe(ReservationStatus.in_process);
+    });
+
+    it('single equipment rejects reservations outside opening hours', async () => {
+      const tmpEquip = await equipService.save({
+        name: 'Closed Morning Camera',
+        description: 'closed camera',
+        equipOwner: EquipOwner.dongyeon,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        fee: 1000,
+        openingHours: '{"Monday":"09:00-18:00"}',
+      });
+
+      await expect(
+        create({
+          equipments: [tmpEquip.uuid],
+          owner: EquipOwner.dongyeon,
+          phone: '010',
+          title: 'Before',
+          description: 'Before',
+          date: '20251222',
+          startTime: '0830',
+          endTime: '0930',
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('multi-equipment reservation fails if any selected equipment is unavailable', async () => {
+      const openEquip = await equipService.save({
+        name: 'Always Open Camera',
+        description: 'open camera',
+        equipOwner: EquipOwner.dongyeon,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        fee: 1000,
+        openingHours: '{"Everyday":"00:00-24:00"}',
+      });
+      const unavailableEquip = await equipService.save({
+        name: 'Afternoon Only Camera',
+        description: 'afternoon camera',
+        equipOwner: EquipOwner.dongyeon,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        fee: 1000,
+        openingHours: '{"Monday":"13:00-18:00"}',
+      });
+
+      await expect(
+        create({
+          equipments: [openEquip.uuid, unavailableEquip.uuid],
+          owner: EquipOwner.dongyeon,
+          phone: '010',
+          title: 'Mixed',
+          description: 'Mixed',
+          date: '20251222',
+          startTime: '1000',
+          endTime: '1100',
+        }),
+      ).rejects.toThrow('Afternoon Only Camera');
+    });
+
+    it('admin acceptance rejects a pending reservation when equipment opening hours no longer allow it', async () => {
+      const tmpEquip = await equipService.save({
+        name: 'Approval Camera',
+        description: 'approval camera',
+        equipOwner: EquipOwner.dongyeon,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        fee: 1000,
+        openingHours: '{"Everyday":"00:00-24:00"}',
+      });
+
+      const reservation = await create({
+        equipments: [tmpEquip.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'Pending',
+        description: 'Pending',
+        date: '20251222',
+        startTime: '1000',
+        endTime: '1100',
+      });
+      expect(reservation.status).toBe(ReservationStatus.in_process);
+
+      await equipService.update(tmpEquip.uuid, {
+        name: tmpEquip.name,
+        description: tmpEquip.description,
+        fee: tmpEquip.fee,
+        equipOwner: tmpEquip.equipOwner,
+        staffEmail: tmpEquip.staffEmail,
+        maxMinutes: tmpEquip.maxMinutes,
+        openingHours: '{"Monday":"13:00-18:00"}',
+      });
+
+      await expect(
+        controller.patchStatus(
+          reservation.uuid,
+          ReservationStatus.accept,
+          false,
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
   describe('Admin acceptance (overlap vs non-overlap)', () => {
     it('Overlapping request should fail on admin accept', async () => {
       const a = await create({

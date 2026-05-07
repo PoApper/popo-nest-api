@@ -10,6 +10,7 @@ import { PlaceEnableAutoAccept, PlaceRegion } from '../../place/place.meta';
 import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import {
   calculateReservationDurationMinutes,
+  isOnOpeningHours,
   timeStringToMinutes,
 } from '../../../utils/reservation-utils';
 import { UserType } from 'src/popo/user/user.meta';
@@ -22,6 +23,7 @@ const Message = {
   NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
   OVER_MAX_RESERVATION_TIME:
     'Over the allocated reservation minutes of that day.',
+  NOT_ON_OPENING_HOURS: 'Reservation time is outside opening hours.',
 };
 
 @Injectable()
@@ -101,6 +103,12 @@ export class ReservePlaceService {
     }
 
     const targetPlace = await this.placeService.findOneByUuidOrFail(placeId);
+
+    if (!isOnOpeningHours(targetPlace.openingHours, date, startTime, endTime)) {
+      throw new BadRequestException(
+        `${Message.NOT_ON_OPENING_HOURS}: "${targetPlace.name}" 장소는 ${date} ${startTime} ~ ${endTime}에 예약할 수 없습니다. 사용 가능 시간을 확인해주세요.`,
+      );
+    }
 
     // Reservation Concurrent Check
     const isConcurrentPossible = await this.isReservationConcurrent(

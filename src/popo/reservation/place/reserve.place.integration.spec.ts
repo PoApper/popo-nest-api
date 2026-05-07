@@ -134,7 +134,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
@@ -205,7 +205,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
@@ -306,7 +306,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
@@ -388,7 +388,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
@@ -441,7 +441,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
@@ -492,7 +492,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
@@ -553,7 +553,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
@@ -604,7 +604,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
     });
@@ -632,7 +632,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
@@ -712,7 +712,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
@@ -783,7 +783,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 
@@ -889,7 +889,7 @@ describe('ReservePlaceModule - Integration Test', () => {
         staffEmail: 'staff@test.com',
         maxMinutes: 120,
         maxConcurrentReservation: 1,
-        openingHours: '{"Monday":"09:00-18:00"}',
+        openingHours: '{"Everyday":"00:00-24:00"}',
         enableAutoAccept: PlaceEnableAutoAccept.inactive,
       });
 

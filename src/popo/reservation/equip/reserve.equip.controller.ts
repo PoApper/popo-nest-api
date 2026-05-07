@@ -235,6 +235,13 @@ export class ReserveEquipController {
 
     // When accepting, validate overlap against already accepted reservations
     if (status === ReservationStatus.accept) {
+      await this.reserveEquipService.assertReservationOpeningHours(
+        reservation.equipments,
+        reservation.date,
+        reservation.startTime,
+        reservation.endTime,
+      );
+
       const isOverlap = await this.reserveEquipService.isReservationOverlap(
         reservation.equipments,
         reservation.date,

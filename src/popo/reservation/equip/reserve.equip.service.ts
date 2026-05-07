@@ -9,9 +9,11 @@ import { ReservationStatus } from '../reservation.meta';
 import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import {
   calculateReservationDurationMinutes,
+  isOnOpeningHours,
   timeStringToMinutes,
 } from '../../../utils/reservation-utils';
 import { UserType } from '../../user/user.meta';
+import { Equip } from '../../equip/equip.entity';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -23,6 +25,7 @@ const Message = {
     'Your reservation is already exist on that day: accepted or in-progress.',
   OVER_MAX_RESERVATION_TIME:
     'Over the allocated reservation minutes of that day.',
+  NOT_ON_OPENING_HOURS: 'Reservation time is outside opening hours.',
 };
 
 @Injectable()
@@ -82,6 +85,13 @@ export class ReserveEquipService {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
 
+    this.assertEquipmentsOnOpeningHours(
+      targetEquipments,
+      date,
+      startTime,
+      endTime,
+    );
+
     // Reservation Overlap Check
     const isReservationOverlap = await this.isReservationOverlap(
       equipments,
@@ -138,6 +148,43 @@ export class ReserveEquipService {
     }
 
     return this.reserveEquipRepo.save(dto);
+  }
+
+  async assertReservationOpeningHours(
+    equipmentIds: string[],
+    date: string,
+    startTime: string,
+    endTime: string,
+  ) {
+    const targetEquipments = await this.equipService.findByIds(equipmentIds);
+    this.assertEquipmentsOnOpeningHours(
+      targetEquipments,
+      date,
+      startTime,
+      endTime,
+    );
+  }
+
+  private assertEquipmentsOnOpeningHours(
+    equipments: Equip[],
+    date: string,
+    startTime: string,
+    endTime: string,
+  ) {
+    const unavailableEquipments = equipments.filter(
+      (equipment) =>
+        !isOnOpeningHours(equipment.openingHours, date, startTime, endTime),
+    );
+
+    if (unavailableEquipments.length) {
+      const unavailableEquipmentNames = unavailableEquipments
+        .map((equipment) => equipment.name)
+        .join(', ');
+
+      throw new BadRequestException(
+        `${Message.NOT_ON_OPENING_HOURS}: ${unavailableEquipmentNames} 장비는 ${date} ${startTime} ~ ${endTime}에 예약할 수 없습니다. 사용 가능 시간을 확인해주세요.`,
+      );
+    }
   }
 
   countEquipmentReservations(equipmentId: string) {

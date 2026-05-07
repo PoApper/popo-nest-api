@@ -221,6 +221,143 @@ describe('ReservePlace - Create (concurrency, policies, midnight)', () => {
     });
   });
 
+  describe('openingHours policy', () => {
+    it('Monday 09:00-18:00 place allows 10:00-11:00', async () => {
+      const place = await placeService.save({
+        name: 'Weekday Open Place',
+        description: 'desc',
+        location: 'loc',
+        region: PlaceRegion.student_hall,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.active,
+      });
+
+      const res = await create({
+        placeId: place.uuid,
+        phone: '010',
+        title: 'Inside',
+        description: 'Inside',
+        date: '20251222',
+        startTime: '1000',
+        endTime: '1100',
+      });
+
+      expect(res.status).toBe(ReservationStatus.accept);
+    });
+
+    it('Monday 09:00-18:00 place rejects times outside the opening range', async () => {
+      const place = await placeService.save({
+        name: 'Weekday Closed Place',
+        description: 'desc',
+        location: 'loc',
+        region: PlaceRegion.student_hall,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"09:00-18:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.active,
+      });
+
+      await expect(
+        create({
+          placeId: place.uuid,
+          phone: '010',
+          title: 'Before',
+          description: 'Before',
+          date: '20251222',
+          startTime: '0830',
+          endTime: '0930',
+        }),
+      ).rejects.toThrow();
+
+      await expect(
+        create({
+          placeId: place.uuid,
+          phone: '010',
+          title: 'After',
+          description: 'After',
+          date: '20251222',
+          startTime: '1800',
+          endTime: '1830',
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('split opening ranges reject reservations crossing closed time', async () => {
+      const place = await placeService.save({
+        name: 'Split Hours Place',
+        description: 'desc',
+        location: 'loc',
+        region: PlaceRegion.student_hall,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 360,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Monday":"00:00-10:00 & 13:00-24:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.active,
+      });
+
+      await expect(
+        create({
+          placeId: place.uuid,
+          phone: '010',
+          title: 'Cross Closed',
+          description: 'Cross Closed',
+          date: '20251222',
+          startTime: '0930',
+          endTime: '1330',
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('manual approval rejects a pending reservation when place opening hours no longer allow it', async () => {
+      const place = await placeService.save({
+        name: 'Manual Opening Hours Place',
+        description: 'desc',
+        location: 'loc',
+        region: PlaceRegion.student_hall,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Everyday":"00:00-24:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
+      });
+
+      const reservation = await create({
+        placeId: place.uuid,
+        phone: '010',
+        title: 'Pending',
+        description: 'Pending',
+        date: '20251222',
+        startTime: '1000',
+        endTime: '1100',
+      });
+      expect(reservation.status).toBe(ReservationStatus.in_process);
+
+      await placeService.update(place.uuid, {
+        name: place.name,
+        description: place.description,
+        location: place.location,
+        region: place.region,
+        staffEmail: place.staffEmail,
+        maxMinutes: place.maxMinutes,
+        maxConcurrentReservation: place.maxConcurrentReservation,
+        openingHours: '{"Monday":"13:00-18:00"}',
+        enableAutoAccept: place.enableAutoAccept,
+      });
+
+      await expect(
+        reservePlaceController.patchStatus(
+          reservation.uuid,
+          ReservationStatus.accept,
+          'false',
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
   // ---- Rejected overlap cases ----
   describe('Rejected overlaps (auto-accept)', () => {
     it('Partial overlap (front): 10:00-11:00 blocks 09:30-10:30', async () => {
