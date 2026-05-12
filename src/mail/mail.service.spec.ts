@@ -60,10 +60,10 @@ describe('MailService', () => {
     );
   });
 
-  it('ignores local SMTP connection refused errors in test env', async () => {
-    process.env.NODE_ENV = 'test';
+  it('ignores local SMTP connection refused errors in local env', async () => {
+    process.env.NODE_ENV = 'local';
     (configMock.get as jest.Mock).mockImplementation((key: string) =>
-      key === 'NODE_ENV' ? 'test' : undefined,
+      key === 'NODE_ENV' ? 'local' : undefined,
     );
     const error = Object.assign(
       new Error('connect ECONNREFUSED 127.0.0.1:587'),
@@ -80,7 +80,25 @@ describe('MailService', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('does not ignore SMTP connection refused errors outside test env', async () => {
+  it('ignores wrapped local SMTP connection refused errors in local env', async () => {
+    process.env.NODE_ENV = 'local';
+    (configMock.get as jest.Mock).mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'local' : undefined,
+    );
+    const error = Object.assign(
+      new Error('connect ECONNREFUSED 127.0.0.1:587'),
+      {
+        code: 'ESOCKET',
+      },
+    );
+    mailerMock.sendMail.mockRejectedValueOnce(error);
+
+    await expect(
+      mailService.sendPasswordResetMail('user@example.com', 'P@ssw0rd!'),
+    ).resolves.toBeUndefined();
+  });
+
+  it('does not ignore SMTP connection refused errors outside local env', async () => {
     process.env.NODE_ENV = 'dev';
     (configMock.get as jest.Mock).mockImplementation((key: string) =>
       key === 'NODE_ENV' ? 'dev' : undefined,

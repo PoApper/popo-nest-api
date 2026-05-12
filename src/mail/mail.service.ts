@@ -354,7 +354,7 @@ export class MailService {
     try {
       return await this.mailerService.sendMail(mailOptions);
     } catch (error) {
-      if (this.shouldIgnoreTestSmtpError(error)) {
+      if (this.shouldIgnoreLocalSmtpError(error)) {
         this.logger.warn(
           `Ignored local SMTP connection error: ${error.message}`,
         );
@@ -365,16 +365,16 @@ export class MailService {
     }
   }
 
-  private shouldIgnoreTestSmtpError(error): boolean {
-    const isTestEnv =
-      this.configService.get('NODE_ENV') === 'test' ||
-      process.env.NODE_ENV === 'test';
+  private shouldIgnoreLocalSmtpError(error): boolean {
+    const isLocalEnv =
+      this.configService.get('NODE_ENV') === 'local' ||
+      process.env.NODE_ENV === 'local';
     const isLocalSmtpRefused =
       error?.code === 'ECONNREFUSED' ||
       (error?.code === 'ESOCKET' && error?.message?.includes('ECONNREFUSED'));
 
     return (
-      isTestEnv &&
+      isLocalEnv &&
       isLocalSmtpRefused &&
       (error?.address === '127.0.0.1' ||
         error?.message?.includes('127.0.0.1')) &&
