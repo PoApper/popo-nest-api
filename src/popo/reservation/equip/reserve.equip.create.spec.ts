@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import * as moment from 'moment-timezone';
 
 import configurations from 'src/config/configurations';
 import { ReserveEquipModule } from './reserve.equip.module';
@@ -333,6 +334,136 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         staffEmail: tmpEquip.staffEmail,
         maxMinutes: tmpEquip.maxMinutes,
         openingHours: '{"Monday":"13:00-18:00"}',
+      });
+
+      await expect(
+        controller.patchStatus(
+          reservation.uuid,
+          ReservationStatus.accept,
+          false,
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('reservationRequiredDays policy', () => {
+    it('rejects dates before the required lead time and allows exactly n days before', async () => {
+      const tmpEquip = await equipService.save({
+        name: 'Required Days Camera',
+        description: 'required days camera',
+        equipOwner: EquipOwner.dongyeon,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        reservationRequiredDays: 3,
+        fee: 1000,
+        openingHours: '{"Everyday":"00:00-24:00"}',
+      });
+
+      const twoDaysLater = moment()
+        .tz('Asia/Seoul')
+        .add(2, 'days')
+        .format('YYYYMMDD');
+      const threeDaysLater = moment()
+        .tz('Asia/Seoul')
+        .add(3, 'days')
+        .format('YYYYMMDD');
+
+      await expect(
+        create({
+          equipments: [tmpEquip.uuid],
+          owner: EquipOwner.dongyeon,
+          phone: '010',
+          title: 'Too Soon',
+          description: 'Too Soon',
+          date: twoDaysLater,
+          startTime: '1000',
+          endTime: '1100',
+        }),
+      ).rejects.toThrow();
+
+      const res = await create({
+        equipments: [tmpEquip.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'Allowed',
+        description: 'Allowed',
+        date: threeDaysLater,
+        startTime: '1000',
+        endTime: '1100',
+      });
+
+      expect(res.status).toBe(ReservationStatus.in_process);
+    });
+
+    it('multi-equipment reservation fails if any selected equipment needs more lead time', async () => {
+      const openEquip = await equipService.save({
+        name: 'No Required Days Camera',
+        description: 'open camera',
+        equipOwner: EquipOwner.dongyeon,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        reservationRequiredDays: 0,
+        fee: 1000,
+        openingHours: '{"Everyday":"00:00-24:00"}',
+      });
+      const strictEquip = await equipService.save({
+        name: 'Strict Required Days Camera',
+        description: 'strict camera',
+        equipOwner: EquipOwner.dongyeon,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        reservationRequiredDays: 3,
+        fee: 1000,
+        openingHours: '{"Everyday":"00:00-24:00"}',
+      });
+
+      await expect(
+        create({
+          equipments: [openEquip.uuid, strictEquip.uuid],
+          owner: EquipOwner.dongyeon,
+          phone: '010',
+          title: 'Mixed',
+          description: 'Mixed',
+          date: moment().tz('Asia/Seoul').add(2, 'days').format('YYYYMMDD'),
+          startTime: '1000',
+          endTime: '1100',
+        }),
+      ).rejects.toThrow('Strict Required Days Camera');
+    });
+
+    it('admin acceptance rejects a pending reservation when lead time policy changes', async () => {
+      const tmpEquip = await equipService.save({
+        name: 'Approval Required Days Camera',
+        description: 'approval camera',
+        equipOwner: EquipOwner.dongyeon,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        reservationRequiredDays: 0,
+        fee: 1000,
+        openingHours: '{"Everyday":"00:00-24:00"}',
+      });
+
+      const reservation = await create({
+        equipments: [tmpEquip.uuid],
+        owner: EquipOwner.dongyeon,
+        phone: '010',
+        title: 'Pending',
+        description: 'Pending',
+        date: moment().tz('Asia/Seoul').add(3, 'days').format('YYYYMMDD'),
+        startTime: '1000',
+        endTime: '1100',
+      });
+      expect(reservation.status).toBe(ReservationStatus.in_process);
+
+      await equipService.update(tmpEquip.uuid, {
+        name: tmpEquip.name,
+        description: tmpEquip.description,
+        fee: tmpEquip.fee,
+        equipOwner: tmpEquip.equipOwner,
+        staffEmail: tmpEquip.staffEmail,
+        maxMinutes: tmpEquip.maxMinutes,
+        reservationRequiredDays: 4,
+        openingHours: tmpEquip.openingHours,
       });
 
       await expect(

@@ -29,6 +29,7 @@ export class PlaceService {
       staffEmail: dto.staffEmail,
       maxMinutes: dto.maxMinutes,
       maxConcurrentReservation: dto.maxConcurrentReservation,
+      reservationRequiredDays: dto.reservationRequiredDays ?? 0,
       openingHours: dto.openingHours,
       enableAutoAccept: dto.enableAutoAccept,
     };
