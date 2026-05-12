@@ -367,13 +367,18 @@ export class MailService {
 
   private shouldIgnoreTestSmtpError(error): boolean {
     const isTestEnv =
-      this.configService.get('NODE_ENV') === 'local' ||
-      process.env.NODE_ENV === 'local';
+      this.configService.get('NODE_ENV') === 'test' ||
+      process.env.NODE_ENV === 'test';
+    const isLocalSmtpRefused =
+      error?.code === 'ECONNREFUSED' ||
+      (error?.code === 'ESOCKET' && error?.message?.includes('ECONNREFUSED'));
+
     return (
       isTestEnv &&
-      error?.code === 'ESOCKET' &&
-      error?.address === '127.0.0.1' &&
-      Number(error?.port) === 587
+      isLocalSmtpRefused &&
+      (error?.address === '127.0.0.1' ||
+        error?.message?.includes('127.0.0.1')) &&
+      (Number(error?.port) === 587 || error?.message?.includes(':587'))
     );
   }
 }

@@ -14,6 +14,9 @@ describe('MailService', () => {
   beforeEach(async () => {
     jest.resetModules();
     jest.clearAllMocks();
+    (configMock.get as jest.Mock).mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'dev' : undefined,
+    );
     process.env.NODE_ENV = 'dev';
     process.env.POPO_MAIL_ADDRESS = 'no-reply@example.com';
 
