@@ -9,6 +9,7 @@ export class PlaceDto {
   readonly staffEmail: string;
   readonly maxMinutes: number;
   readonly maxConcurrentReservation: number;
+  readonly reservationRequiredDays?: number;
   readonly openingHours: string;
   readonly enableAutoAccept: PlaceEnableAutoAccept;
 }

@@ -10,6 +10,7 @@ import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import {
   calculateReservationDurationMinutes,
   isOnOpeningHours,
+  isReservationLeadTimeSatisfied,
   timeStringToMinutes,
 } from '../../../utils/reservation-utils';
 import { UserType } from '../../user/user.meta';
@@ -26,6 +27,7 @@ const Message = {
   OVER_MAX_RESERVATION_TIME:
     'Over the allocated reservation minutes of that day.',
   NOT_ON_OPENING_HOURS: 'Reservation time is outside opening hours.',
+  RESERVATION_REQUIRED_DAYS: 'Reservation requires advance booking days.',
 };
 
 @Injectable()
@@ -91,6 +93,7 @@ export class ReserveEquipService {
       startTime,
       endTime,
     );
+    this.assertEquipmentsReservationRequiredDays(targetEquipments, date);
 
     // Reservation Overlap Check
     const isReservationOverlap = await this.isReservationOverlap(
@@ -165,6 +168,11 @@ export class ReserveEquipService {
     );
   }
 
+  async assertReservationRequiredDays(equipmentIds: string[], date: string) {
+    const targetEquipments = await this.equipService.findByIds(equipmentIds);
+    this.assertEquipmentsReservationRequiredDays(targetEquipments, date);
+  }
+
   private assertEquipmentsOnOpeningHours(
     equipments: Equip[],
     date: string,
@@ -183,6 +191,34 @@ export class ReserveEquipService {
 
       throw new BadRequestException(
         `${Message.NOT_ON_OPENING_HOURS}: ${unavailableEquipmentNames} 장비는 ${date} ${startTime} ~ ${endTime}에 예약할 수 없습니다. 사용 가능 시간을 확인해주세요.`,
+      );
+    }
+  }
+
+  private assertEquipmentsReservationRequiredDays(
+    equipments: Equip[],
+    date: string,
+  ) {
+    const unavailableEquipments = equipments.filter(
+      (equipment) =>
+        !isReservationLeadTimeSatisfied(
+          date,
+          equipment.reservationRequiredDays,
+        ),
+    );
+
+    if (unavailableEquipments.length) {
+      const unavailableEquipmentNames = unavailableEquipments
+        .map((equipment) => equipment.name)
+        .join(', ');
+      const maxRequiredDays = Math.max(
+        ...unavailableEquipments.map(
+          (equipment) => equipment.reservationRequiredDays,
+        ),
+      );
+
+      throw new BadRequestException(
+        `${Message.RESERVATION_REQUIRED_DAYS}: ${unavailableEquipmentNames} 장비는 최소 ${maxRequiredDays}일 전 예약해야 합니다.`,
       );
     }
   }

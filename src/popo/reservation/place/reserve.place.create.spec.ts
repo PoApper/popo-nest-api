@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import * as moment from 'moment-timezone';
 
 import configurations from 'src/config/configurations';
 import { ReservePlaceModule } from './reserve.place.module';
@@ -345,6 +346,122 @@ describe('ReservePlace - Create (concurrency, policies, midnight)', () => {
         maxMinutes: place.maxMinutes,
         maxConcurrentReservation: place.maxConcurrentReservation,
         openingHours: '{"Monday":"13:00-18:00"}',
+        enableAutoAccept: place.enableAutoAccept,
+      });
+
+      await expect(
+        reservePlaceController.patchStatus(
+          reservation.uuid,
+          ReservationStatus.accept,
+          'false',
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('reservationRequiredDays policy', () => {
+    it('rejects dates before the required lead time and allows exactly n days before', async () => {
+      const place = await placeService.save({
+        name: 'Required Days Place',
+        description: 'desc',
+        location: 'loc',
+        region: PlaceRegion.student_hall,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        maxConcurrentReservation: 1,
+        reservationRequiredDays: 3,
+        openingHours: '{"Everyday":"00:00-24:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.active,
+      });
+
+      const twoDaysLater = moment()
+        .tz('Asia/Seoul')
+        .add(2, 'days')
+        .format('YYYYMMDD');
+      const threeDaysLater = moment()
+        .tz('Asia/Seoul')
+        .add(3, 'days')
+        .format('YYYYMMDD');
+
+      await expect(
+        create({
+          placeId: place.uuid,
+          phone: '010',
+          title: 'Too Soon',
+          description: 'Too Soon',
+          date: twoDaysLater,
+          startTime: '1000',
+          endTime: '1100',
+        }),
+      ).rejects.toThrow();
+
+      const res = await create({
+        placeId: place.uuid,
+        phone: '010',
+        title: 'Allowed',
+        description: 'Allowed',
+        date: threeDaysLater,
+        startTime: '1000',
+        endTime: '1100',
+      });
+
+      expect(res.status).toBe(ReservationStatus.accept);
+    });
+
+    it('allows same-day reservations when required days is zero', async () => {
+      const res = await create({
+        placeId: placeAuto.uuid,
+        phone: '010',
+        title: 'Same Day',
+        description: 'Same Day',
+        date: moment().tz('Asia/Seoul').format('YYYYMMDD'),
+        startTime: '1000',
+        endTime: '1100',
+      });
+
+      expect(res.status).toBe(ReservationStatus.accept);
+    });
+
+    it('manual approval rejects a pending reservation when lead time policy changes', async () => {
+      const place = await placeService.save({
+        name: 'Manual Required Days Place',
+        description: 'desc',
+        location: 'loc',
+        region: PlaceRegion.student_hall,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 180,
+        maxConcurrentReservation: 1,
+        reservationRequiredDays: 0,
+        openingHours: '{"Everyday":"00:00-24:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
+      });
+
+      const threeDaysLater = moment()
+        .tz('Asia/Seoul')
+        .add(3, 'days')
+        .format('YYYYMMDD');
+
+      const reservation = await create({
+        placeId: place.uuid,
+        phone: '010',
+        title: 'Pending',
+        description: 'Pending',
+        date: threeDaysLater,
+        startTime: '1000',
+        endTime: '1100',
+      });
+      expect(reservation.status).toBe(ReservationStatus.in_process);
+
+      await placeService.update(place.uuid, {
+        name: place.name,
+        description: place.description,
+        location: place.location,
+        region: place.region,
+        staffEmail: place.staffEmail,
+        maxMinutes: place.maxMinutes,
+        maxConcurrentReservation: place.maxConcurrentReservation,
+        reservationRequiredDays: 4,
+        openingHours: place.openingHours,
         enableAutoAccept: place.enableAutoAccept,
       });
 

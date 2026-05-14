@@ -14,6 +14,9 @@ describe('MailService', () => {
   beforeEach(async () => {
     jest.resetModules();
     jest.clearAllMocks();
+    (configMock.get as jest.Mock).mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'dev' : undefined,
+    );
     process.env.NODE_ENV = 'dev';
     process.env.POPO_MAIL_ADDRESS = 'no-reply@example.com';
 
@@ -55,6 +58,64 @@ describe('MailService', () => {
         html: expect.stringContaining('P@ssw0rd!'),
       }),
     );
+  });
+
+  it('ignores local SMTP connection refused errors in local env', async () => {
+    process.env.NODE_ENV = 'local';
+    (configMock.get as jest.Mock).mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'local' : undefined,
+    );
+    const error = Object.assign(
+      new Error('connect ECONNREFUSED 127.0.0.1:587'),
+      {
+        code: 'ECONNREFUSED',
+        address: '127.0.0.1',
+        port: 587,
+      },
+    );
+    mailerMock.sendMail.mockRejectedValueOnce(error);
+
+    await expect(
+      mailService.sendPasswordResetMail('user@example.com', 'P@ssw0rd!'),
+    ).resolves.toBeUndefined();
+  });
+
+  it('ignores wrapped local SMTP connection refused errors in local env', async () => {
+    process.env.NODE_ENV = 'local';
+    (configMock.get as jest.Mock).mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'local' : undefined,
+    );
+    const error = Object.assign(
+      new Error('connect ECONNREFUSED 127.0.0.1:587'),
+      {
+        code: 'ESOCKET',
+      },
+    );
+    mailerMock.sendMail.mockRejectedValueOnce(error);
+
+    await expect(
+      mailService.sendPasswordResetMail('user@example.com', 'P@ssw0rd!'),
+    ).resolves.toBeUndefined();
+  });
+
+  it('does not ignore SMTP connection refused errors outside local env', async () => {
+    process.env.NODE_ENV = 'dev';
+    (configMock.get as jest.Mock).mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'dev' : undefined,
+    );
+    const error = Object.assign(
+      new Error('connect ECONNREFUSED 127.0.0.1:587'),
+      {
+        code: 'ECONNREFUSED',
+        address: '127.0.0.1',
+        port: 587,
+      },
+    );
+    mailerMock.sendMail.mockRejectedValueOnce(error);
+
+    await expect(
+      mailService.sendPasswordResetMail('user@example.com', 'P@ssw0rd!'),
+    ).rejects.toThrow('connect ECONNREFUSED 127.0.0.1:587');
   });
 
   it('sendReservationPatchMail builds expected payload', async () => {

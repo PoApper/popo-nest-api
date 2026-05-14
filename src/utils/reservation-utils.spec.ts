@@ -1,4 +1,8 @@
-import { isOnOpeningHours } from './reservation-utils';
+import {
+  getReservationDaysUntil,
+  isOnOpeningHours,
+  isReservationLeadTimeSatisfied,
+} from './reservation-utils';
 
 describe('reservation-utils opening hours', () => {
   it('allows reservations inside Everyday 24-hour opening hours', () => {
@@ -56,5 +60,32 @@ describe('reservation-utils opening hours', () => {
       isOnOpeningHours('{"Tuesday":"09:00-18:00"}', '20251222', '1000', '1100'),
     ).toBe(false);
     expect(isOnOpeningHours('invalid', '20251222', '1000', '1100')).toBe(false);
+  });
+});
+
+describe('reservation-utils reservation lead time', () => {
+  const now = '2026-05-12T15:30:00+09:00';
+
+  it('counts days until reservation by KST date', () => {
+    expect(getReservationDaysUntil('20260512', now)).toBe(0);
+    expect(getReservationDaysUntil('20260513', now)).toBe(1);
+    expect(getReservationDaysUntil('20260515', now)).toBe(3);
+  });
+
+  it('allows exactly n days before and blocks dates before that', () => {
+    expect(isReservationLeadTimeSatisfied('20260514', 3, now)).toBe(false);
+    expect(isReservationLeadTimeSatisfied('20260515', 3, now)).toBe(true);
+  });
+
+  it('treats zero or missing required days as unrestricted', () => {
+    expect(isReservationLeadTimeSatisfied('20260512', 0, now)).toBe(true);
+    expect(isReservationLeadTimeSatisfied('20260512', undefined, now)).toBe(
+      true,
+    );
+  });
+
+  it('rejects invalid reservation dates when required days are configured', () => {
+    expect(isReservationLeadTimeSatisfied('20260230', 1, now)).toBe(false);
+    expect(isReservationLeadTimeSatisfied('invalid', 1, now)).toBe(false);
   });
 });

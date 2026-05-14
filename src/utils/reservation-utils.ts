@@ -1,3 +1,5 @@
+import * as moment from 'moment-timezone';
+
 // TODO: reserve.place.entity 의 endTime이 0000 이 아닌 2400으로 저장된다면 이 함수 지워도 됨
 export function timeStringToMinutes(time: string, isEnd = false): number {
   // Normalize '0000' at end boundary to represent 24:00 (end of day)
@@ -147,4 +149,38 @@ export function isOnOpeningHours(
     ([openStart, openEnd]) =>
       openStart <= reservationStart && reservationEnd <= openEnd,
   );
+}
+
+export function getReservationDaysUntil(
+  date: string,
+  now: moment.Moment | Date | string = moment().tz('Asia/Seoul'),
+): number | null {
+  if (!/^\d{8}$/.test(date)) {
+    return null;
+  }
+
+  const reservationDate = moment.tz(date, 'YYYYMMDD', true, 'Asia/Seoul');
+  if (!reservationDate.isValid()) {
+    return null;
+  }
+
+  const today = moment.isMoment(now)
+    ? now.clone().tz('Asia/Seoul')
+    : moment(now).tz('Asia/Seoul');
+
+  return reservationDate.startOf('day').diff(today.startOf('day'), 'days');
+}
+
+export function isReservationLeadTimeSatisfied(
+  date: string,
+  reservationRequiredDays?: number,
+  now?: moment.Moment | Date | string,
+): boolean {
+  const requiredDays = Number(reservationRequiredDays) || 0;
+  if (requiredDays <= 0) {
+    return true;
+  }
+
+  const daysUntil = getReservationDaysUntil(date, now);
+  return daysUntil !== null && daysUntil >= requiredDays;
 }

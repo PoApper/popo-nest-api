@@ -32,6 +32,9 @@ export class Place extends Base {
   @Column({ name: 'max_concurrent_reservation', default: 1 })
   maxConcurrentReservation: number;
 
+  @Column({ name: 'reservation_required_days', default: 0 })
+  reservationRequiredDays: number;
+
   @Column('text', {
     name: 'opening_hours',
     nullable: false,

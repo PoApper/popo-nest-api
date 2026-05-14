@@ -11,6 +11,7 @@ import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import {
   calculateReservationDurationMinutes,
   isOnOpeningHours,
+  isReservationLeadTimeSatisfied,
   timeStringToMinutes,
 } from '../../../utils/reservation-utils';
 import { UserType } from 'src/popo/user/user.meta';
@@ -24,6 +25,7 @@ const Message = {
   OVER_MAX_RESERVATION_TIME:
     'Over the allocated reservation minutes of that day.',
   NOT_ON_OPENING_HOURS: 'Reservation time is outside opening hours.',
+  RESERVATION_REQUIRED_DAYS: 'Reservation requires advance booking days.',
 };
 
 @Injectable()
@@ -103,6 +105,14 @@ export class ReservePlaceService {
     }
 
     const targetPlace = await this.placeService.findOneByUuidOrFail(placeId);
+
+    if (
+      !isReservationLeadTimeSatisfied(date, targetPlace.reservationRequiredDays)
+    ) {
+      throw new BadRequestException(
+        `${Message.RESERVATION_REQUIRED_DAYS}: "${targetPlace.name}" 장소는 최소 ${targetPlace.reservationRequiredDays}일 전 예약해야 합니다.`,
+      );
+    }
 
     if (!isOnOpeningHours(targetPlace.openingHours, date, startTime, endTime)) {
       throw new BadRequestException(
