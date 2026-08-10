@@ -1,8 +1,21 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
-import { DeepPartial, In, MoreThanOrEqual, Repository } from 'typeorm';
-import { CreateReservePlaceDto } from './reserve.place.dto';
+import {
+  Between,
+  DeepPartial,
+  FindOptionsOrder,
+  FindOptionsWhere,
+  In,
+  LessThanOrEqual,
+  Like,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
+import {
+  CreateReservePlaceDto,
+  PlaceReservationFilterDto,
+} from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
@@ -216,6 +229,81 @@ export class ReservePlaceService {
 
   count(whereOption?: object) {
     return this.reservePlaceRepo.count({ where: whereOption });
+  }
+
+  /**
+   * 관리자 장소 예약 목록의 필터 조건을 TypeORM where 절로 변환한다.
+   * date 는 'YYYYMMDD' 형태의 문자열 컬럼이라 사전순 비교가 곧 날짜순 비교이다.
+   */
+  buildFilterWhereOption(
+    filter: PlaceReservationFilterDto = {},
+  ): FindOptionsWhere<ReservePlace> {
+    const whereOption: FindOptionsWhere<ReservePlace> = {};
+
+    if (filter.status) {
+      whereOption.status = filter.status;
+    }
+    if (filter.placeId) {
+      whereOption.placeId = filter.placeId;
+    }
+    if (filter.bookerId) {
+      whereOption.bookerId = filter.bookerId;
+    }
+    if (filter.title) {
+      whereOption.title = Like(`%${filter.title}%`);
+    }
+
+    // 특정 일자 지정이 기간 지정보다 우선한다.
+    if (filter.date) {
+      whereOption.date = filter.date;
+    } else if (filter.startDate && filter.endDate) {
+      whereOption.date = Between(filter.startDate, filter.endDate);
+    } else if (filter.startDate) {
+      whereOption.date = MoreThanOrEqual(filter.startDate);
+    } else if (filter.endDate) {
+      whereOption.date = LessThanOrEqual(filter.endDate);
+    }
+
+    return whereOption;
+  }
+
+  findByFilter(
+    filter: PlaceReservationFilterDto = {},
+    pagination: { skip?: number; take?: number } = {},
+  ) {
+    const findOption = {
+      where: this.buildFilterWhereOption(filter),
+      order: this.buildFilterOrderOption(filter),
+    };
+
+    if (pagination.skip) {
+      findOption['skip'] = pagination.skip;
+    }
+    if (pagination.take) {
+      findOption['take'] = pagination.take;
+    }
+
+    return this.reservePlaceRepo.find(findOption);
+  }
+
+  countByFilter(filter: PlaceReservationFilterDto = {}) {
+    return this.reservePlaceRepo.count({
+      where: this.buildFilterWhereOption(filter),
+    });
+  }
+
+  /**
+   * 예약 기간 순으로도 정렬할 수 있게 한다. 기본값은 기존 동작(생성일 최신순)을 유지한다.
+   */
+  private buildFilterOrderOption(
+    filter: PlaceReservationFilterDto = {},
+  ): FindOptionsOrder<ReservePlace> {
+    const direction = filter.orderDirection === 'ASC' ? 'ASC' : 'DESC';
+
+    if (filter.orderBy === 'date') {
+      return { date: direction, startTime: direction };
+    }
+    return { createdAt: direction };
   }
 
   findOneByUuid(uuid: string) {
