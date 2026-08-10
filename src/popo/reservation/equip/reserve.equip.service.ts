@@ -1,8 +1,20 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Like, Repository } from 'typeorm';
+import {
+  Between,
+  FindOptionsOrder,
+  FindOptionsWhere,
+  In,
+  LessThanOrEqual,
+  Like,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { ReserveEquip } from './reserve.equip.entity';
-import { CreateReserveEquipDto } from './reserve.equip.dto';
+import {
+  CreateReserveEquipDto,
+  EquipReservationFilterDto,
+} from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
 import { EquipService } from '../../equip/equip.service';
 import { ReservationStatus } from '../reservation.meta';
@@ -235,6 +247,78 @@ export class ReserveEquipService {
 
   count(whereOption?: object) {
     return this.reserveEquipRepo.count({ where: whereOption });
+  }
+
+  /**
+   * 관리자 장비 예약 목록의 필터 조건을 TypeORM where 절로 변환한다.
+   * date 는 'YYYYMMDD' 형태의 문자열 컬럼이라 사전순 비교가 곧 날짜순 비교이다.
+   */
+  buildFilterWhereOption(
+    filter: EquipReservationFilterDto = {},
+  ): FindOptionsWhere<ReserveEquip> {
+    const whereOption: FindOptionsWhere<ReserveEquip> = {};
+
+    if (filter.owner) {
+      whereOption.owner = filter.owner;
+    }
+    if (filter.status) {
+      whereOption.status = filter.status;
+    }
+    if (filter.bookerId) {
+      whereOption.bookerId = filter.bookerId;
+    }
+    if (filter.title) {
+      whereOption.title = Like(`%${filter.title}%`);
+    }
+
+    // 특정 일자 지정이 기간 지정보다 우선한다.
+    if (filter.date) {
+      whereOption.date = filter.date;
+    } else if (filter.startDate && filter.endDate) {
+      whereOption.date = Between(filter.startDate, filter.endDate);
+    } else if (filter.startDate) {
+      whereOption.date = MoreThanOrEqual(filter.startDate);
+    } else if (filter.endDate) {
+      whereOption.date = LessThanOrEqual(filter.endDate);
+    }
+
+    return whereOption;
+  }
+
+  findByFilter(
+    filter: EquipReservationFilterDto = {},
+    pagination: { skip?: number; take?: number } = {},
+  ) {
+    const findOption = {
+      where: this.buildFilterWhereOption(filter),
+      order: this.buildFilterOrderOption(filter),
+    };
+
+    if (pagination.skip) {
+      findOption['skip'] = pagination.skip;
+    }
+    if (pagination.take) {
+      findOption['take'] = pagination.take;
+    }
+
+    return this.reserveEquipRepo.find(findOption);
+  }
+
+  countByFilter(filter: EquipReservationFilterDto = {}) {
+    return this.reserveEquipRepo.count({
+      where: this.buildFilterWhereOption(filter),
+    });
+  }
+
+  private buildFilterOrderOption(
+    filter: EquipReservationFilterDto = {},
+  ): FindOptionsOrder<ReserveEquip> {
+    const direction = filter.orderDirection === 'ASC' ? 'ASC' : 'DESC';
+
+    if (filter.orderBy === 'date') {
+      return { date: direction, startTime: direction };
+    }
+    return { createdAt: direction };
   }
 
   findOneByUuid(uuid: string) {
