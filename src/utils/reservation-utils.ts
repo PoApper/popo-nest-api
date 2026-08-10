@@ -171,6 +171,44 @@ export function getReservationDaysUntil(
   return reservationDate.startOf('day').diff(today.startOf('day'), 'days');
 }
 
+/**
+ * 예약이 실제로 끝나는 시각을 구한다.
+ *
+ * endTime 이 '0000' 이면 자정을 의미하므로 다음 날 00:00 으로 해석한다.
+ * 날짜/시간 형식이 잘못된 경우 null 을 돌려준다.
+ */
+export function getReservationEndMoment(
+  date: string,
+  endTime: string,
+): moment.Moment | null {
+  if (!/^\d{8}$/.test(date) || !/^\d{4}$/.test(endTime)) {
+    return null;
+  }
+
+  const startOfDay = moment.tz(date, 'YYYYMMDD', true, 'Asia/Seoul');
+  if (!startOfDay.isValid()) {
+    return null;
+  }
+
+  const endMinutes = timeStringToMinutes(endTime, true);
+  return startOfDay.clone().add(endMinutes, 'minutes');
+}
+
+/**
+ * 예약 종료 시각이 기준 시점보다 이전인지 판단한다.
+ */
+export function isReservationEndedBefore(
+  date: string,
+  endTime: string,
+  cutoff: moment.Moment,
+): boolean {
+  const endMoment = getReservationEndMoment(date, endTime);
+  if (!endMoment) {
+    return false;
+  }
+  return endMoment.isSameOrBefore(cutoff);
+}
+
 export function isReservationLeadTimeSatisfied(
   date: string,
   reservationRequiredDays?: number,

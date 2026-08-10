@@ -32,6 +32,18 @@ export default () => {
             connectionLimit: isProd ? 10 : 1,
           },
     },
+    reservation: {
+      // 종료된 지 오래된 "심사중" 예약을 자동 승인할지 여부.
+      // 실제 서비스 데이터를 대량으로 바꾸는 동작이라 기본값은 꺼둔다.
+      autoAcceptOutdated:
+        process.env.AUTO_ACCEPT_OUTDATED_RESERVATIONS === 'true',
+      // 예약 종료 후 이 시간이 지나면 자동 승인 대상으로 본다.
+      outdatedGraceHours:
+        parseInt(process.env.OUTDATED_RESERVATION_GRACE_HOURS, 10) || 24,
+      // 한 번 실행에서 처리할 최대 건수. 밀린 예약은 다음 실행에서 이어서 처리한다.
+      autoAcceptBatchSize:
+        parseInt(process.env.AUTO_ACCEPT_BATCH_SIZE, 10) || 500,
+    },
     // Paxi의 FCM과 같은 설정 사용
     // Firebase 설정이 없어도 서버가 정상적으로 실행되도록 선택적으로 처리
     firebase: process.env.FIREBASE_PROJECT_ID

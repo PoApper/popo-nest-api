@@ -245,6 +245,23 @@ export class ReserveEquipService {
     return this.reserveEquipRepo.findOneByOrFail({ uuid: uuid });
   }
 
+  /**
+   * 여러 예약의 상태를 한 번의 UPDATE 로 변경한다.
+   * 자동 승인처럼 수백~수천 건을 처리할 때 건별 조회/수정을 피하기 위해 사용한다.
+   * 개별 감사 로그를 남기지 않으므로, 호출하는 쪽에서 요약 로그를 남겨야 한다.
+   */
+  async updateStatusMany(uuidList: string[], status: ReservationStatus) {
+    if (uuidList.length === 0) {
+      return 0;
+    }
+
+    const result = await this.reserveEquipRepo.update(
+      { uuid: In(uuidList) },
+      { status: status },
+    );
+    return result.affected ?? uuidList.length;
+  }
+
   async remove(uuid: string, actor?: JwtPayload) {
     const reservation = await this.findOneByUuidOrFail(uuid);
     const result = await this.reserveEquipRepo.delete(uuid);
