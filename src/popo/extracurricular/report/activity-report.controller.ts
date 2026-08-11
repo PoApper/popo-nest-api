@@ -7,18 +7,29 @@ import {
   Body,
   Param,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { ActivityReportService } from './activity-report.service';
 import {
   CreateActivityReportDto,
   UpdateActivityReportDto,
 } from './activity-report.dto';
+import { FileBody } from 'src/file/file-body.decorator';
 import { Roles } from 'src/auth/authroization/roles.decorator';
 import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { UserType } from 'src/popo/user/user.meta';
 import { Public } from 'src/common/public-guard.decorator';
+
+const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  doc: 'application/msword',
+  hwpx: 'application/hwp+zip',
+  hwp: 'application/x-hwp',
+};
 
 @ApiTags('Extracurricular Activity Report')
 @Controller('activity-report')
@@ -42,10 +53,33 @@ export class ActivityReportController {
     return this.reportService.findOne(id);
   }
 
+  /**
+   * 원본 문서를 그대로 내려준다.
+   * 학생 화면의 PDF/DOCX 뷰어가 이 URL 을 직접 읽는다.
+   */
+  @Public()
+  @Get(':id/file')
+  async downloadFile(@Param('id') id: string, @Res() res: Response) {
+    const { buffer, fileName, fileType } =
+      await this.reportService.getFileBuffer(id);
+
+    res.setHeader(
+      'Content-Type',
+      CONTENT_TYPE_BY_EXTENSION[fileType] ?? 'application/octet-stream',
+    );
+    // 브라우저 내장 뷰어로 열 수 있도록 inline 으로 준다.
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+    );
+    res.send(buffer);
+  }
+
   @ApiCookieAuth()
   @Post()
   @Roles(UserType.admin, UserType.association)
   @UseGuards(RolesGuard)
+  @FileBody('file')
   create(@Body() dto: CreateActivityReportDto) {
     return this.reportService.create(dto);
   }
@@ -54,6 +88,7 @@ export class ActivityReportController {
   @Patch(':id')
   @Roles(UserType.admin, UserType.association)
   @UseGuards(RolesGuard)
+  @FileBody('file')
   update(@Param('id') id: string, @Body() dto: UpdateActivityReportDto) {
     return this.reportService.update(id, dto);
   }
