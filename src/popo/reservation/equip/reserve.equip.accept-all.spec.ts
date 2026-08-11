@@ -1,14 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 
 import configurations from 'src/config/configurations';
 import { ReserveEquipModule } from './reserve.equip.module';
 import { ReserveEquipController } from './reserve.equip.controller';
 import { ReserveEquipService } from './reserve.equip.service';
+import { ReserveEquip } from './reserve.equip.entity';
 import { UserModule } from 'src/popo/user/user.module';
 import { UserService } from 'src/popo/user/user.service';
 import { EquipModule } from 'src/popo/equip/equip.module';
@@ -26,6 +27,7 @@ describe('ReserveEquip - Bulk accept & filters', () => {
   let app: INestApplication;
   let controller: ReserveEquipController;
   let reserveEquipService: ReserveEquipService;
+  let reserveEquipRepo: Repository<ReserveEquip>;
   let equipService: EquipService;
   let userService: UserService;
   let mailService: MailService;
@@ -70,6 +72,9 @@ describe('ReserveEquip - Bulk accept & filters', () => {
     );
     reserveEquipService =
       moduleFixture.get<ReserveEquipService>(ReserveEquipService);
+    reserveEquipRepo = moduleFixture.get<Repository<ReserveEquip>>(
+      getRepositoryToken(ReserveEquip),
+    );
     equipService = moduleFixture.get<EquipService>(EquipService);
     userService = moduleFixture.get<UserService>(UserService);
     mailService = moduleFixture.get<MailService>(MailService);
@@ -127,6 +132,33 @@ describe('ReserveEquip - Bulk accept & filters', () => {
     await app.close();
   });
 
+  /**
+   * 겹치는 "심사중" 예약을 DB에 직접 넣는다.
+   *
+   * 지금은 신청 단계에서 심사중 예약과의 겹침을 막기 때문에 API 로는 이 상태를
+   * 만들 수 없다. 하지만 정책 변경 전에 쌓인 예약이 그대로 남아 있으므로,
+   * 일괄 승인은 여전히 이 상황을 처리할 수 있어야 한다.
+   */
+  function saveOverlappingReservationDirectly(
+    overrides: Partial<ReserveEquip>,
+  ): Promise<ReserveEquip> {
+    return reserveEquipRepo.save(
+      reserveEquipRepo.create({
+        equipments: [equipment.uuid],
+        bookerId: testUserJwt.uuid,
+        owner: EquipOwner.dongyeon,
+        phone: '010-1234-5678',
+        title: 'Equip Reservation',
+        description: 'description',
+        date: '20241210',
+        startTime: '1000',
+        endTime: '1100',
+        status: ReservationStatus.in_process,
+        ...overrides,
+      }),
+    );
+  }
+
   function saveReservation(overrides) {
     return reserveEquipService.save({
       equipments: [equipment.uuid],
@@ -174,9 +206,8 @@ describe('ReserveEquip - Bulk accept & filters', () => {
     });
 
     it('should skip overlapping reservations instead of aborting the batch', async () => {
-      // 예약 생성 시점에는 승인된 예약만 겹침 검사 대상이므로,
-      // 서로 겹치는 예약이 모두 "심사중"으로 쌓일 수 있다. 이 상황을 재현한다.
-      const overlapping = await saveReservation({
+      // 정책 변경 전에 쌓여 있던, 서로 겹치는 "심사중" 예약 상황을 재현한다.
+      const overlapping = await saveOverlappingReservationDirectly({
         title: 'Overlapping',
         startTime: '1100',
         endTime: '1300',
@@ -190,7 +221,7 @@ describe('ReserveEquip - Bulk accept & filters', () => {
       });
 
       // 겹치는 예약 중 한 건을 먼저 승인해 둔다.
-      const accepted = await saveReservation({
+      const accepted = await saveOverlappingReservationDirectly({
         title: 'Already Accepted',
         startTime: '1000',
         endTime: '1200',

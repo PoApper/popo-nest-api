@@ -52,17 +52,23 @@ export class ReservePlaceService {
     private readonly placeService: PlaceService,
   ) {}
 
+  /**
+   * @param countedStatuses 동시 예약 개수에 포함할 예약 상태.
+   *   신규 신청은 심사중 예약과도 겹치면 안 되고(중복 신청 차단),
+   *   승인 시점에는 통과된 예약만 센다. 자세한 이유는 checkReservationPossible 참고.
+   */
   async isReservationConcurrent(
     placeId: string,
     maxConcurrentReservation: number,
     date: string,
     startTime: string,
     endTime: string,
+    countedStatuses: ReservationStatus[] = [ReservationStatus.accept],
   ): Promise<boolean> {
     // 라인스위핑으로 동시 예약 개수 체크
 
     const accepted = await this.reservePlaceRepo.find({
-      where: { placeId: placeId, date: date, status: ReservationStatus.accept },
+      where: { placeId: placeId, date: date, status: In(countedStatuses) },
       order: { startTime: 'ASC' },
     });
 
@@ -134,16 +140,32 @@ export class ReservePlaceService {
     }
 
     // Reservation Concurrent Check
+    //
+    // 신규 신청(isPatch=false)은 심사중 예약까지 세어 중복 신청을 아예 막는다.
+    // 예전에는 통과된 예약만 세어서, 같은 시간대에 심사중 예약이 있어도 신청이
+    // 되었고 결국 관리자가 둘 중 하나를 반려해야 했다.
+    //
+    // 반대로 승인(isPatch=true) 때는 통과된 예약만 센다. 여기서 심사중까지 세면
+    // 경쟁 관계인 예약들이 서로를 막아 일괄 승인이 한 건도 처리되지 않는다.
+    // 먼저 생성된 예약이 통과로 바뀌면 그와 겹치는 뒤 예약은 자연히 걸러진다.
+    const countedStatuses = isPatch
+      ? [ReservationStatus.accept]
+      : [ReservationStatus.accept, ReservationStatus.in_process];
+
     const isConcurrentPossible = await this.isReservationConcurrent(
       placeId,
       targetPlace.maxConcurrentReservation,
       date,
       startTime,
       endTime,
+      countedStatuses,
     );
     if (!isConcurrentPossible) {
+      const conflictDescription = isPatch
+        ? '이미 승인된'
+        : '이미 승인되었거나 심사중인';
       throw new BadRequestException(
-        `"${targetPlace.name}" 장소에 이미 승인된 ${targetPlace.maxConcurrentReservation}개 예약이 있어 ${date} ${startTime} ~ ${endTime}에는 예약이 불가능 합니다.`,
+        `"${targetPlace.name}" 장소는 ${date} ${startTime} ~ ${endTime}에 ${conflictDescription} 예약이 ${targetPlace.maxConcurrentReservation}개 있어 예약할 수 없습니다. 다른 시간대를 선택해주세요.`,
       );
     }
 
