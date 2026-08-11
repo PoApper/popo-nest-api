@@ -350,6 +350,67 @@ export class ReservePlaceController {
   }
 
   @ApiCookieAuth()
+  @Patch('all/status/reject')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
+  async rejectAllStatus(
+    @Body() body: AcceptPlaceReservationListDto,
+    @Query('sendEmail') sendEmail?: string,
+    @User() user?: JwtPayload,
+  ): Promise<AcceptPlaceReservationResultDto> {
+    // 거절은 승인과 달리 중복 검사를 할 필요가 없어 요청한 건을 그대로 처리한다.
+    const acceptedUuidList: string[] = [];
+    const skippedList: SkippedPlaceReservationDto[] = [];
+
+    for (const reservationUuid of body.uuidList) {
+      try {
+        const response = await this.reservePlaceService.updateStatus(
+          reservationUuid,
+          ReservationStatus.reject,
+          user,
+          '일괄 거절',
+        );
+        acceptedUuidList.push(reservationUuid);
+
+        if (sendEmail === 'true') {
+          const skipList = [
+            UserType.admin,
+            UserType.association,
+            UserType.club,
+          ];
+          if (!skipList.includes(response.userType)) {
+            await this.mailService.sendReservationPatchMail(
+              response.email,
+              response.title,
+              ReservationStatus.reject,
+            );
+          }
+        }
+      } catch (error) {
+        // 한 건이 실패해도 나머지를 계속 처리하고, 실패 목록을 함께 돌려준다.
+        const reservation =
+          await this.reservePlaceService.findOneByUuid(reservationUuid);
+        skippedList.push({
+          uuid: reservationUuid,
+          title: reservation?.title ?? '(알 수 없음)',
+          date: reservation?.date ?? '',
+          startTime: reservation?.startTime ?? '',
+          endTime: reservation?.endTime ?? '',
+          reason: error?.response?.message ?? error?.message ?? '거절 불가',
+        });
+      }
+    }
+
+    return {
+      totalCount: body.uuidList.length,
+      acceptedCount: acceptedUuidList.length,
+      skippedCount: skippedList.length,
+      acceptedUuidList: acceptedUuidList,
+      skippedList: skippedList,
+    };
+  }
+
+  @ApiCookieAuth()
   @Patch(':uuid/status/:status')
   @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association, UserType.staff)
