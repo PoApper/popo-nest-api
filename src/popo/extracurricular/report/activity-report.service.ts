@@ -11,6 +11,25 @@ import {
 } from './activity-report.dto';
 import { FileService } from '../../../file/file.service';
 
+/**
+ * multipart 파일명 인코딩 보정.
+ *
+ * RFC 7578 은 파일명 인코딩을 정하지 않아서, 브라우저가 보낸 UTF-8 바이트를
+ * 파서가 latin1 문자열로 해석해 넘겨준다. 그대로 두면 "통합 문서 1.pdf" 가
+ * "íµí© ë¬¸ì 1.pdf" 로 저장된다.
+ * latin1 로 되돌린 바이트가 올바른 UTF-8 이면 그걸 쓰고, 아니면 원본을 유지한다.
+ */
+export const decodeFileName = (rawName: string) => {
+  if (!rawName) return rawName;
+
+  const bytes = Buffer.from(rawName, 'latin1');
+  const decoded = bytes.toString('utf8');
+
+  // 되돌린 값이 깨졌거나(U+FFFD) 왕복이 맞지 않으면 원본이 이미 정상이다.
+  if (decoded.includes('�')) return rawName;
+  return Buffer.from(decoded, 'utf8').equals(bytes) ? decoded : rawName;
+};
+
 /** "2025_보고서.docx" -> "docx" */
 export const extensionOf = (fileName: string) => {
   const idx = fileName.lastIndexOf('.');
@@ -104,7 +123,7 @@ export class ActivityReportService {
 
   /** 원본 문서를 저장하고 엔티티에 채울 파일 관련 필드를 돌려준다. */
   private async storeFile(activityId: string, file: MemoryStoredFile) {
-    const fileName = file.originalName;
+    const fileName = decodeFileName(file.originalName);
     const key = `activity-report/${activityId}/${moment().format(
       'YYYY-MM-DD/HHmmss',
     )}/${fileName}`;

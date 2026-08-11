@@ -37,7 +37,7 @@ export class ActivityController {
 
   @ApiCookieAuth()
   @Post()
-  @Roles(UserType.admin, UserType.association)
+  @Roles(UserType.admin, UserType.staff)
   @UseGuards(RolesGuard)
   create(@Body() dto: CreateActivityDto) {
     return this.activityService.create(dto);
@@ -45,7 +45,7 @@ export class ActivityController {
 
   @ApiCookieAuth()
   @Patch(':id')
-  @Roles(UserType.admin, UserType.association)
+  @Roles(UserType.admin, UserType.staff)
   @UseGuards(RolesGuard)
   update(@Param('id') id: string, @Body() dto: UpdateActivityDto) {
     return this.activityService.update(id, dto);
@@ -53,7 +53,7 @@ export class ActivityController {
 
   @ApiCookieAuth()
   @Delete(':id')
-  @Roles(UserType.admin, UserType.association)
+  @Roles(UserType.admin, UserType.staff)
   @UseGuards(RolesGuard)
   remove(@Param('id') id: string) {
     return this.activityService.remove(id);

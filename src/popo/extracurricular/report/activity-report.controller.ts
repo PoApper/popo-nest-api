@@ -77,7 +77,7 @@ export class ActivityReportController {
 
   @ApiCookieAuth()
   @Post()
-  @Roles(UserType.admin, UserType.association)
+  @Roles(UserType.admin, UserType.staff)
   @UseGuards(RolesGuard)
   @FileBody('file')
   create(@Body() dto: CreateActivityReportDto) {
@@ -86,7 +86,7 @@ export class ActivityReportController {
 
   @ApiCookieAuth()
   @Patch(':id')
-  @Roles(UserType.admin, UserType.association)
+  @Roles(UserType.admin, UserType.staff)
   @UseGuards(RolesGuard)
   @FileBody('file')
   update(@Param('id') id: string, @Body() dto: UpdateActivityReportDto) {
@@ -95,7 +95,7 @@ export class ActivityReportController {
 
   @ApiCookieAuth()
   @Delete(':id')
-  @Roles(UserType.admin, UserType.association)
+  @Roles(UserType.admin, UserType.staff)
   @UseGuards(RolesGuard)
   remove(@Param('id') id: string) {
     return this.reportService.remove(id);
