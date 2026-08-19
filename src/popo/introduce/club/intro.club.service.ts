@@ -20,6 +20,10 @@ export class IntroClubService {
     return this.introClubRepo.update({ uuid: uuid }, { imageUrl: imageUrl });
   }
 
+  updateBannerUrl(uuid: string, bannerUrl: string) {
+    return this.introClubRepo.update({ uuid: uuid }, { bannerUrl: bannerUrl });
+  }
+
   find(findOptions?: object) {
     return this.introClubRepo.find(findOptions);
   }

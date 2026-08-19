@@ -14,12 +14,15 @@ import { Between } from 'typeorm';
 import * as moment from 'moment';
 
 import { IntroAssociationService } from './intro.association.service';
-import { CreateIntroAssociationDto } from './intro.association.dto';
+import {
+  AssociationBannerDto,
+  AssociationImageDto,
+  CreateIntroAssociationDto,
+} from './intro.association.dto';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { UserType } from '../../user/user.meta';
 import { FileBody } from '../../../file/file-body.decorator';
-import { ClubImageDto } from '../club/intro.club.dto';
 import { FileService } from '../../../file/file.service';
 import { Public } from '../../../common/public-guard.decorator';
 import { AssociationType } from './intro.association.meta';
@@ -45,13 +48,33 @@ export class IntroAssociationController {
   @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   @FileBody('image')
-  async uploadImage(@Param('uuid') uuid: string, @Body() dto: ClubImageDto) {
+  async uploadImage(
+    @Param('uuid') uuid: string,
+    @Body() dto: AssociationImageDto,
+  ) {
     const image_url = await this.fileService.uploadFile(
       `association/${uuid}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
       dto.image,
     );
     await this.introAssociationService.updateImageUrl(uuid, image_url);
     return image_url;
+  }
+
+  @ApiCookieAuth()
+  @Post('banner/:uuid')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association)
+  @FileBody('image')
+  async uploadBanner(
+    @Param('uuid') uuid: string,
+    @Body() dto: AssociationBannerDto,
+  ) {
+    const banner_url = await this.fileService.uploadFile(
+      `association/${uuid}/banner/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
+      dto.image,
+    );
+    await this.introAssociationService.updateBannerUrl(uuid, banner_url);
+    return banner_url;
   }
 
   @Public()

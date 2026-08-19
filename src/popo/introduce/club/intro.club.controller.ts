@@ -17,7 +17,11 @@ import { IntroClubService } from './intro.club.service';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { UserType } from '../../user/user.meta';
-import { ClubImageDto, CreateIntroClubDto } from './intro.club.dto';
+import {
+  ClubBannerDto,
+  ClubImageDto,
+  CreateIntroClubDto,
+} from './intro.club.dto';
 import { ClubType } from './intro.club.meta';
 import { FileService } from '../../../file/file.service';
 import { FileBody } from '../../../file/file-body.decorator';
@@ -52,6 +56,20 @@ export class IntroClubController {
     );
     await this.introClubService.updateImageUrl(uuid, imageUrl);
     return imageUrl;
+  }
+
+  @ApiCookieAuth()
+  @Post('banner/:uuid')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association)
+  @FileBody('image')
+  async uploadBanner(@Param('uuid') uuid: string, @Body() dto: ClubBannerDto) {
+    const bannerUrl = await this.fileService.uploadFile(
+      `club/${uuid}/banner/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
+      dto.image,
+    );
+    await this.introClubService.updateBannerUrl(uuid, bannerUrl);
+    return bannerUrl;
   }
 
   @Public()

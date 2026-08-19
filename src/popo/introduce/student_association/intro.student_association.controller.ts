@@ -16,6 +16,7 @@ import * as moment from 'moment';
 import { IntroStudentAssociationService } from './intro.student_association.service';
 import {
   CreateIntroStudentAssociationDto,
+  StudentAssociationBannerDto,
   StudentAssociationImageDto,
 } from './intro.student_association.dto';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
@@ -60,6 +61,23 @@ export class IntroStudentAssociationController {
     );
     await this.introStudentAssociationService.updateImageUrl(uuid, image_url);
     return image_url;
+  }
+
+  @ApiCookieAuth()
+  @Post('banner/:uuid')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association)
+  @FileBody('image')
+  async uploadBanner(
+    @Param('uuid') uuid: string,
+    @Body() dto: StudentAssociationBannerDto,
+  ) {
+    const banner_url = await this.fileService.uploadFile(
+      `student_association/${uuid}/banner/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
+      dto.image,
+    );
+    await this.introStudentAssociationService.updateBannerUrl(uuid, banner_url);
+    return banner_url;
   }
 
   @Public()

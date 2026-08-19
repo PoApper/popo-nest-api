@@ -31,6 +31,9 @@ export class IntroClub extends Base {
   @Column({ name: 'image_url', nullable: true })
   imageUrl: string;
 
+  @Column({ name: 'banner_url', nullable: true })
+  bannerUrl: string;
+
   @Column({ default: 0 })
   views: number;
 

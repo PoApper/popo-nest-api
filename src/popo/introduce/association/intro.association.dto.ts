@@ -8,12 +8,20 @@ export class CreateIntroAssociationDto {
   readonly location: string;
   readonly representative: string;
   readonly contact: string;
+  readonly imageUrl?: string;
+  readonly bannerUrl?: string;
   readonly homepageUrl: string;
   readonly facebookUrl: string;
   readonly instagramUrl: string;
 }
 
 export class AssociationImageDto {
+  @IsFile()
+  @MaxFileSize(10 * 1024 * 1024) // 10MB
+  readonly image: MemoryStoredFile;
+}
+
+export class AssociationBannerDto {
   @IsFile()
   @MaxFileSize(10 * 1024 * 1024) // 10MB
   readonly image: MemoryStoredFile;

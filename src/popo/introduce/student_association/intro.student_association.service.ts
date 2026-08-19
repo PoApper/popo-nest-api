@@ -27,6 +27,13 @@ export class IntroStudentAssociationService {
     );
   }
 
+  updateBannerUrl(uuid: string, bannerUrl: string) {
+    return this.introStudentAssociationRepo.update(
+      { uuid: uuid },
+      { bannerUrl: bannerUrl },
+    );
+  }
+
   findOneByUuid(uuid: string) {
     return this.introStudentAssociationRepo.findOneBy({ uuid: uuid });
   }
