@@ -43,4 +43,7 @@ export class IntroAssociation extends Base {
 
   @Column({ name: 'instagram_url', nullable: true })
   instagramUrl: string;
+
+  @Column({ name: 'youtube_url', nullable: true })
+  youtubeUrl: string;
 }

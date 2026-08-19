@@ -11,6 +11,7 @@ export class CreateIntroAssociationDto {
   readonly homepageUrl: string;
   readonly facebookUrl: string;
   readonly instagramUrl: string;
+  readonly youtubeUrl: string;
 }
 
 export class AssociationImageDto {
