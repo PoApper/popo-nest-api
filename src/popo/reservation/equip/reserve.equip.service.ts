@@ -1,8 +1,20 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Like, Repository } from 'typeorm';
+import {
+  Between,
+  FindOptionsOrder,
+  FindOptionsWhere,
+  In,
+  LessThanOrEqual,
+  Like,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { ReserveEquip } from './reserve.equip.entity';
-import { CreateReserveEquipDto } from './reserve.equip.dto';
+import {
+  CreateReserveEquipDto,
+  EquipReservationFilterDto,
+} from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
 import { EquipService } from '../../equip/equip.service';
 import { ReservationStatus } from '../reservation.meta';
@@ -41,16 +53,22 @@ export class ReserveEquipService {
     private readonly equipService: EquipService,
   ) {}
 
+  /**
+   * @param countedStatuses 겹침 판정에 포함할 예약 상태.
+   *   신규 신청은 심사중 예약과도 겹치면 안 되고(중복 신청 차단),
+   *   승인 시점에는 통과된 예약만 본다. 자세한 이유는 checkReservationPossible 참고.
+   */
   async isReservationOverlap(
     uuidList: string[],
     date: string,
     startTime: string,
     endTime: string,
+    countedStatuses: ReservationStatus[] = [ReservationStatus.accept],
   ): Promise<boolean> {
     const booked_reservations = await this.find({
       where: {
         date: date,
-        status: ReservationStatus.accept,
+        status: In(countedStatuses),
       },
     });
 
@@ -96,14 +114,23 @@ export class ReserveEquipService {
     this.assertEquipmentsReservationRequiredDays(targetEquipments, date);
 
     // Reservation Overlap Check
+    //
+    // 신규 신청은 심사중 예약과도 겹치면 안 된다. 예전에는 통과된 예약만 봐서
+    // 같은 장비·같은 시간에 심사중 예약이 있어도 신청이 되었고, 결국 관리자가
+    // 둘 중 하나를 반려해야 했다.
+    // 승인 시점의 검사(controller 의 assertReservationAcceptable)는 통과된 예약만
+    // 보는데, 심사중까지 세면 경쟁 예약끼리 서로를 막아 일괄 승인이 막힌다.
     const isReservationOverlap = await this.isReservationOverlap(
       equipments,
       date,
       startTime,
       endTime,
+      [ReservationStatus.accept, ReservationStatus.in_process],
     );
     if (isReservationOverlap) {
-      throw new BadRequestException(Message.OVERLAP_RESERVATION);
+      throw new BadRequestException(
+        `${Message.OVERLAP_RESERVATION}: ${date} ${startTime} ~ ${endTime}에 이미 승인되었거나 심사중인 예약이 있습니다. 다른 시간대를 선택해주세요.`,
+      );
     }
 
     // Reservation Duration Check
@@ -235,6 +262,78 @@ export class ReserveEquipService {
 
   count(whereOption?: object) {
     return this.reserveEquipRepo.count({ where: whereOption });
+  }
+
+  /**
+   * 관리자 장비 예약 목록의 필터 조건을 TypeORM where 절로 변환한다.
+   * date 는 'YYYYMMDD' 형태의 문자열 컬럼이라 사전순 비교가 곧 날짜순 비교이다.
+   */
+  buildFilterWhereOption(
+    filter: EquipReservationFilterDto = {},
+  ): FindOptionsWhere<ReserveEquip> {
+    const whereOption: FindOptionsWhere<ReserveEquip> = {};
+
+    if (filter.owner) {
+      whereOption.owner = filter.owner;
+    }
+    if (filter.status) {
+      whereOption.status = filter.status;
+    }
+    if (filter.bookerId) {
+      whereOption.bookerId = filter.bookerId;
+    }
+    if (filter.title) {
+      whereOption.title = Like(`%${filter.title}%`);
+    }
+
+    // 특정 일자 지정이 기간 지정보다 우선한다.
+    if (filter.date) {
+      whereOption.date = filter.date;
+    } else if (filter.startDate && filter.endDate) {
+      whereOption.date = Between(filter.startDate, filter.endDate);
+    } else if (filter.startDate) {
+      whereOption.date = MoreThanOrEqual(filter.startDate);
+    } else if (filter.endDate) {
+      whereOption.date = LessThanOrEqual(filter.endDate);
+    }
+
+    return whereOption;
+  }
+
+  findByFilter(
+    filter: EquipReservationFilterDto = {},
+    pagination: { skip?: number; take?: number } = {},
+  ) {
+    const findOption = {
+      where: this.buildFilterWhereOption(filter),
+      order: this.buildFilterOrderOption(filter),
+    };
+
+    if (pagination.skip) {
+      findOption['skip'] = pagination.skip;
+    }
+    if (pagination.take) {
+      findOption['take'] = pagination.take;
+    }
+
+    return this.reserveEquipRepo.find(findOption);
+  }
+
+  countByFilter(filter: EquipReservationFilterDto = {}) {
+    return this.reserveEquipRepo.count({
+      where: this.buildFilterWhereOption(filter),
+    });
+  }
+
+  private buildFilterOrderOption(
+    filter: EquipReservationFilterDto = {},
+  ): FindOptionsOrder<ReserveEquip> {
+    const direction = filter.orderDirection === 'ASC' ? 'ASC' : 'DESC';
+
+    if (filter.orderBy === 'date') {
+      return { date: direction, startTime: direction };
+    }
+    return { createdAt: direction };
   }
 
   findOneByUuid(uuid: string) {

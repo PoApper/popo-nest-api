@@ -15,7 +15,9 @@ import { ApiBody, ApiQuery, ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { ReservePlaceService } from './reserve.place.service';
 import {
   AcceptPlaceReservationListDto,
+  AcceptPlaceReservationResultDto,
   CreateReservePlaceDto,
+  SkippedPlaceReservationDto,
 } from './reserve.place.dto';
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
@@ -97,24 +99,70 @@ export class ReservePlaceController {
   @ApiQuery({ name: 'date', required: false })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'placeId', required: false })
+  @ApiQuery({ name: 'bookerId', required: false })
+  @ApiQuery({ name: 'title', required: false })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  @ApiQuery({ name: 'orderBy', required: false, enum: ['createdAt', 'date'] })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'] })
   async getAll(
     @Query('status') status: string,
     @Query('date') date: string,
     @Query('skip') skip: number,
     @Query('take') take: number,
+    @Query('placeId') placeId?: string,
+    @Query('bookerId') bookerId?: string,
+    @Query('title') title?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('orderBy') orderBy?: 'createdAt' | 'date',
+    @Query('orderDirection') orderDirection?: 'ASC' | 'DESC',
   ) {
     return this.reservePlaceService.findAllWithRelations(
-      status,
-      date,
-      skip,
-      take,
+      {
+        status: status as ReservationStatus,
+        date,
+        placeId,
+        bookerId,
+        title,
+        startDate,
+        endDate,
+        orderBy,
+        orderDirection,
+      },
+      { skip, take },
     );
   }
 
   @ApiCookieAuth()
   @Get('count')
-  count() {
-    return this.reservePlaceService.count();
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'date', required: false })
+  @ApiQuery({ name: 'placeId', required: false })
+  @ApiQuery({ name: 'bookerId', required: false })
+  @ApiQuery({ name: 'title', required: false })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  count(
+    @Query('status') status?: string,
+    @Query('date') date?: string,
+    @Query('placeId') placeId?: string,
+    @Query('bookerId') bookerId?: string,
+    @Query('title') title?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    // 필터를 주지 않으면 기존과 동일하게 전체 예약 건수를 돌려준다.
+    return this.reservePlaceService.countByFilter({
+      status: status as ReservationStatus,
+      date,
+      placeId,
+      bookerId,
+      title,
+      startDate,
+      endDate,
+    });
   }
 
   @ApiCookieAuth()
@@ -228,7 +276,7 @@ export class ReservePlaceController {
     @Body() body: AcceptPlaceReservationListDto,
     @Query('sendEmail') sendEmail?: string,
     @User() user?: JwtPayload,
-  ) {
+  ): Promise<AcceptPlaceReservationResultDto> {
     const reservations: ReservePlace[] = [];
     for (const reservationUuid of body.uuidList) {
       const reservation =
@@ -239,23 +287,42 @@ export class ReservePlaceController {
     // early created reservation should be processed first
     reservations.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
 
+    const acceptedUuidList: string[] = [];
+    const skippedList: SkippedPlaceReservationDto[] = [];
+
     for (const reservation of reservations) {
-      await this.reservePlaceService.checkReservationPossible(
-        {
-          placeId: reservation.placeId,
+      // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
+      // 앞선 예약이 승인되면 그와 겹치는 뒤쪽 예약은 이 검사에서 자동으로 걸러진다.
+      try {
+        await this.reservePlaceService.checkReservationPossible(
+          {
+            placeId: reservation.placeId,
+            date: reservation.date,
+            startTime: reservation.startTime,
+            endTime: reservation.endTime,
+          },
+          reservation.bookerId,
+          true,
+        );
+      } catch (error) {
+        skippedList.push({
+          uuid: reservation.uuid,
+          title: reservation.title,
           date: reservation.date,
           startTime: reservation.startTime,
           endTime: reservation.endTime,
-        },
-        reservation.bookerId,
-        true,
-      );
+          reason: error?.response?.message ?? error?.message ?? '승인 불가',
+        });
+        continue;
+      }
+
       const response = await this.reservePlaceService.updateStatus(
         reservation.uuid,
         ReservationStatus.accept,
         user,
         '일괄 승인',
       );
+      acceptedUuidList.push(reservation.uuid);
 
       if (sendEmail === 'true') {
         // Send e-mail to client.
@@ -269,6 +336,75 @@ export class ReservePlaceController {
         }
       }
     }
+
+    return {
+      totalCount: reservations.length,
+      acceptedCount: acceptedUuidList.length,
+      skippedCount: skippedList.length,
+      acceptedUuidList: acceptedUuidList,
+      skippedList: skippedList,
+    };
+  }
+
+  @ApiCookieAuth()
+  @Patch('all/status/reject')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
+  async rejectAllStatus(
+    @Body() body: AcceptPlaceReservationListDto,
+    @Query('sendEmail') sendEmail?: string,
+    @User() user?: JwtPayload,
+  ): Promise<AcceptPlaceReservationResultDto> {
+    // 거절은 승인과 달리 중복 검사를 할 필요가 없어 요청한 건을 그대로 처리한다.
+    const acceptedUuidList: string[] = [];
+    const skippedList: SkippedPlaceReservationDto[] = [];
+
+    for (const reservationUuid of body.uuidList) {
+      try {
+        const response = await this.reservePlaceService.updateStatus(
+          reservationUuid,
+          ReservationStatus.reject,
+          user,
+          '일괄 거절',
+        );
+        acceptedUuidList.push(reservationUuid);
+
+        if (sendEmail === 'true') {
+          const skipList = [
+            UserType.admin,
+            UserType.association,
+            UserType.club,
+          ];
+          if (!skipList.includes(response.userType)) {
+            await this.mailService.sendReservationPatchMail(
+              response.email,
+              response.title,
+              ReservationStatus.reject,
+            );
+          }
+        }
+      } catch (error) {
+        // 한 건이 실패해도 나머지를 계속 처리하고, 실패 목록을 함께 돌려준다.
+        const reservation =
+          await this.reservePlaceService.findOneByUuid(reservationUuid);
+        skippedList.push({
+          uuid: reservationUuid,
+          title: reservation?.title ?? '(알 수 없음)',
+          date: reservation?.date ?? '',
+          startTime: reservation?.startTime ?? '',
+          endTime: reservation?.endTime ?? '',
+          reason: error?.response?.message ?? error?.message ?? '거절 불가',
+        });
+      }
+    }
+
+    return {
+      totalCount: body.uuidList.length,
+      acceptedCount: acceptedUuidList.length,
+      skippedCount: skippedList.length,
+      acceptedUuidList: acceptedUuidList,
+      skippedList: skippedList,
+    };
   }
 
   @ApiCookieAuth()

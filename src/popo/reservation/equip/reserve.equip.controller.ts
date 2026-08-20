@@ -13,14 +13,20 @@ import {
 } from '@nestjs/common';
 import { ApiQuery, ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { ReserveEquipService } from './reserve.equip.service';
-import { CreateReserveEquipDto } from './reserve.equip.dto';
+import {
+  AcceptEquipReservationListDto,
+  AcceptEquipReservationResultDto,
+  CreateReserveEquipDto,
+  SkippedEquipReservationDto,
+} from './reserve.equip.dto';
+import { ReserveEquip } from './reserve.equip.entity';
+import { EquipOwner } from '../../equip/equip.meta';
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
-import { MoreThanOrEqual } from 'typeorm';
 import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import * as moment from 'moment-timezone';
 import { Public } from 'src/common/public-guard.decorator';
@@ -76,6 +82,12 @@ export class ReserveEquipController {
   @ApiQuery({ name: 'date', required: false })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'bookerId', required: false })
+  @ApiQuery({ name: 'title', required: false })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  @ApiQuery({ name: 'orderBy', required: false, enum: ['createdAt', 'date'] })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'] })
   async getAll(
     @Query('owner') owner: string,
     @Query('status') status: string,
@@ -83,32 +95,29 @@ export class ReserveEquipController {
     @Query('startDate') startDate: string,
     @Query('skip') skip: number,
     @Query('take') take: number,
+    @Query('bookerId') bookerId?: string,
+    @Query('title') title?: string,
+    @Query('endDate') endDate?: string,
+    @Query('orderBy') orderBy?: 'createdAt' | 'date',
+    @Query('orderDirection') orderDirection?: 'ASC' | 'DESC',
   ) {
-    const whereOption = {};
-    if (owner) {
-      whereOption['owner'] = owner;
-    }
-    if (status) {
-      whereOption['status'] = status;
-    }
-    if (date) {
-      whereOption['date'] = date;
-    }
-    if (startDate) {
-      whereOption['date'] = MoreThanOrEqual(startDate);
-    }
+    const reservations = await this.reserveEquipService.findByFilter(
+      {
+        owner: owner as EquipOwner,
+        status: status as ReservationStatus,
+        date,
+        bookerId,
+        title,
+        startDate,
+        endDate,
+        orderBy,
+        orderDirection,
+      },
+      { skip, take },
+    );
 
-    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
-    if (skip) {
-      findOption['skip'] = skip;
-    }
-    if (take) {
-      findOption['take'] = take;
-    }
-
-    let reservations = await this.reserveEquipService.find(findOption);
-    reservations = await this.reserveEquipService.joinBooker(reservations);
-    return this.reserveEquipService.joinEquips(reservations);
+    const withBooker = await this.reserveEquipService.joinBooker(reservations);
+    return this.reserveEquipService.joinEquips(withBooker);
   }
 
   @ApiCookieAuth()
@@ -181,8 +190,32 @@ export class ReserveEquipController {
 
   @ApiCookieAuth()
   @Get('count')
-  count() {
-    return this.reserveEquipService.count();
+  @ApiQuery({ name: 'owner', required: false })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'date', required: false })
+  @ApiQuery({ name: 'bookerId', required: false })
+  @ApiQuery({ name: 'title', required: false })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  count(
+    @Query('owner') owner?: string,
+    @Query('status') status?: string,
+    @Query('date') date?: string,
+    @Query('bookerId') bookerId?: string,
+    @Query('title') title?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    // 필터를 주지 않으면 기존과 동일하게 전체 예약 건수를 돌려준다.
+    return this.reserveEquipService.countByFilter({
+      owner: owner as EquipOwner,
+      status: status as ReservationStatus,
+      date,
+      bookerId,
+      title,
+      startDate,
+      endDate,
+    });
   }
 
   @ApiCookieAuth()
@@ -220,6 +253,161 @@ export class ReserveEquipController {
     }
   }
 
+  /**
+   * 장비 예약을 승인할 수 있는지 검사한다. 승인 불가 시 BadRequestException 을 던진다.
+   * 단건 승인과 일괄 승인이 동일한 기준을 쓰도록 분리했다.
+   */
+  private async assertReservationAcceptable(reservation: ReserveEquip) {
+    await this.reserveEquipService.assertReservationRequiredDays(
+      reservation.equipments,
+      reservation.date,
+    );
+    await this.reserveEquipService.assertReservationOpeningHours(
+      reservation.equipments,
+      reservation.date,
+      reservation.startTime,
+      reservation.endTime,
+    );
+
+    const isOverlap = await this.reserveEquipService.isReservationOverlap(
+      reservation.equipments,
+      reservation.date,
+      reservation.startTime,
+      reservation.endTime,
+    );
+    if (isOverlap) {
+      throw new BadRequestException('Reservation time overlapped.');
+    }
+  }
+
+  @ApiCookieAuth()
+  @Patch('all/status/accept')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
+  async acceptAllStatus(
+    @Body() body: AcceptEquipReservationListDto,
+    @Query('sendEmail') sendEmail?: string,
+    @User() user?: JwtPayload,
+  ): Promise<AcceptEquipReservationResultDto> {
+    const reservations: ReserveEquip[] = [];
+    for (const reservationUuid of body.uuidList) {
+      const reservation =
+        await this.reserveEquipService.findOneByUuidOrFail(reservationUuid);
+      reservations.push(reservation);
+    }
+
+    // 먼저 생성된 예약을 먼저 처리한다.
+    reservations.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
+
+    const acceptedUuidList: string[] = [];
+    const skippedList: SkippedEquipReservationDto[] = [];
+
+    for (const reservation of reservations) {
+      // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
+      try {
+        await this.assertReservationAcceptable(reservation);
+      } catch (error) {
+        skippedList.push({
+          uuid: reservation.uuid,
+          title: reservation.title,
+          date: reservation.date,
+          startTime: reservation.startTime,
+          endTime: reservation.endTime,
+          reason: error?.response?.message ?? error?.message ?? '승인 불가',
+        });
+        continue;
+      }
+
+      const response = await this.reserveEquipService.updateStatus(
+        reservation.uuid,
+        ReservationStatus.accept,
+        user,
+        '일괄 승인',
+      );
+      acceptedUuidList.push(reservation.uuid);
+
+      if (sendEmail === 'true') {
+        const skipList = [UserType.admin, UserType.association, UserType.club];
+        if (!skipList.includes(response.userType)) {
+          await this.mailService.sendReservationPatchMail(
+            response.email,
+            response.title,
+            ReservationStatus.accept,
+          );
+        }
+      }
+    }
+
+    return {
+      totalCount: reservations.length,
+      acceptedCount: acceptedUuidList.length,
+      skippedCount: skippedList.length,
+      acceptedUuidList: acceptedUuidList,
+      skippedList: skippedList,
+    };
+  }
+
+  @ApiCookieAuth()
+  @Patch('all/status/reject')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
+  async rejectAllStatus(
+    @Body() body: AcceptEquipReservationListDto,
+    @Query('sendEmail') sendEmail?: string,
+    @User() user?: JwtPayload,
+  ): Promise<AcceptEquipReservationResultDto> {
+    // 거절은 승인과 달리 중복 검사를 할 필요가 없어 요청한 건을 그대로 처리한다.
+    const acceptedUuidList: string[] = [];
+    const skippedList: SkippedEquipReservationDto[] = [];
+
+    for (const reservationUuid of body.uuidList) {
+      try {
+        const response = await this.reserveEquipService.updateStatus(
+          reservationUuid,
+          ReservationStatus.reject,
+          user,
+          '일괄 거절',
+        );
+        acceptedUuidList.push(reservationUuid);
+
+        if (sendEmail === 'true') {
+          const skipList = [
+            UserType.admin,
+            UserType.association,
+            UserType.club,
+          ];
+          if (!skipList.includes(response.userType)) {
+            await this.mailService.sendReservationPatchMail(
+              response.email,
+              response.title,
+              ReservationStatus.reject,
+            );
+          }
+        }
+      } catch (error) {
+        // 한 건이 실패해도 나머지를 계속 처리하고, 실패 목록을 함께 돌려준다.
+        const reservation =
+          await this.reserveEquipService.findOneByUuid(reservationUuid);
+        skippedList.push({
+          uuid: reservationUuid,
+          title: reservation?.title ?? '(알 수 없음)',
+          date: reservation?.date ?? '',
+          startTime: reservation?.startTime ?? '',
+          endTime: reservation?.endTime ?? '',
+          reason: error?.response?.message ?? error?.message ?? '거절 불가',
+        });
+      }
+    }
+
+    return {
+      totalCount: body.uuidList.length,
+      acceptedCount: acceptedUuidList.length,
+      skippedCount: skippedList.length,
+      acceptedUuidList: acceptedUuidList,
+      skippedList: skippedList,
+    };
+  }
+
   @ApiCookieAuth()
   @Patch(':uuid/status/:status')
   @UseGuards(RolesGuard)
@@ -235,26 +423,7 @@ export class ReserveEquipController {
 
     // When accepting, validate overlap against already accepted reservations
     if (status === ReservationStatus.accept) {
-      await this.reserveEquipService.assertReservationRequiredDays(
-        reservation.equipments,
-        reservation.date,
-      );
-      await this.reserveEquipService.assertReservationOpeningHours(
-        reservation.equipments,
-        reservation.date,
-        reservation.startTime,
-        reservation.endTime,
-      );
-
-      const isOverlap = await this.reserveEquipService.isReservationOverlap(
-        reservation.equipments,
-        reservation.date,
-        reservation.startTime,
-        reservation.endTime,
-      );
-      if (isOverlap) {
-        throw new BadRequestException('Reservation time overlapped.');
-      }
+      await this.assertReservationAcceptable(reservation);
     }
 
     const response = await this.reserveEquipService.updateStatus(

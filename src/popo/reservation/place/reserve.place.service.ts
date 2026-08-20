@@ -1,8 +1,21 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
-import { DeepPartial, In, MoreThanOrEqual, Repository } from 'typeorm';
-import { CreateReservePlaceDto } from './reserve.place.dto';
+import {
+  Between,
+  DeepPartial,
+  FindOptionsOrder,
+  FindOptionsWhere,
+  In,
+  LessThanOrEqual,
+  Like,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
+import {
+  CreateReservePlaceDto,
+  PlaceReservationFilterDto,
+} from './reserve.place.dto';
 import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
@@ -39,17 +52,23 @@ export class ReservePlaceService {
     private readonly placeService: PlaceService,
   ) {}
 
+  /**
+   * @param countedStatuses 동시 예약 개수에 포함할 예약 상태.
+   *   신규 신청은 심사중 예약과도 겹치면 안 되고(중복 신청 차단),
+   *   승인 시점에는 통과된 예약만 센다. 자세한 이유는 checkReservationPossible 참고.
+   */
   async isReservationConcurrent(
     placeId: string,
     maxConcurrentReservation: number,
     date: string,
     startTime: string,
     endTime: string,
+    countedStatuses: ReservationStatus[] = [ReservationStatus.accept],
   ): Promise<boolean> {
     // 라인스위핑으로 동시 예약 개수 체크
 
     const accepted = await this.reservePlaceRepo.find({
-      where: { placeId: placeId, date: date, status: ReservationStatus.accept },
+      where: { placeId: placeId, date: date, status: In(countedStatuses) },
       order: { startTime: 'ASC' },
     });
 
@@ -121,16 +140,32 @@ export class ReservePlaceService {
     }
 
     // Reservation Concurrent Check
+    //
+    // 신규 신청(isPatch=false)은 심사중 예약까지 세어 중복 신청을 아예 막는다.
+    // 예전에는 통과된 예약만 세어서, 같은 시간대에 심사중 예약이 있어도 신청이
+    // 되었고 결국 관리자가 둘 중 하나를 반려해야 했다.
+    //
+    // 반대로 승인(isPatch=true) 때는 통과된 예약만 센다. 여기서 심사중까지 세면
+    // 경쟁 관계인 예약들이 서로를 막아 일괄 승인이 한 건도 처리되지 않는다.
+    // 먼저 생성된 예약이 통과로 바뀌면 그와 겹치는 뒤 예약은 자연히 걸러진다.
+    const countedStatuses = isPatch
+      ? [ReservationStatus.accept]
+      : [ReservationStatus.accept, ReservationStatus.in_process];
+
     const isConcurrentPossible = await this.isReservationConcurrent(
       placeId,
       targetPlace.maxConcurrentReservation,
       date,
       startTime,
       endTime,
+      countedStatuses,
     );
     if (!isConcurrentPossible) {
+      const conflictDescription = isPatch
+        ? '이미 승인된'
+        : '이미 승인되었거나 심사중인';
       throw new BadRequestException(
-        `"${targetPlace.name}" 장소에 이미 승인된 ${targetPlace.maxConcurrentReservation}개 예약이 있어 ${date} ${startTime} ~ ${endTime}에는 예약이 불가능 합니다.`,
+        `"${targetPlace.name}" 장소는 ${date} ${startTime} ~ ${endTime}에 ${conflictDescription} 예약이 ${targetPlace.maxConcurrentReservation}개 있어 예약할 수 없습니다. 다른 시간대를 선택해주세요.`,
       );
     }
 
@@ -215,10 +250,8 @@ export class ReservePlaceService {
   }
 
   findAllWithRelations(
-    status?: string,
-    date?: string,
-    skip?: number,
-    take?: number,
+    filter: PlaceReservationFilterDto = {},
+    pagination: { skip?: number; take?: number } = {},
   ) {
     const query = this.reservePlaceRepo
       .createQueryBuilder('reservation')
@@ -234,20 +267,58 @@ export class ReservePlaceService {
         'booker.userStatus',
         'booker.createdAt',
         'booker.lastLoginAt',
-      ])
-      .orderBy('reservation.createdAt', 'DESC');
+      ]);
 
-    if (status) {
-      query.andWhere('reservation.status = :status', { status });
+    if (filter.status) {
+      query.andWhere('reservation.status = :status', {
+        status: filter.status,
+      });
     }
-    if (date) {
-      query.andWhere('reservation.date = :date', { date });
+    if (filter.placeId) {
+      query.andWhere('reservation.placeId = :placeId', {
+        placeId: filter.placeId,
+      });
     }
-    if (skip) {
-      query.skip(skip);
+    if (filter.bookerId) {
+      query.andWhere('reservation.bookerId = :bookerId', {
+        bookerId: filter.bookerId,
+      });
     }
-    if (take) {
-      query.take(take);
+    if (filter.title) {
+      query.andWhere('reservation.title LIKE :title', {
+        title: `%${filter.title}%`,
+      });
+    }
+
+    if (filter.date) {
+      query.andWhere('reservation.date = :date', { date: filter.date });
+    } else {
+      if (filter.startDate) {
+        query.andWhere('reservation.date >= :startDate', {
+          startDate: filter.startDate,
+        });
+      }
+      if (filter.endDate) {
+        query.andWhere('reservation.date <= :endDate', {
+          endDate: filter.endDate,
+        });
+      }
+    }
+
+    const direction = filter.orderDirection === 'ASC' ? 'ASC' : 'DESC';
+    if (filter.orderBy === 'date') {
+      query
+        .orderBy('reservation.date', direction)
+        .addOrderBy('reservation.startTime', direction);
+    } else {
+      query.orderBy('reservation.createdAt', direction);
+    }
+
+    if (pagination.skip) {
+      query.skip(pagination.skip);
+    }
+    if (pagination.take) {
+      query.take(pagination.take);
     }
 
     return query.getMany();
@@ -255,6 +326,120 @@ export class ReservePlaceService {
 
   count(whereOption?: object) {
     return this.reservePlaceRepo.count({ where: whereOption });
+  }
+
+  /**
+   * 관리자 장소 예약 목록의 필터 조건을 TypeORM where 절로 변환한다.
+   * date 는 'YYYYMMDD' 형태의 문자열 컬럼이라 사전순 비교가 곧 날짜순 비교이다.
+   */
+  buildFilterWhereOption(
+    filter: PlaceReservationFilterDto = {},
+  ): FindOptionsWhere<ReservePlace> {
+    const whereOption: FindOptionsWhere<ReservePlace> = {};
+
+    if (filter.status) {
+      whereOption.status = filter.status;
+    }
+    if (filter.placeId) {
+      whereOption.placeId = filter.placeId;
+    }
+    if (filter.bookerId) {
+      whereOption.bookerId = filter.bookerId;
+    }
+    if (filter.title) {
+      whereOption.title = Like(`%${filter.title}%`);
+    }
+
+    // 특정 일자 지정이 기간 지정보다 우선한다.
+    if (filter.date) {
+      whereOption.date = filter.date;
+    } else if (filter.startDate && filter.endDate) {
+      whereOption.date = Between(filter.startDate, filter.endDate);
+    } else if (filter.startDate) {
+      whereOption.date = MoreThanOrEqual(filter.startDate);
+    } else if (filter.endDate) {
+      whereOption.date = LessThanOrEqual(filter.endDate);
+    }
+
+    return whereOption;
+  }
+
+  findByFilter(
+    filter: PlaceReservationFilterDto = {},
+    pagination: { skip?: number; take?: number } = {},
+  ) {
+    const findOption = {
+      where: this.buildFilterWhereOption(filter),
+      order: this.buildFilterOrderOption(filter),
+    };
+
+    if (pagination.skip) {
+      findOption['skip'] = pagination.skip;
+    }
+    if (pagination.take) {
+      findOption['take'] = pagination.take;
+    }
+
+    return this.reservePlaceRepo.find(findOption);
+  }
+
+  countByFilter(filter: PlaceReservationFilterDto = {}) {
+    const query = this.reservePlaceRepo
+      .createQueryBuilder('reservation')
+      .innerJoin('reservation.place', 'place')
+      .innerJoin('reservation.booker', 'booker');
+
+    if (filter.status) {
+      query.andWhere('reservation.status = :status', {
+        status: filter.status,
+      });
+    }
+    if (filter.placeId) {
+      query.andWhere('reservation.placeId = :placeId', {
+        placeId: filter.placeId,
+      });
+    }
+    if (filter.bookerId) {
+      query.andWhere('reservation.bookerId = :bookerId', {
+        bookerId: filter.bookerId,
+      });
+    }
+    if (filter.title) {
+      query.andWhere('reservation.title LIKE :title', {
+        title: `%${filter.title}%`,
+      });
+    }
+
+    if (filter.date) {
+      query.andWhere('reservation.date = :date', { date: filter.date });
+    } else {
+      if (filter.startDate) {
+        query.andWhere('reservation.date >= :startDate', {
+          startDate: filter.startDate,
+        });
+      }
+      if (filter.endDate) {
+        query.andWhere('reservation.date <= :endDate', {
+          endDate: filter.endDate,
+        });
+      }
+    }
+
+    return query.getCount();
+  }
+
+  /**
+   * 예약 기간 순으로도 정렬할 수 있게 한다. 기본값은 기존 동작(생성일 최신순)을 유지한다.
+   */
+  private buildFilterOrderOption(
+    filter: PlaceReservationFilterDto = {},
+  ): FindOptionsOrder<ReservePlace> {
+    const direction = filter.orderDirection === 'ASC' ? 'ASC' : 'DESC';
+
+    if (filter.orderBy === 'date') {
+      return { date: direction, startTime: direction };
+    }
+    return { createdAt: direction };
   }
 
   findOneByUuid(uuid: string) {

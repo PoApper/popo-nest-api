@@ -76,10 +76,18 @@ describe('ReservePlaceController (mail integration)', () => {
 
     expect(result).toBe(reservations);
     expect(reservePlaceService.findAllWithRelations).toHaveBeenCalledWith(
-      undefined,
-      undefined,
-      0,
-      10,
+      {
+        status: undefined,
+        date: undefined,
+        placeId: undefined,
+        bookerId: undefined,
+        title: undefined,
+        startDate: undefined,
+        endDate: undefined,
+        orderBy: undefined,
+        orderDirection: undefined,
+      },
+      { skip: 0, take: 10 },
     );
     expect(reservePlaceService.joinBooker).not.toHaveBeenCalled();
     expect(reservePlaceService.joinPlace).not.toHaveBeenCalled();
