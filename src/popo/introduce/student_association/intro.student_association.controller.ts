@@ -13,22 +13,23 @@ import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Between } from 'typeorm';
 import * as moment from 'moment';
 
-import { IntroAssociationService } from './intro.association.service';
-import { CreateIntroAssociationDto } from './intro.association.dto';
+import { IntroStudentAssociationService } from './intro.student_association.service';
+import {
+  CreateIntroStudentAssociationDto,
+  StudentAssociationImageDto,
+} from './intro.student_association.dto';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { UserType } from '../../user/user.meta';
 import { FileBody } from '../../../file/file-body.decorator';
-import { ClubImageDto } from '../club/intro.club.dto';
 import { FileService } from '../../../file/file.service';
 import { Public } from '../../../common/public-guard.decorator';
-import { AssociationType } from './intro.association.meta';
 
-@ApiTags('Introduce - Association')
-@Controller('introduce/association')
-export class IntroAssociationController {
+@ApiTags('Introduce - Student_Association')
+@Controller('introduce/student_association')
+export class IntroStudentAssociationController {
   constructor(
-    private readonly introAssociationService: IntroAssociationService,
+    private readonly introStudentAssociationService: IntroStudentAssociationService,
     private readonly fileService: FileService,
   ) {}
 
@@ -36,8 +37,12 @@ export class IntroAssociationController {
   @Post()
   @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
-  create(@Body() createIntroAssociationDto: CreateIntroAssociationDto) {
-    return this.introAssociationService.save(createIntroAssociationDto);
+  create(
+    @Body() createIntroStudentAssociationDto: CreateIntroStudentAssociationDto,
+  ) {
+    return this.introStudentAssociationService.save(
+      createIntroStudentAssociationDto,
+    );
   }
 
   @ApiCookieAuth()
@@ -45,34 +50,28 @@ export class IntroAssociationController {
   @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   @FileBody('image')
-  async uploadImage(@Param('uuid') uuid: string, @Body() dto: ClubImageDto) {
+  async uploadImage(
+    @Param('uuid') uuid: string,
+    @Body() dto: StudentAssociationImageDto,
+  ) {
     const image_url = await this.fileService.uploadFile(
-      `association/${uuid}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
+      `student_association/${uuid}/${moment().format('YYYY-MM-DD/HH:mm:ss')}`,
       dto.image,
     );
-    await this.introAssociationService.updateImageUrl(uuid, image_url);
+    await this.introStudentAssociationService.updateImageUrl(uuid, image_url);
     return image_url;
   }
 
   @Public()
   @Get()
   get() {
-    return this.introAssociationService.find({ order: { name: 'ASC' } });
-  }
-
-  @Public()
-  @Get('types')
-  getAssociationTypes() {
-    return Object.entries(AssociationType).map(([key, value]) => ({
-      key,
-      value,
-    }));
+    return this.introStudentAssociationService.find({ order: { name: 'ASC' } });
   }
 
   @Public()
   @Get('today')
   getTodayVisited() {
-    return this.introAssociationService.find({
+    return this.introStudentAssociationService.find({
       where: {
         updatedAt: Between(
           moment().startOf('day').toDate(),
@@ -83,24 +82,13 @@ export class IntroAssociationController {
   }
 
   @Public()
-  @Get('associationType/:associationType')
-  getByAssociationType(
-    @Param('associationType') associationType: AssociationType,
-  ) {
-    return this.introAssociationService.find({
-      where: { associationType: associationType },
-      order: { name: 'ASC' },
-    });
-  }
-
-  @Public()
   @Get('name/:name')
   async getOneByName(@Param('name') name: string) {
     const introAssociation =
-      await this.introAssociationService.findOneByName(name);
+      await this.introStudentAssociationService.findOneByName(name);
 
     if (introAssociation) {
-      await this.introAssociationService.updateViewCount(
+      await this.introStudentAssociationService.updateViewCount(
         introAssociation.uuid,
         introAssociation.views + 1,
       );
@@ -113,7 +101,7 @@ export class IntroAssociationController {
   @Public()
   @Get(':uuid')
   getOneByUuid(@Param('uuid') uuid: string) {
-    return this.introAssociationService.findOneByUuid(uuid);
+    return this.introStudentAssociationService.findOneByUuid(uuid);
   }
 
   @ApiCookieAuth()
@@ -122,9 +110,12 @@ export class IntroAssociationController {
   @Roles(UserType.admin, UserType.association)
   put(
     @Param('uuid') uuid: string,
-    @Body() updateIntroAssociationDto: CreateIntroAssociationDto,
+    @Body() updateIntroStudentAssociationDto: CreateIntroStudentAssociationDto,
   ) {
-    return this.introAssociationService.update(uuid, updateIntroAssociationDto);
+    return this.introStudentAssociationService.update(
+      uuid,
+      updateIntroStudentAssociationDto,
+    );
   }
 
   @ApiCookieAuth()
@@ -132,6 +123,6 @@ export class IntroAssociationController {
   @UseGuards(RolesGuard)
   @Roles(UserType.admin, UserType.association)
   delete(@Param('uuid') uuid: string) {
-    return this.introAssociationService.remove(uuid);
+    return this.introStudentAssociationService.remove(uuid);
   }
 }

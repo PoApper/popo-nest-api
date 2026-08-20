@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Like, Repository } from 'typeorm';
 import { ReserveEquip } from './reserve.equip.entity';
@@ -6,10 +6,15 @@ import { CreateReserveEquipDto } from './reserve.equip.dto';
 import { UserService } from '../../user/user.service';
 import { EquipService } from '../../equip/equip.service';
 import { ReservationStatus } from '../reservation.meta';
+import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import {
   calculateReservationDurationMinutes,
+  isOnOpeningHours,
+  isReservationLeadTimeSatisfied,
   timeStringToMinutes,
 } from '../../../utils/reservation-utils';
+import { UserType } from '../../user/user.meta';
+import { Equip } from '../../equip/equip.entity';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -21,10 +26,14 @@ const Message = {
     'Your reservation is already exist on that day: accepted or in-progress.',
   OVER_MAX_RESERVATION_TIME:
     'Over the allocated reservation minutes of that day.',
+  NOT_ON_OPENING_HOURS: 'Reservation time is outside opening hours.',
+  RESERVATION_REQUIRED_DAYS: 'Reservation requires advance booking days.',
 };
 
 @Injectable()
 export class ReserveEquipService {
+  private readonly logger = new Logger(ReserveEquipService.name);
+
   constructor(
     @InjectRepository(ReserveEquip)
     private readonly reserveEquipRepo: Repository<ReserveEquip>,
@@ -77,6 +86,14 @@ export class ReserveEquipService {
     if (!targetEquipments) {
       throw new BadRequestException(Message.NOT_EXISTING_EQUIP);
     }
+
+    this.assertEquipmentsOnOpeningHours(
+      targetEquipments,
+      date,
+      startTime,
+      endTime,
+    );
+    this.assertEquipmentsReservationRequiredDays(targetEquipments, date);
 
     // Reservation Overlap Check
     const isReservationOverlap = await this.isReservationOverlap(
@@ -136,6 +153,76 @@ export class ReserveEquipService {
     return this.reserveEquipRepo.save(dto);
   }
 
+  async assertReservationOpeningHours(
+    equipmentIds: string[],
+    date: string,
+    startTime: string,
+    endTime: string,
+  ) {
+    const targetEquipments = await this.equipService.findByIds(equipmentIds);
+    this.assertEquipmentsOnOpeningHours(
+      targetEquipments,
+      date,
+      startTime,
+      endTime,
+    );
+  }
+
+  async assertReservationRequiredDays(equipmentIds: string[], date: string) {
+    const targetEquipments = await this.equipService.findByIds(equipmentIds);
+    this.assertEquipmentsReservationRequiredDays(targetEquipments, date);
+  }
+
+  private assertEquipmentsOnOpeningHours(
+    equipments: Equip[],
+    date: string,
+    startTime: string,
+    endTime: string,
+  ) {
+    const unavailableEquipments = equipments.filter(
+      (equipment) =>
+        !isOnOpeningHours(equipment.openingHours, date, startTime, endTime),
+    );
+
+    if (unavailableEquipments.length) {
+      const unavailableEquipmentNames = unavailableEquipments
+        .map((equipment) => equipment.name)
+        .join(', ');
+
+      throw new BadRequestException(
+        `${Message.NOT_ON_OPENING_HOURS}: ${unavailableEquipmentNames} 장비는 ${date} ${startTime} ~ ${endTime}에 예약할 수 없습니다. 사용 가능 시간을 확인해주세요.`,
+      );
+    }
+  }
+
+  private assertEquipmentsReservationRequiredDays(
+    equipments: Equip[],
+    date: string,
+  ) {
+    const unavailableEquipments = equipments.filter(
+      (equipment) =>
+        !isReservationLeadTimeSatisfied(
+          date,
+          equipment.reservationRequiredDays,
+        ),
+    );
+
+    if (unavailableEquipments.length) {
+      const unavailableEquipmentNames = unavailableEquipments
+        .map((equipment) => equipment.name)
+        .join(', ');
+      const maxRequiredDays = Math.max(
+        ...unavailableEquipments.map(
+          (equipment) => equipment.reservationRequiredDays,
+        ),
+      );
+
+      throw new BadRequestException(
+        `${Message.RESERVATION_REQUIRED_DAYS}: ${unavailableEquipmentNames} 장비는 최소 ${maxRequiredDays}일 전 예약해야 합니다.`,
+      );
+    }
+  }
+
   countEquipmentReservations(equipmentId: string) {
     return this.reserveEquipRepo.count({
       where: { equipments: Like(`%${equipmentId}%`) },
@@ -158,12 +245,39 @@ export class ReserveEquipService {
     return this.reserveEquipRepo.findOneByOrFail({ uuid: uuid });
   }
 
-  remove(uuid: string) {
-    return this.reserveEquipRepo.delete(uuid);
+  async remove(uuid: string, actor?: JwtPayload) {
+    const reservation = await this.findOneByUuidOrFail(uuid);
+    const result = await this.reserveEquipRepo.delete(uuid);
+
+    if (this.isAdminActor(actor)) {
+      const actorName = actor.name ?? actor.nickname ?? '(이름 없음)';
+      this.logger.log(
+        [
+          '[관리자 장비 예약 삭제]',
+          `- 관리자 UUID: ${actor.uuid}`,
+          `- 관리자 이름: ${actorName}`,
+          `- 관리자 권한: ${actor.userType}`,
+          `- 예약 UUID: ${reservation.uuid}`,
+          `- 예약 제목: ${reservation.title}`,
+          `- 예약자 UUID: ${reservation.bookerId}`,
+          `- 장비 UUID 목록: [${reservation.equipments.join(', ')}]`,
+          `- 예약 일시: ${reservation.date} ${reservation.startTime}~${reservation.endTime}`,
+          `- 삭제 당시 상태: "${reservation.status}"`,
+        ].join('\n'),
+      );
+    }
+
+    return result;
   }
 
-  async updateStatus(uuid: string, status: ReservationStatus) {
+  async updateStatus(
+    uuid: string,
+    status: ReservationStatus,
+    actor?: JwtPayload,
+    actionContext: string = '단건 상태 변경',
+  ) {
     const existReserve = await this.findOneByUuidOrFail(uuid);
+    const previousStatus = existReserve.status;
 
     await this.reserveEquipRepo.update(
       { uuid: uuid },
@@ -176,11 +290,39 @@ export class ReserveEquipService {
       existReserve.bookerId,
     );
 
+    if (this.isAdminActor(actor)) {
+      const actorName = actor.name ?? actor.nickname ?? '(이름 없음)';
+      this.logger.log(
+        [
+          '[관리자 장비 예약 상태 변경]',
+          `- 행동: ${actionContext}`,
+          `- 관리자 UUID: ${actor.uuid}`,
+          `- 관리자 이름: ${actorName}`,
+          `- 관리자 권한: ${actor.userType}`,
+          `- 예약 UUID: ${existReserve.uuid}`,
+          `- 예약 제목: ${existReserve.title}`,
+          `- 예약자 UUID: ${existReserve.bookerId}`,
+          `- 장비 UUID 목록: [${existReserve.equipments.join(', ')}]`,
+          `- 예약 일시: ${existReserve.date} ${existReserve.startTime}~${existReserve.endTime}`,
+          `- 상태 변경: "${previousStatus}" -> "${status}"`,
+        ].join('\n'),
+      );
+    }
+
     return {
       userType: existUser.userType,
       email: existUser.email,
       title: existReserve.title,
     };
+  }
+
+  private isAdminActor(actor?: JwtPayload) {
+    return (
+      !!actor &&
+      [UserType.admin, UserType.association, UserType.staff].includes(
+        actor.userType,
+      )
+    );
   }
 
   async joinBooker(reservations) {

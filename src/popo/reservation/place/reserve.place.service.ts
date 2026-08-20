@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
 import { DeepPartial, In, MoreThanOrEqual, Repository } from 'typeorm';
@@ -7,8 +7,11 @@ import { UserService } from '../../user/user.service';
 import { PlaceService } from '../../place/place.service';
 import { ReservationStatus } from '../reservation.meta';
 import { PlaceEnableAutoAccept, PlaceRegion } from '../../place/place.meta';
+import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import {
   calculateReservationDurationMinutes,
+  isOnOpeningHours,
+  isReservationLeadTimeSatisfied,
   timeStringToMinutes,
 } from '../../../utils/reservation-utils';
 import { UserType } from 'src/popo/user/user.meta';
@@ -21,10 +24,14 @@ const Message = {
   NOT_ENOUGH_INFORMATION: "There's no enough information about reservation",
   OVER_MAX_RESERVATION_TIME:
     'Over the allocated reservation minutes of that day.',
+  NOT_ON_OPENING_HOURS: 'Reservation time is outside opening hours.',
+  RESERVATION_REQUIRED_DAYS: 'Reservation requires advance booking days.',
 };
 
 @Injectable()
 export class ReservePlaceService {
+  private readonly logger = new Logger(ReservePlaceService.name);
+
   constructor(
     @InjectRepository(ReservePlace)
     private readonly reservePlaceRepo: Repository<ReservePlace>,
@@ -98,6 +105,20 @@ export class ReservePlaceService {
     }
 
     const targetPlace = await this.placeService.findOneByUuidOrFail(placeId);
+
+    if (
+      !isReservationLeadTimeSatisfied(date, targetPlace.reservationRequiredDays)
+    ) {
+      throw new BadRequestException(
+        `${Message.RESERVATION_REQUIRED_DAYS}: "${targetPlace.name}" 장소는 최소 ${targetPlace.reservationRequiredDays}일 전 예약해야 합니다.`,
+      );
+    }
+
+    if (!isOnOpeningHours(targetPlace.openingHours, date, startTime, endTime)) {
+      throw new BadRequestException(
+        `${Message.NOT_ON_OPENING_HOURS}: "${targetPlace.name}" 장소는 ${date} ${startTime} ~ ${endTime}에 예약할 수 없습니다. 사용 가능 시간을 확인해주세요.`,
+      );
+    }
 
     // Reservation Concurrent Check
     const isConcurrentPossible = await this.isReservationConcurrent(
@@ -233,8 +254,14 @@ export class ReservePlaceService {
     });
   }
 
-  async updateStatus(uuid: string, status: ReservationStatus) {
+  async updateStatus(
+    uuid: string,
+    status: ReservationStatus,
+    actor?: JwtPayload,
+    actionContext: string = '단건 상태 변경',
+  ) {
     const existReserve = await this.findOneByUuidOrFail(uuid);
+    const previousStatus = existReserve.status;
 
     if (!existReserve) {
       throw new BadRequestException(Message.NOT_EXISTING_RESERVATION);
@@ -251,6 +278,25 @@ export class ReservePlaceService {
       existReserve.bookerId,
     );
 
+    if (this.isAdminActor(actor)) {
+      const actorName = actor.name ?? actor.nickname ?? '(이름 없음)';
+      this.logger.log(
+        [
+          '[관리자 장소 예약 상태 변경]',
+          `- 행동: ${actionContext}`,
+          `- 관리자 UUID: ${actor.uuid}`,
+          `- 관리자 이름: ${actorName}`,
+          `- 관리자 권한: ${actor.userType}`,
+          `- 예약 UUID: ${existReserve.uuid}`,
+          `- 예약 제목: ${existReserve.title}`,
+          `- 예약자 UUID: ${existReserve.bookerId}`,
+          `- 장소 UUID: ${existReserve.placeId}`,
+          `- 예약 일시: ${existReserve.date} ${existReserve.startTime}~${existReserve.endTime}`,
+          `- 상태 변경: "${previousStatus}" -> "${status}"`,
+        ].join('\n'),
+      );
+    }
+
     return {
       userType: existUser.userType,
       email: existUser.email,
@@ -258,8 +304,38 @@ export class ReservePlaceService {
     };
   }
 
-  remove(uuid: string) {
-    return this.reservePlaceRepo.delete(uuid);
+  async remove(uuid: string, actor?: JwtPayload) {
+    const reservation = await this.findOneByUuidOrFail(uuid);
+    const result = await this.reservePlaceRepo.delete(uuid);
+
+    if (this.isAdminActor(actor)) {
+      const actorName = actor.name ?? actor.nickname ?? '(이름 없음)';
+      this.logger.log(
+        [
+          '[관리자 장소 예약 삭제]',
+          `- 관리자 UUID: ${actor.uuid}`,
+          `- 관리자 이름: ${actorName}`,
+          `- 관리자 권한: ${actor.userType}`,
+          `- 예약 UUID: ${reservation.uuid}`,
+          `- 예약 제목: ${reservation.title}`,
+          `- 예약자 UUID: ${reservation.bookerId}`,
+          `- 장소 UUID: ${reservation.placeId}`,
+          `- 예약 일시: ${reservation.date} ${reservation.startTime}~${reservation.endTime}`,
+          `- 삭제 당시 상태: "${reservation.status}"`,
+        ].join('\n'),
+      );
+    }
+
+    return result;
+  }
+
+  private isAdminActor(actor?: JwtPayload) {
+    return (
+      !!actor &&
+      [UserType.admin, UserType.association, UserType.staff].includes(
+        actor.userType,
+      )
+    );
   }
 
   async joinBooker(reservations) {

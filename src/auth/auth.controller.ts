@@ -20,8 +20,9 @@ import { CreateUserDto } from '../popo/user/user.dto';
 import { MailService } from '../mail/mail.service';
 import { ReservePlaceService } from '../popo/reservation/place/reserve.place.service';
 import { ReserveEquipService } from '../popo/reservation/equip/reserve.equip.service';
-import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtPayload } from './strategies/jwt.payload';
+import { AuthLogger } from './auth.logger';
 import { PasswordResetRequest, PasswordUpdateRequest } from './auth.dto';
 import { jwtConstants } from './constants';
 import * as ms from 'ms';
@@ -38,6 +39,8 @@ const Message = {
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new AuthLogger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly userService: UserService,
@@ -45,6 +48,19 @@ export class AuthController {
     private readonly reserveEquipService: ReserveEquipService,
     private readonly mailService: MailService,
   ) {}
+
+  private getUserAgent(req: Request): string {
+    const userAgent = req.headers['user-agent'];
+    if (!userAgent) {
+      return '(알 수 없음)';
+    }
+
+    const normalizedUserAgent = Array.isArray(userAgent)
+      ? userAgent.join(', ')
+      : String(userAgent);
+
+    return normalizedUserAgent.replace(/[\r\n]/g, '');
+  }
 
   @ApiCookieAuth()
   @Get(['verifyToken', 'verifyToken/admin', 'me'])
@@ -81,6 +97,15 @@ export class AuthController {
   @Public()
   @Post(['login', 'login/admin'])
   @UseGuards(LocalAuthGuard)
+  @ApiBody({
+    schema: {
+      properties: {
+        email: { type: 'string' },
+        password: { type: 'string' },
+      },
+      required: ['email', 'password'],
+    },
+  })
   async logIn(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const path = req.path;
     const user = req.user as JwtPayload;
@@ -120,7 +145,10 @@ export class AuthController {
   @Post(['signIn', 'register'])
   async register(@Body() createUserDto: CreateUserDto) {
     const saveUser = await this.userService.save(createUserDto);
-    console.log('유저 생성 성공!', saveUser.name, saveUser.email); // TODO: console.log 로깅으로 변경
+    this.logger.log('회원가입 성공', {
+      이메일: saveUser.email,
+      '유저 UUID': saveUser.uuid,
+    });
 
     try {
       await this.mailService.sendVerificationMail(
@@ -128,9 +156,16 @@ export class AuthController {
         saveUser.uuid,
       );
     } catch (error) {
-      console.log('!! 유저 인증 메일 전송 실패 !!');
+      this.logger.error(
+        '회원가입 실패: 인증 메일 전송 실패',
+        {
+          이메일: createUserDto.email,
+          '유저 UUID': saveUser.uuid,
+          에러: error instanceof Error ? error.message : String(error),
+        },
+        error instanceof Error ? error.stack : undefined,
+      );
       await this.userService.remove(saveUser.uuid);
-      console.log('잘못 생성된 유저 정보를 DB에서 삭제합니다.');
       throw new BadRequestException(Message.FAIL_VERIFICATION_EMAIL_SEND);
     }
     return saveUser;
@@ -149,12 +184,19 @@ export class AuthController {
     const existUser = await this.userService.findOneByEmail(body.email);
 
     if (!existUser) {
+      this.logger.warn('비밀번호 초기화 실패: 존재하지 않는 이메일', {
+        '시도 이메일': body.email,
+      });
       throw new BadRequestException(
         '해당 이메일로 가입한 유저가 존재하지 않습니다.',
       );
     }
 
     if (existUser.userStatus === UserStatus.password_reset) {
+      this.logger.warn('비밀번호 초기화 실패: 이미 초기화된 계정', {
+        이메일: body.email,
+        '유저 UUID': existUser.uuid,
+      });
       throw new BadRequestException(
         '이미 비빌번호를 초기화 했습니다. 신규 비밀번호를 메일에서 확인해주세요.',
       );
@@ -174,6 +216,11 @@ export class AuthController {
       existUser.email,
       temp_password,
     );
+
+    this.logger.log('비밀번호 초기화 성공', {
+      이메일: existUser.email,
+      '유저 UUID': existUser.uuid,
+    });
   }
 
   @ApiCookieAuth()
@@ -182,7 +229,17 @@ export class AuthController {
     @User() user: JwtPayload,
     @Body() body: PasswordUpdateRequest,
   ) {
-    return this.userService.updatePasswordByEmail(user.email, body.password);
+    const result = await this.userService.updatePasswordByEmail(
+      user.email,
+      body.password,
+    );
+
+    this.logger.log('비밀번호 변경', {
+      이메일: user.email,
+      '유저 UUID': user.uuid,
+    });
+
+    return result;
   }
 
   @ApiCookieAuth()
@@ -210,6 +267,11 @@ export class AuthController {
     const refreshTokenInCookie = req.cookies?.Refresh;
 
     if (!accessTokenInCookie || !refreshTokenInCookie) {
+      this.logger.warn('토큰 갱신 실패: 쿠키 누락', {
+        'Access Token 존재': !!accessTokenInCookie,
+        'Refresh Token 존재': !!refreshTokenInCookie,
+        'User-Agent': this.getUserAgent(req),
+      });
       this.clearCookies(res);
       throw new UnauthorizedException('Missing access token or refresh token');
     }
@@ -217,6 +279,9 @@ export class AuthController {
     // 만료된 access token을 디코딩 (JWT 가드 우회)
     const user = this.authService.decodeExpiredAccessToken(accessTokenInCookie);
     if (!user) {
+      this.logger.warn('토큰 갱신 실패: Access Token 디코딩 실패', {
+        'User-Agent': this.getUserAgent(req),
+      });
       this.clearCookies(res);
       throw new UnauthorizedException('Invalid access token');
     }
@@ -227,6 +292,11 @@ export class AuthController {
       refreshTokenInCookie,
     );
     if (!isValid) {
+      this.logger.warn('토큰 갱신 실패: Refresh Token 검증 실패', {
+        '유저 UUID': user.uuid,
+        이메일: user.email,
+        'User-Agent': this.getUserAgent(req),
+      });
       await this.userService.updateRefreshToken(user.uuid, null, null);
       this.clearCookies(res);
       throw new UnauthorizedException('Invalid refresh token');
@@ -236,6 +306,12 @@ export class AuthController {
     const refreshToken = await this.authService.generateRefreshToken(user);
 
     this.setCookies(res, accessToken, refreshToken);
+
+    this.logger.log('토큰 갱신 성공', {
+      '유저 UUID': user.uuid,
+      이메일: user.email,
+      'User-Agent': this.getUserAgent(req),
+    });
 
     return user;
   }

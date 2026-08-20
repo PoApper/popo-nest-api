@@ -28,6 +28,9 @@ export class Equip extends Base {
   @Column({ name: 'max_minutes', default: 24 * 60 })
   maxMinutes: number;
 
+  @Column({ name: 'reservation_required_days', default: 0 })
+  reservationRequiredDays: number;
+
   @Column('text', {
     name: 'opening_hours',
     nullable: false,
