@@ -103,25 +103,12 @@ export class ReservePlaceController {
     @Query('skip') skip: number,
     @Query('take') take: number,
   ) {
-    const whereOption = {};
-    if (status) {
-      whereOption['status'] = status;
-    }
-    if (date) {
-      whereOption['date'] = date;
-    }
-
-    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
-    if (skip) {
-      findOption['skip'] = skip;
-    }
-    if (take) {
-      findOption['take'] = take;
-    }
-
-    let reservations = await this.reservePlaceService.find(findOption);
-    reservations = await this.reservePlaceService.joinBooker(reservations);
-    return this.reservePlaceService.joinPlace(reservations);
+    return this.reservePlaceService.findAllWithRelations(
+      status,
+      date,
+      skip,
+      take,
+    );
   }
 
   @ApiCookieAuth()

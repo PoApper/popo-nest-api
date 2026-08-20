@@ -214,6 +214,45 @@ export class ReservePlaceService {
     return this.reservePlaceRepo.find(findOptions);
   }
 
+  findAllWithRelations(
+    status?: string,
+    date?: string,
+    skip?: number,
+    take?: number,
+  ) {
+    const query = this.reservePlaceRepo
+      .createQueryBuilder('reservation')
+      .innerJoinAndSelect('reservation.place', 'place')
+      .innerJoin('reservation.booker', 'booker')
+      .select([
+        'reservation',
+        'place',
+        'booker.uuid',
+        'booker.email',
+        'booker.name',
+        'booker.userType',
+        'booker.userStatus',
+        'booker.createdAt',
+        'booker.lastLoginAt',
+      ])
+      .orderBy('reservation.createdAt', 'DESC');
+
+    if (status) {
+      query.andWhere('reservation.status = :status', { status });
+    }
+    if (date) {
+      query.andWhere('reservation.date = :date', { date });
+    }
+    if (skip) {
+      query.skip(skip);
+    }
+    if (take) {
+      query.take(take);
+    }
+
+    return query.getMany();
+  }
+
   count(whereOption?: object) {
     return this.reservePlaceRepo.count({ where: whereOption });
   }
