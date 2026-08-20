@@ -252,6 +252,14 @@ describe('ReservePlaceModule - Integration Test', () => {
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThanOrEqual(2);
+      result.forEach((reservation) => {
+        expect(reservation.booker).toBeDefined();
+        expect(reservation.place).toBeDefined();
+        expect(reservation.booker.password).toBeUndefined();
+        expect(reservation.booker.cryptoSalt).toBeUndefined();
+        expect(reservation.booker.hashedRefreshToken).toBeUndefined();
+        expect(reservation.booker.refreshTokenExpiresAt).toBeUndefined();
+      });
     });
 
     it('should get reservations by status', async () => {

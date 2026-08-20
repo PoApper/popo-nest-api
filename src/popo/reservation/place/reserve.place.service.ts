@@ -249,6 +249,81 @@ export class ReservePlaceService {
     return this.reservePlaceRepo.find(findOptions);
   }
 
+  findAllWithRelations(
+    filter: PlaceReservationFilterDto = {},
+    pagination: { skip?: number; take?: number } = {},
+  ) {
+    const query = this.reservePlaceRepo
+      .createQueryBuilder('reservation')
+      .innerJoinAndSelect('reservation.place', 'place')
+      .innerJoin('reservation.booker', 'booker')
+      .select([
+        'reservation',
+        'place',
+        'booker.uuid',
+        'booker.email',
+        'booker.name',
+        'booker.userType',
+        'booker.userStatus',
+        'booker.createdAt',
+        'booker.lastLoginAt',
+      ]);
+
+    if (filter.status) {
+      query.andWhere('reservation.status = :status', {
+        status: filter.status,
+      });
+    }
+    if (filter.placeId) {
+      query.andWhere('reservation.placeId = :placeId', {
+        placeId: filter.placeId,
+      });
+    }
+    if (filter.bookerId) {
+      query.andWhere('reservation.bookerId = :bookerId', {
+        bookerId: filter.bookerId,
+      });
+    }
+    if (filter.title) {
+      query.andWhere('reservation.title LIKE :title', {
+        title: `%${filter.title}%`,
+      });
+    }
+
+    if (filter.date) {
+      query.andWhere('reservation.date = :date', { date: filter.date });
+    } else {
+      if (filter.startDate) {
+        query.andWhere('reservation.date >= :startDate', {
+          startDate: filter.startDate,
+        });
+      }
+      if (filter.endDate) {
+        query.andWhere('reservation.date <= :endDate', {
+          endDate: filter.endDate,
+        });
+      }
+    }
+
+    const direction = filter.orderDirection === 'ASC' ? 'ASC' : 'DESC';
+    if (filter.orderBy === 'date') {
+      query
+        .orderBy('reservation.date', direction)
+        .addOrderBy('reservation.startTime', direction);
+    } else {
+      query.orderBy('reservation.createdAt', direction);
+    }
+
+    if (pagination.skip) {
+      query.skip(pagination.skip);
+    }
+    if (pagination.take) {
+      query.take(pagination.take);
+    }
+
+    return query.getMany();
+  }
+
   count(whereOption?: object) {
     return this.reservePlaceRepo.count({ where: whereOption });
   }
@@ -309,9 +384,48 @@ export class ReservePlaceService {
   }
 
   countByFilter(filter: PlaceReservationFilterDto = {}) {
-    return this.reservePlaceRepo.count({
-      where: this.buildFilterWhereOption(filter),
-    });
+    const query = this.reservePlaceRepo
+      .createQueryBuilder('reservation')
+      .innerJoin('reservation.place', 'place')
+      .innerJoin('reservation.booker', 'booker');
+
+    if (filter.status) {
+      query.andWhere('reservation.status = :status', {
+        status: filter.status,
+      });
+    }
+    if (filter.placeId) {
+      query.andWhere('reservation.placeId = :placeId', {
+        placeId: filter.placeId,
+      });
+    }
+    if (filter.bookerId) {
+      query.andWhere('reservation.bookerId = :bookerId', {
+        bookerId: filter.bookerId,
+      });
+    }
+    if (filter.title) {
+      query.andWhere('reservation.title LIKE :title', {
+        title: `%${filter.title}%`,
+      });
+    }
+
+    if (filter.date) {
+      query.andWhere('reservation.date = :date', { date: filter.date });
+    } else {
+      if (filter.startDate) {
+        query.andWhere('reservation.date >= :startDate', {
+          startDate: filter.startDate,
+        });
+      }
+      if (filter.endDate) {
+        query.andWhere('reservation.date <= :endDate', {
+          endDate: filter.endDate,
+        });
+      }
+    }
+
+    return query.getCount();
   }
 
   /**

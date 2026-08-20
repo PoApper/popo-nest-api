@@ -119,7 +119,7 @@ export class ReservePlaceController {
     @Query('orderBy') orderBy?: 'createdAt' | 'date',
     @Query('orderDirection') orderDirection?: 'ASC' | 'DESC',
   ) {
-    const reservations = await this.reservePlaceService.findByFilter(
+    return this.reservePlaceService.findAllWithRelations(
       {
         status: status as ReservationStatus,
         date,
@@ -133,9 +133,6 @@ export class ReservePlaceController {
       },
       { skip, take },
     );
-
-    const withBooker = await this.reservePlaceService.joinBooker(reservations);
-    return this.reservePlaceService.joinPlace(withBooker);
   }
 
   @ApiCookieAuth()
