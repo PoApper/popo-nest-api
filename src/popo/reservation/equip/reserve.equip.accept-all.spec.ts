@@ -134,10 +134,6 @@ describe('ReserveEquip - Bulk accept & filters', () => {
 
   /**
    * 겹치는 "심사중" 예약을 DB에 직접 넣는다.
-   *
-   * 지금은 신청 단계에서 심사중 예약과의 겹침을 막기 때문에 API 로는 이 상태를
-   * 만들 수 없다. 하지만 정책 변경 전에 쌓인 예약이 그대로 남아 있으므로,
-   * 일괄 승인은 여전히 이 상황을 처리할 수 있어야 한다.
    */
   function saveOverlappingReservationDirectly(
     overrides: Partial<ReserveEquip>,
