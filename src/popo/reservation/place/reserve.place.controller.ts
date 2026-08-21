@@ -15,7 +15,9 @@ import { ApiBody, ApiQuery, ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { ReservePlaceService } from './reserve.place.service';
 import {
   AcceptPlaceReservationListDto,
+  AcceptPlaceReservationResultDto,
   CreateReservePlaceDto,
+  SkippedPlaceReservationDto,
 } from './reserve.place.dto';
 import { MailService } from '../../../mail/mail.service';
 import { ReservationStatus } from '../reservation.meta';
@@ -97,37 +99,73 @@ export class ReservePlaceController {
   @ApiQuery({ name: 'date', required: false })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'placeId', required: false })
+  @ApiQuery({ name: 'bookerId', required: false })
+  @ApiQuery({ name: 'title', required: false })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  @ApiQuery({ name: 'orderBy', required: false, enum: ['createdAt', 'date'] })
+  @ApiQuery({ name: 'orderDirection', required: false, enum: ['ASC', 'DESC'] })
   async getAll(
     @Query('status') status: string,
     @Query('date') date: string,
     @Query('skip') skip: number,
     @Query('take') take: number,
+    @Query('placeId') placeId?: string,
+    @Query('bookerId') bookerId?: string,
+    @Query('title') title?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('orderBy') orderBy?: 'createdAt' | 'date',
+    @Query('orderDirection') orderDirection?: 'ASC' | 'DESC',
   ) {
-    const whereOption = {};
-    if (status) {
-      whereOption['status'] = status;
-    }
-    if (date) {
-      whereOption['date'] = date;
-    }
+    const reservations = await this.reservePlaceService.findByFilter(
+      {
+        status: status as ReservationStatus,
+        date,
+        placeId,
+        bookerId,
+        title,
+        startDate,
+        endDate,
+        orderBy,
+        orderDirection,
+      },
+      { skip, take },
+    );
 
-    const findOption = { where: whereOption, order: { createdAt: 'DESC' } };
-    if (skip) {
-      findOption['skip'] = skip;
-    }
-    if (take) {
-      findOption['take'] = take;
-    }
-
-    let reservations = await this.reservePlaceService.find(findOption);
-    reservations = await this.reservePlaceService.joinBooker(reservations);
-    return this.reservePlaceService.joinPlace(reservations);
+    const withBooker = await this.reservePlaceService.joinBooker(reservations);
+    return this.reservePlaceService.joinPlace(withBooker);
   }
 
   @ApiCookieAuth()
   @Get('count')
-  count() {
-    return this.reservePlaceService.count();
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'date', required: false })
+  @ApiQuery({ name: 'placeId', required: false })
+  @ApiQuery({ name: 'bookerId', required: false })
+  @ApiQuery({ name: 'title', required: false })
+  @ApiQuery({ name: 'startDate', required: false })
+  @ApiQuery({ name: 'endDate', required: false })
+  count(
+    @Query('status') status?: string,
+    @Query('date') date?: string,
+    @Query('placeId') placeId?: string,
+    @Query('bookerId') bookerId?: string,
+    @Query('title') title?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    // 필터를 주지 않으면 기존과 동일하게 전체 예약 건수를 돌려준다.
+    return this.reservePlaceService.countByFilter({
+      status: status as ReservationStatus,
+      date,
+      placeId,
+      bookerId,
+      title,
+      startDate,
+      endDate,
+    });
   }
 
   @ApiCookieAuth()
@@ -241,47 +279,190 @@ export class ReservePlaceController {
     @Body() body: AcceptPlaceReservationListDto,
     @Query('sendEmail') sendEmail?: string,
     @User() user?: JwtPayload,
-  ) {
+  ): Promise<AcceptPlaceReservationResultDto> {
     const reservations: ReservePlace[] = [];
+    const acceptedUuidList: string[] = [];
+    const skippedList: SkippedPlaceReservationDto[] = [];
+
     for (const reservationUuid of body.uuidList) {
       const reservation =
-        await this.reservePlaceService.findOneByUuidOrFail(reservationUuid);
+        await this.reservePlaceService.findOneByUuid(reservationUuid);
+      if (!reservation) {
+        skippedList.push({
+          uuid: reservationUuid,
+          title: '(알 수 없음)',
+          date: '',
+          startTime: '',
+          endTime: '',
+          reason: '존재하지 않는 예약입니다.',
+        });
+        continue;
+      }
       reservations.push(reservation);
     }
 
     // early created reservation should be processed first
     reservations.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
 
-    for (const reservation of reservations) {
-      await this.reservePlaceService.checkReservationPossible(
-        {
-          placeId: reservation.placeId,
-          date: reservation.date,
-          startTime: reservation.startTime,
-          endTime: reservation.endTime,
-        },
-        reservation.bookerId,
-        true,
-      );
-      const response = await this.reservePlaceService.updateStatus(
-        reservation.uuid,
-        ReservationStatus.accept,
-        user,
-        '일괄 승인',
-      );
+    const updatedUserList: {
+      email: string;
+      title: string;
+      userType: UserType;
+    }[] = [];
 
-      if (sendEmail === 'true') {
-        // Send e-mail to client.
-        const skipList = [UserType.admin, UserType.association, UserType.club];
-        if (!skipList.includes(response.userType)) {
+    await this.reservePlaceService.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const transactionalReservePlaceRepo =
+          transactionalEntityManager.getRepository(ReservePlace);
+
+        for (const reservation of reservations) {
+          // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
+          // 앞선 예약이 승인되면 그와 겹치는 뒤쪽 예약은 이 검사에서 자동으로 걸러진다.
+          try {
+            await this.reservePlaceService.checkReservationPossible(
+              {
+                placeId: reservation.placeId,
+                date: reservation.date,
+                startTime: reservation.startTime,
+                endTime: reservation.endTime,
+              },
+              reservation.bookerId,
+              true,
+            );
+          } catch (error) {
+            skippedList.push({
+              uuid: reservation.uuid,
+              title: reservation.title,
+              date: reservation.date,
+              startTime: reservation.startTime,
+              endTime: reservation.endTime,
+              reason: error?.response?.message ?? error?.message ?? '승인 불가',
+            });
+            continue;
+          }
+
+          await transactionalReservePlaceRepo.update(
+            { uuid: reservation.uuid },
+            { status: ReservationStatus.accept },
+          );
+          acceptedUuidList.push(reservation.uuid);
+
+          const existUser = await this.reservePlaceService[
+            'userService'
+          ].findOneByUuid(reservation.bookerId);
+
+          if (this.reservePlaceService['isAdminActor'](user)) {
+            const actorName = user.name ?? user.nickname ?? '(이름 없음)';
+            this.reservePlaceService['logger'].log(
+              [
+                '[관리자 장소 예약 상태 변경]',
+                `- 행동: 일괄 승인`,
+                `- 관리자 UUID: ${user.uuid}`,
+                `- 관리자 이름: ${actorName}`,
+                `- 관리자 권한: ${user.userType}`,
+                `- 예약 UUID: ${reservation.uuid}`,
+                `- 예약 제목: ${reservation.title}`,
+                `- 예약자 UUID: ${reservation.bookerId}`,
+                `- 장소 UUID: ${reservation.placeId}`,
+                `- 예약 일시: ${reservation.date} ${reservation.startTime}~${reservation.endTime}`,
+                `- 상태 변경: "${reservation.status}" -> "${ReservationStatus.accept}"`,
+              ].join('\n'),
+            );
+          }
+
+          if (existUser) {
+            updatedUserList.push({
+              email: existUser.email,
+              title: reservation.title,
+              userType: existUser.userType,
+            });
+          }
+        }
+      },
+    );
+
+    if (sendEmail === 'true') {
+      // Send e-mail to client after transaction successfully commits.
+      const skipList = [UserType.admin, UserType.association, UserType.club];
+      for (const userInfo of updatedUserList) {
+        if (!skipList.includes(userInfo.userType)) {
           await this.mailService.sendReservationPatchMail(
-            response.email,
-            response.title,
+            userInfo.email,
+            userInfo.title,
             ReservationStatus.accept,
           );
         }
       }
     }
+
+    return {
+      totalCount: body.uuidList.length,
+      acceptedCount: acceptedUuidList.length,
+      skippedCount: skippedList.length,
+      acceptedUuidList: acceptedUuidList,
+      skippedList: skippedList,
+    };
+  }
+
+  @ApiCookieAuth()
+  @Patch('all/status/reject')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin, UserType.association, UserType.staff)
+  async rejectAllStatus(
+    @Body() body: AcceptPlaceReservationListDto,
+    @Query('sendEmail') sendEmail?: string,
+    @User() user?: JwtPayload,
+  ): Promise<AcceptPlaceReservationResultDto> {
+    // 거절은 승인과 달리 중복 검사를 할 필요가 없어 요청한 건을 그대로 처리한다.
+    const acceptedUuidList: string[] = [];
+    const skippedList: SkippedPlaceReservationDto[] = [];
+
+    for (const reservationUuid of body.uuidList) {
+      try {
+        const response = await this.reservePlaceService.updateStatus(
+          reservationUuid,
+          ReservationStatus.reject,
+          user,
+          '일괄 거절',
+        );
+        acceptedUuidList.push(reservationUuid);
+
+        if (sendEmail === 'true') {
+          const skipList = [
+            UserType.admin,
+            UserType.association,
+            UserType.club,
+          ];
+          if (!skipList.includes(response.userType)) {
+            await this.mailService.sendReservationPatchMail(
+              response.email,
+              response.title,
+              ReservationStatus.reject,
+            );
+          }
+        }
+      } catch (error) {
+        // 한 건이 실패해도 나머지를 계속 처리하고, 실패 목록을 함께 돌려준다.
+        const reservation =
+          await this.reservePlaceService.findOneByUuid(reservationUuid);
+        skippedList.push({
+          uuid: reservationUuid,
+          title: reservation?.title ?? '(알 수 없음)',
+          date: reservation?.date ?? '',
+          startTime: reservation?.startTime ?? '',
+          endTime: reservation?.endTime ?? '',
+          reason: error?.response?.message ?? error?.message ?? '거절 불가',
+        });
+      }
+    }
+
+    return {
+      totalCount: body.uuidList.length,
+      acceptedCount: acceptedUuidList.length,
+      skippedCount: skippedList.length,
+      acceptedUuidList: acceptedUuidList,
+      skippedList: skippedList,
+    };
   }
 
   @ApiCookieAuth()
