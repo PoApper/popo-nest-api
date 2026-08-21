@@ -304,47 +304,91 @@ export class ReservePlaceController {
     // early created reservation should be processed first
     reservations.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
 
-    for (const reservation of reservations) {
-      // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
-      // 앞선 예약이 승인되면 그와 겹치는 뒤쪽 예약은 이 검사에서 자동으로 걸러진다.
-      try {
-        await this.reservePlaceService.checkReservationPossible(
-          {
-            placeId: reservation.placeId,
-            date: reservation.date,
-            startTime: reservation.startTime,
-            endTime: reservation.endTime,
-          },
-          reservation.bookerId,
-          true,
-        );
-      } catch (error) {
-        skippedList.push({
-          uuid: reservation.uuid,
-          title: reservation.title,
-          date: reservation.date,
-          startTime: reservation.startTime,
-          endTime: reservation.endTime,
-          reason: error?.response?.message ?? error?.message ?? '승인 불가',
-        });
-        continue;
-      }
+    const updatedUserList: {
+      email: string;
+      title: string;
+      userType: UserType;
+    }[] = [];
 
-      const response = await this.reservePlaceService.updateStatus(
-        reservation.uuid,
-        ReservationStatus.accept,
-        user,
-        '일괄 승인',
-      );
-      acceptedUuidList.push(reservation.uuid);
+    await this.reservePlaceService.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const transactionalReservePlaceRepo =
+          transactionalEntityManager.getRepository(ReservePlace);
 
-      if (sendEmail === 'true') {
-        // Send e-mail to client.
-        const skipList = [UserType.admin, UserType.association, UserType.club];
-        if (!skipList.includes(response.userType)) {
+        for (const reservation of reservations) {
+          // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
+          // 앞선 예약이 승인되면 그와 겹치는 뒤쪽 예약은 이 검사에서 자동으로 걸러진다.
+          try {
+            await this.reservePlaceService.checkReservationPossible(
+              {
+                placeId: reservation.placeId,
+                date: reservation.date,
+                startTime: reservation.startTime,
+                endTime: reservation.endTime,
+              },
+              reservation.bookerId,
+              true,
+            );
+          } catch (error) {
+            skippedList.push({
+              uuid: reservation.uuid,
+              title: reservation.title,
+              date: reservation.date,
+              startTime: reservation.startTime,
+              endTime: reservation.endTime,
+              reason: error?.response?.message ?? error?.message ?? '승인 불가',
+            });
+            continue;
+          }
+
+          await transactionalReservePlaceRepo.update(
+            { uuid: reservation.uuid },
+            { status: ReservationStatus.accept },
+          );
+          acceptedUuidList.push(reservation.uuid);
+
+          const existUser = await this.reservePlaceService[
+            'userService'
+          ].findOneByUuid(reservation.bookerId);
+
+          if (this.reservePlaceService['isAdminActor'](user)) {
+            const actorName = user.name ?? user.nickname ?? '(이름 없음)';
+            this.reservePlaceService['logger'].log(
+              [
+                '[관리자 장소 예약 상태 변경]',
+                `- 행동: 일괄 승인`,
+                `- 관리자 UUID: ${user.uuid}`,
+                `- 관리자 이름: ${actorName}`,
+                `- 관리자 권한: ${user.userType}`,
+                `- 예약 UUID: ${reservation.uuid}`,
+                `- 예약 제목: ${reservation.title}`,
+                `- 예약자 UUID: ${reservation.bookerId}`,
+                `- 장소 UUID: ${reservation.placeId}`,
+                `- 예약 일시: ${reservation.date} ${reservation.startTime}~${reservation.endTime}`,
+                `- 상태 변경: "${reservation.status}" -> "${ReservationStatus.accept}"`,
+              ].join('\n'),
+            );
+          }
+
+          if (existUser) {
+            updatedUserList.push({
+              email: existUser.email,
+              title: reservation.title,
+              userType: existUser.userType,
+            });
+          }
+        }
+      },
+    );
+
+    if (sendEmail === 'true') {
+      // Send e-mail to client after transaction successfully commits.
+      const skipList = [UserType.admin, UserType.association, UserType.club];
+      for (const userInfo of updatedUserList) {
+        if (!skipList.includes(userInfo.userType)) {
           await this.mailService.sendReservationPatchMail(
-            response.email,
-            response.title,
+            userInfo.email,
+            userInfo.title,
             ReservationStatus.accept,
           );
         }

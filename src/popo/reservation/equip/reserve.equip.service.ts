@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Between,
+  DataSource,
   FindOptionsOrder,
   FindOptionsWhere,
   In,
@@ -51,6 +52,7 @@ export class ReserveEquipService {
     private readonly reserveEquipRepo: Repository<ReserveEquip>,
     private readonly userService: UserService,
     private readonly equipService: EquipService,
+    public readonly dataSource: DataSource,
   ) {}
 
   async isReservationOverlap(

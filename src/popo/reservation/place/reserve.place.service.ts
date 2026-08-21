@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
 import {
   Between,
+  DataSource,
   DeepPartial,
   FindOptionsOrder,
   FindOptionsWhere,
@@ -50,6 +51,7 @@ export class ReservePlaceService {
     private readonly reservePlaceRepo: Repository<ReservePlace>,
     private readonly userService: UserService,
     private readonly placeService: PlaceService,
+    public readonly dataSource: DataSource,
   ) {}
 
   async isReservationConcurrent(
