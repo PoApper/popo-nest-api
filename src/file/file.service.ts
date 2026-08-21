@@ -8,6 +8,12 @@ import {
 import { Injectable, Logger } from '@nestjs/common';
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { Readable } from 'stream';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// S3 가 꺼진 로컬 환경에서 업로드 파일을 담아두는 디렉터리.
+// 예전에는 업로드가 조용히 버려져서 로컬에서 첨부 파일을 다시 읽을 수 없었다.
+const LOCAL_UPLOAD_DIR = path.resolve(process.cwd(), 'uploads');
 
 @Injectable()
 export class FileService {
@@ -118,9 +124,21 @@ export class FileService {
     return res.Body.transformToString();
   }
 
+  /** 로컬 폴백 저장 경로. 키에 상위 경로 탈출이 섞이지 않도록 정규화한다. */
+  private localPathOf(key: string) {
+    const resolved = path.resolve(LOCAL_UPLOAD_DIR, key);
+    if (!resolved.startsWith(LOCAL_UPLOAD_DIR)) {
+      throw new Error(`Invalid file key: ${key}`);
+    }
+    return resolved;
+  }
+
   async getFile(key: string) {
     if (!this.checkS3Enabled('getFile')) {
-      return Buffer.from('');
+      const localPath = this.localPathOf(key);
+      return fs.existsSync(localPath)
+        ? fs.promises.readFile(localPath)
+        : Buffer.from('');
     }
 
     const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
@@ -151,6 +169,9 @@ export class FileService {
 
   async uploadFile(key: string, file: MemoryStoredFile) {
     if (!this.checkS3Enabled('uploadFile')) {
+      const localPath = this.localPathOf(key);
+      await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
+      await fs.promises.writeFile(localPath, file.buffer);
       return `local://${key}`;
     }
 
@@ -167,7 +188,7 @@ export class FileService {
 
   deleteFile(key: string) {
     if (!this.checkS3Enabled('deleteFile')) {
-      return Promise.resolve();
+      return fs.promises.rm(this.localPathOf(key), { force: true });
     }
 
     return this.s3.send(
