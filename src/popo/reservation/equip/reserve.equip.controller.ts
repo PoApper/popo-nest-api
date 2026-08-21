@@ -290,17 +290,28 @@ export class ReserveEquipController {
     @User() user?: JwtPayload,
   ): Promise<AcceptEquipReservationResultDto> {
     const reservations: ReserveEquip[] = [];
+    const acceptedUuidList: string[] = [];
+    const skippedList: SkippedEquipReservationDto[] = [];
+
     for (const reservationUuid of body.uuidList) {
       const reservation =
-        await this.reserveEquipService.findOneByUuidOrFail(reservationUuid);
+        await this.reserveEquipService.findOneByUuid(reservationUuid);
+      if (!reservation) {
+        skippedList.push({
+          uuid: reservationUuid,
+          title: '(알 수 없음)',
+          date: '',
+          startTime: '',
+          endTime: '',
+          reason: '존재하지 않는 예약입니다.',
+        });
+        continue;
+      }
       reservations.push(reservation);
     }
 
     // 먼저 생성된 예약을 먼저 처리한다.
     reservations.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
-
-    const acceptedUuidList: string[] = [];
-    const skippedList: SkippedEquipReservationDto[] = [];
 
     for (const reservation of reservations) {
       // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
@@ -339,7 +350,7 @@ export class ReserveEquipController {
     }
 
     return {
-      totalCount: reservations.length,
+      totalCount: body.uuidList.length,
       acceptedCount: acceptedUuidList.length,
       skippedCount: skippedList.length,
       acceptedUuidList: acceptedUuidList,

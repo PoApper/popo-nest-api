@@ -888,15 +888,10 @@ describe('ReservePlaceModule - Integration Test', () => {
         ).toBe(ReservationStatus.in_process);
       });
 
-      it('should not abort the whole batch when the first reservation is not acceptable', async () => {
-        // 겹치는 예약을 먼저 승인해두면, 그 뒤 일괄 승인에서는 해당 건만 건너뛰어야 한다.
-        await reservePlaceService.updateStatus(
-          earlierReservation.uuid,
-          ReservationStatus.accept,
-        );
-
+      it('should skip non-existent reservation uuid without throwing error', async () => {
+        const fakeUuid = '00000000-0000-0000-0000-000000000000';
         const dto: AcceptPlaceReservationListDto = {
-          uuidList: [overlappingReservation.uuid, independentReservation.uuid],
+          uuidList: [fakeUuid, independentReservation.uuid],
         };
 
         const result = await reservePlaceController.acceptAllStatus(
@@ -904,8 +899,118 @@ describe('ReservePlaceModule - Integration Test', () => {
           'false',
         );
 
+        expect(result.totalCount).toBe(2);
+        expect(result.acceptedCount).toBe(1);
         expect(result.skippedCount).toBe(1);
+        expect(result.skippedList[0].uuid).toBe(fakeUuid);
         expect(result.acceptedUuidList).toEqual([independentReservation.uuid]);
+      });
+    });
+
+    describe('rejectAllStatus', () => {
+      let reservationA: ReservePlace;
+      let reservationB: ReservePlace;
+
+      beforeEach(async () => {
+        const place = await placeService.save({
+          name: 'Reject Test Place',
+          description: 'Test place description',
+          location: 'Test location',
+          region: PlaceRegion.student_hall,
+          staffEmail: 'staff@test.com',
+          maxMinutes: 120,
+          maxConcurrentReservation: 1,
+          openingHours: '{"Everyday":"00:00-24:00"}',
+          enableAutoAccept: PlaceEnableAutoAccept.inactive,
+        });
+
+        reservationA = await reservePlaceService.save({
+          placeId: place.uuid,
+          bookerId: testUserJwt.uuid,
+          phone: '010-1234-5678',
+          title: 'Reject Reservation A',
+          description: 'To be rejected',
+          date: '20241211',
+          startTime: '1000',
+          endTime: '1100',
+        });
+
+        reservationB = await reservePlaceService.save({
+          placeId: place.uuid,
+          bookerId: testUserJwt.uuid,
+          phone: '010-1234-5678',
+          title: 'Reject Reservation B',
+          description: 'To be rejected as well',
+          date: '20241211',
+          startTime: '1400',
+          endTime: '1500',
+        });
+      });
+
+      it('should reject all valid reservations successfully', async () => {
+        const dto: AcceptPlaceReservationListDto = {
+          uuidList: [reservationA.uuid, reservationB.uuid],
+        };
+
+        const result = await reservePlaceController.rejectAllStatus(
+          dto,
+          'false',
+        );
+
+        expect(result.totalCount).toBe(2);
+        expect(result.acceptedCount).toBe(2);
+        expect(result.skippedCount).toBe(0);
+        expect(result.acceptedUuidList).toEqual([
+          reservationA.uuid,
+          reservationB.uuid,
+        ]);
+
+        const updatedA = await reservePlaceService.findOneByUuidOrFail(
+          reservationA.uuid,
+        );
+        const updatedB = await reservePlaceService.findOneByUuidOrFail(
+          reservationB.uuid,
+        );
+        expect(updatedA.status).toBe(ReservationStatus.reject);
+        expect(updatedB.status).toBe(ReservationStatus.reject);
+      });
+
+      it('should skip non-existent uuid and reject the remaining reservations', async () => {
+        const fakeUuid = '00000000-0000-0000-0000-000000000000';
+        const dto: AcceptPlaceReservationListDto = {
+          uuidList: [reservationA.uuid, fakeUuid],
+        };
+
+        const result = await reservePlaceController.rejectAllStatus(
+          dto,
+          'false',
+        );
+
+        expect(result.totalCount).toBe(2);
+        expect(result.acceptedCount).toBe(1);
+        expect(result.skippedCount).toBe(1);
+        expect(result.acceptedUuidList).toEqual([reservationA.uuid]);
+        expect(result.skippedList[0].uuid).toBe(fakeUuid);
+
+        const updatedA = await reservePlaceService.findOneByUuidOrFail(
+          reservationA.uuid,
+        );
+        expect(updatedA.status).toBe(ReservationStatus.reject);
+      });
+
+      it('should send notification email when sendEmail is true', async () => {
+        const mailSpy = jest.spyOn(mailService, 'sendReservationPatchMail');
+        const dto: AcceptPlaceReservationListDto = {
+          uuidList: [reservationA.uuid],
+        };
+
+        await reservePlaceController.rejectAllStatus(dto, 'true');
+
+        expect(mailSpy).toHaveBeenCalledWith(
+          testUserJwt.email,
+          reservationA.title,
+          ReservationStatus.reject,
+        );
       });
     });
   });
