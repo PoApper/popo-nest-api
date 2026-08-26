@@ -767,6 +767,405 @@ describe('ReservePlaceModule - Integration Test', () => {
 
       expect(sendEmailSpy).toHaveBeenCalled();
     });
+
+    it('should return a summary of accepted reservations', async () => {
+      const dto: AcceptPlaceReservationListDto = {
+        uuidList: testReservations.map((r) => r.uuid),
+      };
+
+      const result = await reservePlaceController.acceptAllStatus(dto, 'false');
+
+      expect(result.totalCount).toBe(3);
+      expect(result.acceptedCount).toBe(3);
+      expect(result.skippedCount).toBe(0);
+      expect(result.acceptedUuidList).toHaveLength(3);
+      expect(result.skippedList).toHaveLength(0);
+    });
+
+    describe('with overlapping reservations', () => {
+      let overlapPlace: Place;
+      let earlierReservation: ReservePlace;
+      let overlappingReservation: ReservePlace;
+      let independentReservation: ReservePlace;
+
+      beforeEach(async () => {
+        // maxConcurrentReservation: 1 이므로 시간이 겹치는 예약은 1건만 승인될 수 있다.
+        // maxMinutes 는 넉넉히 두어 일일 총 예약 시간 제한이 아니라
+        // 동시 예약 제한 때문에 걸러지는 상황을 만든다.
+        overlapPlace = await placeService.save({
+          name: 'Overlap Test Place',
+          description: 'Test place description',
+          location: 'Test location',
+          region: PlaceRegion.student_hall,
+          staffEmail: 'staff@test.com',
+          maxMinutes: 24 * 60,
+          maxConcurrentReservation: 1,
+          openingHours: '{"Everyday":"00:00-24:00"}',
+          enableAutoAccept: PlaceEnableAutoAccept.inactive,
+        });
+
+        earlierReservation = await reservePlaceService.save({
+          placeId: overlapPlace.uuid,
+          bookerId: testUserJwt.uuid,
+          phone: '010-1234-5678',
+          title: 'Earlier Reservation',
+          description: 'Should be accepted',
+          date: '20241210',
+          startTime: '1400',
+          endTime: '1600',
+        });
+
+        overlappingReservation = await reservePlaceService.save({
+          placeId: overlapPlace.uuid,
+          bookerId: testUserJwt.uuid,
+          phone: '010-1234-5678',
+          title: 'Overlapping Reservation',
+          description: 'Should be skipped',
+          date: '20241210',
+          startTime: '1500',
+          endTime: '1700',
+        });
+
+        // 겹치지 않는 시간대의 예약은 중복 건 때문에 막히지 않아야 한다.
+        independentReservation = await reservePlaceService.save({
+          placeId: overlapPlace.uuid,
+          bookerId: testUserJwt.uuid,
+          phone: '010-1234-5678',
+          title: 'Independent Reservation',
+          description: 'Should be accepted',
+          date: '20241210',
+          startTime: '1800',
+          endTime: '1900',
+        });
+      });
+
+      it('should skip overlapping reservations and accept the rest', async () => {
+        const dto: AcceptPlaceReservationListDto = {
+          uuidList: [
+            earlierReservation.uuid,
+            overlappingReservation.uuid,
+            independentReservation.uuid,
+          ],
+        };
+
+        const result = await reservePlaceController.acceptAllStatus(
+          dto,
+          'false',
+        );
+
+        expect(result.totalCount).toBe(3);
+        expect(result.acceptedCount).toBe(2);
+        expect(result.skippedCount).toBe(1);
+
+        // 겹치는 두 건 중 정확히 하나만 승인되어야 한다.
+        // 두 건의 createdAt 이 동일할 수 있어 어느 쪽이 먼저 처리되는지는 고정되지 않는다.
+        const overlappingPair = [
+          earlierReservation.uuid,
+          overlappingReservation.uuid,
+        ];
+        const acceptedFromPair = result.acceptedUuidList.filter((uuid) =>
+          overlappingPair.includes(uuid),
+        );
+        expect(acceptedFromPair).toHaveLength(1);
+        expect(overlappingPair).toContain(result.skippedList[0].uuid);
+        expect(result.skippedList[0].reason).toBeTruthy();
+
+        // 겹치는 건 때문에 처리가 중단되지 않고, 무관한 예약은 반드시 승인되어야 한다.
+        expect(result.acceptedUuidList).toContain(independentReservation.uuid);
+        expect(
+          (
+            await reservePlaceService.findOneByUuidOrFail(
+              independentReservation.uuid,
+            )
+          ).status,
+        ).toBe(ReservationStatus.accept);
+        expect(
+          (
+            await reservePlaceService.findOneByUuidOrFail(
+              result.skippedList[0].uuid,
+            )
+          ).status,
+        ).toBe(ReservationStatus.in_process);
+      });
+
+      it('should skip non-existent reservation uuid without throwing error', async () => {
+        const fakeUuid = '00000000-0000-0000-0000-000000000000';
+        const dto: AcceptPlaceReservationListDto = {
+          uuidList: [fakeUuid, independentReservation.uuid],
+        };
+
+        const result = await reservePlaceController.acceptAllStatus(
+          dto,
+          'false',
+        );
+
+        expect(result.totalCount).toBe(2);
+        expect(result.acceptedCount).toBe(1);
+        expect(result.skippedCount).toBe(1);
+        expect(result.skippedList[0].uuid).toBe(fakeUuid);
+        expect(result.acceptedUuidList).toEqual([independentReservation.uuid]);
+      });
+    });
+
+    describe('rejectAllStatus', () => {
+      let reservationA: ReservePlace;
+      let reservationB: ReservePlace;
+
+      beforeEach(async () => {
+        const place = await placeService.save({
+          name: 'Reject Test Place',
+          description: 'Test place description',
+          location: 'Test location',
+          region: PlaceRegion.student_hall,
+          staffEmail: 'staff@test.com',
+          maxMinutes: 120,
+          maxConcurrentReservation: 1,
+          openingHours: '{"Everyday":"00:00-24:00"}',
+          enableAutoAccept: PlaceEnableAutoAccept.inactive,
+        });
+
+        reservationA = await reservePlaceService.save({
+          placeId: place.uuid,
+          bookerId: testUserJwt.uuid,
+          phone: '010-1234-5678',
+          title: 'Reject Reservation A',
+          description: 'To be rejected',
+          date: '20241211',
+          startTime: '1000',
+          endTime: '1100',
+        });
+
+        reservationB = await reservePlaceService.save({
+          placeId: place.uuid,
+          bookerId: testUserJwt.uuid,
+          phone: '010-1234-5678',
+          title: 'Reject Reservation B',
+          description: 'To be rejected as well',
+          date: '20241211',
+          startTime: '1400',
+          endTime: '1500',
+        });
+      });
+
+      it('should reject all valid reservations successfully', async () => {
+        const dto: AcceptPlaceReservationListDto = {
+          uuidList: [reservationA.uuid, reservationB.uuid],
+        };
+
+        const result = await reservePlaceController.rejectAllStatus(
+          dto,
+          'false',
+        );
+
+        expect(result.totalCount).toBe(2);
+        expect(result.acceptedCount).toBe(2);
+        expect(result.skippedCount).toBe(0);
+        expect(result.acceptedUuidList).toEqual([
+          reservationA.uuid,
+          reservationB.uuid,
+        ]);
+
+        const updatedA = await reservePlaceService.findOneByUuidOrFail(
+          reservationA.uuid,
+        );
+        const updatedB = await reservePlaceService.findOneByUuidOrFail(
+          reservationB.uuid,
+        );
+        expect(updatedA.status).toBe(ReservationStatus.reject);
+        expect(updatedB.status).toBe(ReservationStatus.reject);
+      });
+
+      it('should skip non-existent uuid and reject the remaining reservations', async () => {
+        const fakeUuid = '00000000-0000-0000-0000-000000000000';
+        const dto: AcceptPlaceReservationListDto = {
+          uuidList: [reservationA.uuid, fakeUuid],
+        };
+
+        const result = await reservePlaceController.rejectAllStatus(
+          dto,
+          'false',
+        );
+
+        expect(result.totalCount).toBe(2);
+        expect(result.acceptedCount).toBe(1);
+        expect(result.skippedCount).toBe(1);
+        expect(result.acceptedUuidList).toEqual([reservationA.uuid]);
+        expect(result.skippedList[0].uuid).toBe(fakeUuid);
+
+        const updatedA = await reservePlaceService.findOneByUuidOrFail(
+          reservationA.uuid,
+        );
+        expect(updatedA.status).toBe(ReservationStatus.reject);
+      });
+
+      it('should send notification email when sendEmail is true', async () => {
+        const mailSpy = jest.spyOn(mailService, 'sendReservationPatchMail');
+        const dto: AcceptPlaceReservationListDto = {
+          uuidList: [reservationA.uuid],
+        };
+
+        await reservePlaceController.rejectAllStatus(dto, 'true');
+
+        expect(mailSpy).toHaveBeenCalledWith(
+          testUserJwt.email,
+          reservationA.title,
+          ReservationStatus.reject,
+        );
+      });
+    });
+  });
+
+  describe('getAll with filters', () => {
+    let placeA: Place;
+    let placeB: Place;
+    let testUserJwt: JwtPayload;
+
+    beforeEach(async () => {
+      testUserJwt = {
+        uuid: testUtils.getTestUser().uuid,
+        email: testUtils.getTestUser().email,
+        name: testUtils.getTestUser().name,
+        nickname: '',
+        userType: testUtils.getTestUser().userType,
+      };
+
+      const basePlaceDto = {
+        description: 'Test place description',
+        location: 'Test location',
+        region: PlaceRegion.student_hall,
+        staffEmail: 'staff@test.com',
+        maxMinutes: 24 * 60,
+        maxConcurrentReservation: 1,
+        openingHours: '{"Everyday":"00:00-24:00"}',
+        enableAutoAccept: PlaceEnableAutoAccept.inactive,
+      };
+
+      placeA = await placeService.save({
+        ...basePlaceDto,
+        name: 'Filter Place A',
+      });
+      placeB = await placeService.save({
+        ...basePlaceDto,
+        name: 'Filter Place B',
+      });
+
+      await reservePlaceService.save({
+        placeId: placeA.uuid,
+        bookerId: testUserJwt.uuid,
+        phone: '010-1234-5678',
+        title: '동아리 정기 공연',
+        description: 'A place, early date',
+        date: '20241201',
+        startTime: '1000',
+        endTime: '1100',
+      });
+      await reservePlaceService.save({
+        placeId: placeA.uuid,
+        bookerId: testUserJwt.uuid,
+        phone: '010-1234-5678',
+        title: '학생회 회의',
+        description: 'A place, late date',
+        date: '20241215',
+        startTime: '1000',
+        endTime: '1100',
+      });
+      await reservePlaceService.save({
+        placeId: placeB.uuid,
+        bookerId: testUserJwt.uuid,
+        phone: '010-1234-5678',
+        title: '동아리 연습',
+        description: 'B place',
+        date: '20241210',
+        startTime: '1000',
+        endTime: '1100',
+      });
+    });
+
+    it('should filter reservations by placeId', async () => {
+      const result = await reservePlaceController.getAll(
+        null,
+        null,
+        null,
+        null,
+        placeA.uuid,
+      );
+
+      expect(result).toHaveLength(2);
+      result.forEach((reservation) => {
+        expect(reservation.placeId).toBe(placeA.uuid);
+      });
+    });
+
+    it('should filter reservations by date range', async () => {
+      const result = await reservePlaceController.getAll(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        '20241205',
+        '20241220',
+      );
+
+      expect(result).toHaveLength(2);
+      result.forEach((reservation) => {
+        expect(reservation.date >= '20241205').toBe(true);
+        expect(reservation.date <= '20241220').toBe(true);
+      });
+    });
+
+    it('should filter reservations by partial title', async () => {
+      const result = await reservePlaceController.getAll(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        '동아리',
+      );
+
+      expect(result).toHaveLength(2);
+      result.forEach((reservation) => {
+        expect(reservation.title).toContain('동아리');
+      });
+    });
+
+    it('should order reservations by reservation date', async () => {
+      const result = await reservePlaceController.getAll(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        'date',
+        'ASC',
+      );
+
+      expect(result.map((reservation) => reservation.date)).toEqual([
+        '20241201',
+        '20241210',
+        '20241215',
+      ]);
+    });
+
+    it('should count reservations with the same filters', async () => {
+      const totalCount = await reservePlaceController.count();
+      const placeACount = await reservePlaceController.count(
+        null,
+        null,
+        placeA.uuid,
+      );
+
+      expect(totalCount).toBe(3);
+      expect(placeACount).toBe(2);
+    });
   });
 
   describe('delete', () => {

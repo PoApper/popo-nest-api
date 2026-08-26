@@ -113,6 +113,9 @@ jobs:
   redeploy_dev_service:
     name: Redeploy Dev Service
     needs: docker_build_and_push
+    # release(=Prod 이미지 빌드) 때는 dev를 건드리지 않는다.
+    # Prod 배포는 Portainer에서 이미지 태그를 직접 바꿔주는 수동 절차다.
+    if: github.event_name != 'release'
     runs-on: ubuntu-latest
     steps:
       - name: Redeploy Dev Service
