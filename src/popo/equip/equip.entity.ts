@@ -22,7 +22,7 @@ export class Equip extends Base {
   @Column({ name: 'staff_email', nullable: true })
   staffEmail: string;
 
-  @Column({ name: 'image_url', nullable: true })
+  @Column('text', { name: 'image_url', nullable: true })
   imageUrl: string;
 
   @Column({ name: 'max_minutes', default: 24 * 60 })

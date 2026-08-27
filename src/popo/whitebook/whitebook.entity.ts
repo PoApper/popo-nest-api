@@ -9,7 +9,7 @@ export class Whitebook extends Base {
   @Column({ nullable: false })
   title: string;
 
-  @Column({ nullable: false })
+  @Column('text', { nullable: false })
   link: string;
 
   @Column('text', { nullable: true })

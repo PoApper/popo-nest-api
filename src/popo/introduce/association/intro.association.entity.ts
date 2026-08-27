@@ -29,18 +29,18 @@ export class IntroAssociation extends Base {
   })
   associationType: AssociationType = AssociationType.others;
 
-  @Column({ name: 'image_url', nullable: true })
+  @Column('text', { name: 'image_url', nullable: true })
   imageUrl: string;
 
   @Column({ default: 0 })
   views: number;
 
-  @Column({ name: 'homepage_url', nullable: true })
+  @Column('text', { name: 'homepage_url', nullable: true })
   homepageUrl: string;
 
-  @Column({ name: 'facebook_url', nullable: true })
+  @Column('text', { name: 'facebook_url', nullable: true })
   facebookUrl: string;
 
-  @Column({ name: 'instagram_url', nullable: true })
+  @Column('text', { name: 'instagram_url', nullable: true })
   instagramUrl: string;
 }

@@ -12,10 +12,10 @@ export class Notice extends Base {
   @Column('text', { nullable: true })
   content: string;
 
-  @Column({ name: 'image_url', nullable: true })
+  @Column('text', { name: 'image_url', nullable: true })
   imageUrl: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   link: string;
 
   @Column({ name: 'start_datetime', nullable: false })
