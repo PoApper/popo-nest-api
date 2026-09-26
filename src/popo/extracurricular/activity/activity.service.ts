@@ -39,6 +39,5 @@ export class ActivityService {
 
   async remove(uuid: string): Promise<void> {
     await this.reportService.removeForActivity(uuid);
-    await this.activityRepository.delete({ uuid });
   }
 }

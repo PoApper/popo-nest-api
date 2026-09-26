@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MemoryStoredFile } from 'nestjs-form-data';
@@ -10,6 +15,10 @@ import {
   UpdateActivityReportDto,
 } from './activity-report.dto';
 import { FileService } from '../../../file/file.service';
+import { Activity } from '../activity/activity.entity';
+import { lockActivity } from '../activity/lock-activity';
+import { ReportFileDeletion } from './report-file-deletion.entity';
+import { ReportFileCleanupService } from './report-file-cleanup.service';
 
 /**
  * multipart 파일명 인코딩 보정.
@@ -50,6 +59,7 @@ export class ActivityReportService {
     @InjectRepository(ActivityReport)
     private readonly reportRepository: Repository<ActivityReport>,
     private readonly fileService: FileService,
+    private readonly fileCleanup: ReportFileCleanupService,
   ) {}
 
   async findAll(query?: {
@@ -85,7 +95,12 @@ export class ActivityReportService {
     }
 
     try {
-      return await this.reportRepository.save(report);
+      return await this.reportRepository.manager.transaction(
+        async (manager) => {
+          await lockActivity(manager, dto.activityId);
+          return manager.getRepository(ActivityReport).save(report);
+        },
+      );
     } catch (error) {
       if (report.fileKey) await this.cleanupFile(report.fileKey);
       throw error;
@@ -108,17 +123,37 @@ export class ActivityReportService {
     }
 
     try {
-      if (Object.keys(patch).length) {
-        await this.reportRepository.update({ uuid }, patch);
-      }
+      await this.reportRepository.manager.transaction(async (manager) => {
+        for (const activityId of [
+          ...new Set([
+            existing.activityId,
+            dto.activityId ?? existing.activityId,
+          ]),
+        ].sort()) {
+          await lockActivity(manager, activityId);
+        }
+        const repository = manager.getRepository(ActivityReport);
+        const current = await repository.findOneBy({ uuid });
+        if (!current)
+          throw new NotFoundException('존재하지 않는 활동 수기입니다.');
+        if (current.activityId !== existing.activityId) {
+          throw new ConflictException(
+            '수기가 변경되었습니다. 다시 시도해주세요.',
+          );
+        }
+        if (Object.keys(patch).length) await repository.update({ uuid }, patch);
+        if (patch.fileKey && current.fileKey) {
+          await manager.insert(ReportFileDeletion, {
+            fileKey: current.fileKey,
+          });
+        }
+      });
     } catch (error) {
       // DB가 새 파일을 참조하기 전에는 기존 파일을 삭제하지 않는다.
       if (patch.fileKey) await this.cleanupFile(patch.fileKey);
       throw error;
     }
-    if (patch.fileKey && existing.fileKey) {
-      await this.cleanupFile(existing.fileKey);
-    }
+    await this.fileCleanup.retry();
     return this.findOne(uuid);
   }
 
@@ -152,16 +187,35 @@ export class ActivityReportService {
   }
 
   async removeForActivity(activityId: string): Promise<void> {
-    const reports = await this.findAll({ activityId });
-    for (const report of reports) await this.remove(report.uuid);
+    await this.reportRepository.manager.transaction(async (manager) => {
+      await lockActivity(manager, activityId);
+      const reports = await manager.findBy(ActivityReport, { activityId });
+      for (const report of reports) {
+        if (report.fileKey)
+          await manager.insert(ReportFileDeletion, { fileKey: report.fileKey });
+      }
+      await manager.delete(Activity, { uuid: activityId });
+    });
+    await this.fileCleanup.retry();
   }
 
   async remove(uuid: string): Promise<void> {
     const existing = await this.findOne(uuid);
-    if (existing?.fileKey) {
-      await this.fileService.deleteFile(existing.fileKey);
-    }
-    await this.reportRepository.delete({ uuid });
+    if (!existing) return;
+    await this.reportRepository.manager.transaction(async (manager) => {
+      await lockActivity(manager, existing.activityId);
+      const report = await manager.findOneBy(ActivityReport, { uuid });
+      if (!report) return;
+      if (report.activityId !== existing.activityId) {
+        throw new ConflictException(
+          '수기가 변경되었습니다. 다시 시도해주세요.',
+        );
+      }
+      if (report.fileKey)
+        await manager.insert(ReportFileDeletion, { fileKey: report.fileKey });
+      await manager.delete(ActivityReport, { uuid });
+    });
+    await this.fileCleanup.retry();
   }
 
   /** 원본 문서를 저장하고 엔티티에 채울 파일 관련 필드를 돌려준다. */
@@ -179,13 +233,13 @@ export class ActivityReportService {
   }
 
   /** 뷰어/다운로드용 원본 바이트 */
-  async getFileBuffer(uuid: string) {
+  async getFileStream(uuid: string) {
     const report = await this.findOneOrFail(uuid);
     if (!report.fileKey) {
       throw new NotFoundException('첨부된 파일이 없습니다.');
     }
     return {
-      buffer: await this.fileService.getFile(report.fileKey),
+      stream: await this.fileService.getFileStream(report.fileKey),
       fileName: report.fileName,
       fileType: report.fileType,
     };

@@ -7,6 +7,7 @@ import {
   UpdateActivityReportDto,
 } from './activity-report.dto';
 import { FileService } from '../../../file/file.service';
+import { ReportFileCleanupService } from './report-file-cleanup.service';
 
 describe('ActivityReportService storage consistency', () => {
   const existing = {
@@ -25,6 +26,8 @@ describe('ActivityReportService storage consistency', () => {
     update: jest.Mock;
     delete: jest.Mock;
     find: jest.Mock;
+    findOneBy: jest.Mock;
+    manager: Record<string, jest.Mock>;
   };
   let files: { uploadFile: jest.Mock; deleteFile: jest.Mock };
   let service: ActivityReportService;
@@ -36,14 +39,37 @@ describe('ActivityReportService storage consistency', () => {
       update: jest.fn().mockResolvedValue({ affected: 1 }),
       delete: jest.fn(),
       find: jest.fn(),
+      findOneBy: jest.fn().mockResolvedValue(existing),
+      manager: undefined,
     };
     files = {
       uploadFile: jest.fn().mockResolvedValue('https://file'),
       deleteFile: jest.fn().mockResolvedValue(undefined),
     };
+    const builder: Record<string, jest.Mock> = {};
+    for (const method of ['update', 'set', 'where'])
+      builder[method] = jest.fn(() => builder);
+    builder.execute = jest.fn();
+    const manager = {
+      createQueryBuilder: jest.fn(() => builder),
+      findOneBy: jest.fn().mockResolvedValue(existing),
+      getRepository: jest.fn(() => repository),
+      insert: jest.fn(),
+      delete: jest.fn((_entity, criteria) => repository.delete(criteria)),
+      transaction: undefined,
+    };
+    manager.transaction = jest.fn(async (callback) => callback(manager));
+    repository.manager = manager;
+    const cleanup = {
+      retry: jest.fn(async () => {
+        for (const [, deletion] of manager.insert.mock.calls)
+          await files.deleteFile(deletion.fileKey);
+      }),
+    };
     service = new ActivityReportService(
       repository as unknown as Repository<ActivityReport>,
       files as unknown as FileService,
+      cleanup as unknown as ReportFileCleanupService,
     );
   });
 
@@ -120,9 +146,22 @@ describe('ActivityReportService storage consistency', () => {
     expect(files.deleteFile).not.toHaveBeenCalled();
   });
 
-  it('does not drop the report row if deleting its object fails', async () => {
-    files.deleteFile.mockRejectedValue(new Error('delete failed'));
-    await expect(service.remove('report')).rejects.toThrow('delete failed');
-    expect(repository.delete).not.toHaveBeenCalled();
+  it('preserves the attachment if the report deletion fails', async () => {
+    repository.delete.mockRejectedValue(new Error('database unavailable'));
+    await expect(service.remove('report')).rejects.toThrow(
+      'database unavailable',
+    );
+    expect(files.deleteFile).not.toHaveBeenCalled();
+  });
+
+  it('does not delete the attachment until the transaction commits', async () => {
+    const manager = repository.manager;
+    manager.transaction.mockImplementation(async (callback) => {
+      await callback(manager);
+      expect(files.deleteFile).not.toHaveBeenCalled();
+      throw new Error('commit failed');
+    });
+    await expect(service.remove('report')).rejects.toThrow('commit failed');
+    expect(files.deleteFile).not.toHaveBeenCalled();
   });
 });

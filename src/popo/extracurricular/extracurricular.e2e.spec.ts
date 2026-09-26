@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as request from 'supertest';
@@ -8,6 +8,9 @@ import { Activity } from './activity/activity.entity';
 import { ActivityReport } from './report/activity-report.entity';
 import { ExtracurricularModule } from './extracurricular.module';
 import { UserType } from '../user/user.meta';
+import { Readable } from 'stream';
+import { ReportFileDeletion } from './report/report-file-deletion.entity';
+import { ReportFileCleanupService } from './report/report-file-cleanup.service';
 
 describe('Extracurricular CRUD', () => {
   let app: INestApplication;
@@ -19,6 +22,7 @@ describe('Extracurricular CRUD', () => {
       return `https://files.example/${key}`;
     }),
     getFile: jest.fn(async (key) => objects.get(key)),
+    getFileStream: jest.fn(async (key) => Readable.from([objects.get(key)])),
     deleteFile: jest.fn(async (key) => {
       objects.delete(key);
     }),
@@ -38,7 +42,7 @@ describe('Extracurricular CRUD', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: ':memory:',
-          entities: [Activity, ActivityReport],
+          entities: [Activity, ActivityReport, ReportFileDeletion],
           synchronize: true,
         }),
         ExtracurricularModule,
@@ -164,6 +168,83 @@ describe('Extracurricular CRUD', () => {
       .delete(`/activity/${parent.uuid}`)
       .set('x-test-role', UserType.admin)
       .expect(200);
+    expect(objects.size).toBe(0);
+    expect(await dataSource.getRepository(ActivityReport).count()).toBe(0);
+  });
+
+  it('keeps a durable cleanup key when storage deletion fails and retries it', async () => {
+    const { body: parent } = await createActivity();
+    const { body: report } = await createReport(parent.uuid).expect(201);
+    files.deleteFile.mockRejectedValueOnce(new Error('storage unavailable'));
+    await request(app.getHttpServer())
+      .delete(`/activity-report/${report.uuid}`)
+      .set('x-test-role', UserType.admin)
+      .expect(200);
+    expect(await dataSource.getRepository(ActivityReport).count()).toBe(0);
+    expect(objects.has(report.fileKey)).toBe(true);
+    expect(await dataSource.getRepository(ReportFileDeletion).find()).toEqual([
+      expect.objectContaining({ fileKey: report.fileKey }),
+    ]);
+    await app.get(ReportFileCleanupService).retry();
+    expect(objects.has(report.fileKey)).toBe(false);
+    expect(await dataSource.getRepository(ReportFileDeletion).count()).toBe(0);
+  });
+
+  it('rolls back the queued cleanup when the database rejects deletion', async () => {
+    const { body: parent } = await createActivity();
+    const { body: report } = await createReport(parent.uuid).expect(201);
+    await dataSource.query(
+      "CREATE TRIGGER reject_report_delete BEFORE DELETE ON activity_report BEGIN SELECT RAISE(ABORT, 'delete rejected'); END",
+    );
+    try {
+      await request(app.getHttpServer())
+        .delete(`/activity-report/${report.uuid}`)
+        .set('x-test-role', UserType.admin)
+        .expect(500);
+      expect(await dataSource.getRepository(ActivityReport).count()).toBe(1);
+      expect(await dataSource.getRepository(ReportFileDeletion).count()).toBe(
+        0,
+      );
+      expect(objects.has(report.fileKey)).toBe(true);
+      expect(files.deleteFile).not.toHaveBeenCalled();
+    } finally {
+      await dataSource.query('DROP TRIGGER reject_report_delete');
+    }
+  });
+
+  it('does not let failing cleanup keys starve later entries', async () => {
+    const repository = dataSource.getRepository(ReportFileDeletion);
+    await repository.insert(
+      Array.from({ length: 101 }, (_, i) => ({
+        fileKey: `pending-${String(i).padStart(3, '0')}`,
+      })),
+    );
+    const cleanup = app.get(ReportFileCleanupService);
+    const remove = files.deleteFile.getMockImplementation();
+    const log = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+    files.deleteFile.mockRejectedValue(new Error('storage unavailable'));
+    try {
+      await cleanup.retry();
+      expect(files.deleteFile).not.toHaveBeenCalledWith('pending-100');
+      files.deleteFile.mockClear();
+      files.deleteFile.mockImplementation(remove);
+      await cleanup.retry();
+      expect(files.deleteFile.mock.calls[0][0]).toBe('pending-100');
+    } finally {
+      files.deleteFile.mockImplementation(remove);
+      log.mockRestore();
+    }
+  });
+
+  it('cleans an upload when its activity has already been deleted', async () => {
+    const { body: parent } = await createActivity();
+    await request(app.getHttpServer())
+      .delete(`/activity/${parent.uuid}`)
+      .set('x-test-role', UserType.admin)
+      .expect(200);
+    await createReport(parent.uuid).expect(404);
     expect(objects.size).toBe(0);
     expect(await dataSource.getRepository(ActivityReport).count()).toBe(0);
   });

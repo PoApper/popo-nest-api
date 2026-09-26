@@ -1,6 +1,8 @@
 import { FileService } from './file.service';
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { randomUUID } from 'crypto';
+import { S3Client } from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
 
 describe('FileService environment configuration', () => {
   const previous = { ...process.env };
@@ -31,6 +33,24 @@ describe('FileService environment configuration', () => {
     expect(() => new FileService()).not.toThrow();
   });
 
+  it('returns the unconsumed S3 stream without collecting object chunks', async () => {
+    process.env.NODE_ENV = 'prod';
+    process.env.S3_REGION = 'ap-northeast-2';
+    process.env.S3_BUCKET_NAME = 'reports';
+    const read = jest.fn();
+    const stream = new Readable({ read });
+    const send = jest
+      .spyOn(S3Client.prototype, 'send')
+      .mockImplementation(async () => ({ Body: stream }));
+    try {
+      expect(await new FileService().getFileStream('report.pdf')).toBe(stream);
+      expect(read).not.toHaveBeenCalled();
+    } finally {
+      send.mockRestore();
+      stream.destroy();
+    }
+  });
+
   it('persists and removes bytes only in local mode', async () => {
     process.env.NODE_ENV = 'local';
     const service = new FileService();
@@ -43,6 +63,10 @@ describe('FileService environment configuration', () => {
         `local://${key}`,
       );
       await expect(service.getFile(key)).resolves.toEqual(file.buffer);
+      const stream = await service.getFileStream(key);
+      const chunks = [];
+      for await (const chunk of stream) chunks.push(chunk);
+      expect(Buffer.concat(chunks)).toEqual(file.buffer);
     } finally {
       await service.deleteFile(key);
     }

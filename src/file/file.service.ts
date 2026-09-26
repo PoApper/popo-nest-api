@@ -171,6 +171,20 @@ export class FileService {
     });
   }
 
+  async getFileStream(key: string): Promise<Readable> {
+    if (!this.checkS3Enabled('getFileStream')) {
+      const file = await fs.promises.open(this.localPathOf(key), 'r');
+      return file.createReadStream();
+    }
+    const response = await this.s3.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
+    if (!(response.Body instanceof Readable)) {
+      throw new Error('S3 returned no readable file body');
+    }
+    return response.Body;
+  }
+
   async uploadText(key: string, text: string) {
     if (!this.checkS3Enabled('uploadText')) {
       return `local://${key}`;

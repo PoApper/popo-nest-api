@@ -24,6 +24,8 @@ import { Roles } from 'src/auth/authroization/roles.decorator';
 import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { UserType } from 'src/popo/user/user.meta';
 import { Public } from 'src/common/public-guard.decorator';
+import { pipeline } from 'stream/promises';
+import { ReportDownloadGuard } from './report-download.guard';
 
 const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
   pdf: 'application/pdf',
@@ -68,9 +70,15 @@ export class ActivityReportController {
    */
   @Public()
   @Get(':id/file')
+  @UseGuards(ReportDownloadGuard)
   async downloadFile(@Param('id') id: string, @Res() res: Response) {
-    const { buffer, fileName, fileType } =
-      await this.reportService.getFileBuffer(id);
+    const { stream, fileName, fileType } =
+      await this.reportService.getFileStream(id);
+
+    if (res.destroyed) {
+      stream.destroy();
+      return;
+    }
 
     res.setHeader(
       'Content-Type',
@@ -81,7 +89,12 @@ export class ActivityReportController {
       'Content-Disposition',
       `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`,
     );
-    res.send(buffer);
+    // pipeline propagates backpressure and destroys the source on disconnect/error.
+    try {
+      await pipeline(stream, res);
+    } catch (error) {
+      if (!res.destroyed) throw error;
+    }
   }
 
   @ApiCookieAuth()

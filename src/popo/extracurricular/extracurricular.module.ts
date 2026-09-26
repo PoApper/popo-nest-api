@@ -8,14 +8,22 @@ import { ActivityService } from './activity/activity.service';
 import { ActivityController } from './activity/activity.controller';
 import { ActivityReportService } from './report/activity-report.service';
 import { ActivityReportController } from './report/activity-report.controller';
+import { ReportFileDeletion } from './report/report-file-deletion.entity';
+import { ReportFileCleanupService } from './report/report-file-cleanup.service';
+import { ReportDownloadGuard } from './report/report-download.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Activity, ActivityReport]),
+    TypeOrmModule.forFeature([Activity, ActivityReport, ReportFileDeletion]),
     NestjsFormDataModule,
     FileModule,
   ],
-  providers: [ActivityService, ActivityReportService],
+  providers: [
+    ActivityService,
+    ActivityReportService,
+    ReportFileCleanupService,
+    ReportDownloadGuard,
+  ],
   controllers: [ActivityController, ActivityReportController],
   exports: [ActivityService, ActivityReportService],
 })
