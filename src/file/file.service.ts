@@ -200,7 +200,11 @@ export class FileService {
     return `${this.PopoCdnUrl}/${key}`;
   }
 
-  async uploadFile(key: string, file: MemoryStoredFile) {
+  async uploadFile(
+    key: string,
+    file: MemoryStoredFile,
+    headers?: { contentType: string; contentDisposition: string },
+  ) {
     if (!this.checkS3Enabled('uploadFile')) {
       const localPath = this.localPathOf(key);
       await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
@@ -213,7 +217,8 @@ export class FileService {
         Bucket: this.bucket,
         Key: key,
         Body: file.buffer,
-        ContentType: file.mimetype,
+        ContentType: headers?.contentType ?? file.mimetype,
+        ContentDisposition: headers?.contentDisposition,
       }),
     );
     return `${this.PopoCdnUrl}/${key}`;

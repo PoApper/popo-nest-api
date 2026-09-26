@@ -26,14 +26,7 @@ import { UserType } from 'src/popo/user/user.meta';
 import { Public } from 'src/common/public-guard.decorator';
 import { pipeline } from 'stream/promises';
 import { ReportDownloadGuard } from './report-download.guard';
-
-const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
-  pdf: 'application/pdf',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  doc: 'application/msword',
-  hwpx: 'application/hwp+zip',
-  hwp: 'application/x-hwp',
-};
+import { REPORT_CONTENT_TYPES } from './report-file-format';
 
 @ApiTags('Extracurricular Activity Report')
 @Controller('activity-report')
@@ -82,8 +75,9 @@ export class ActivityReportController {
 
     res.setHeader(
       'Content-Type',
-      CONTENT_TYPE_BY_EXTENSION[fileType] ?? 'application/octet-stream',
+      REPORT_CONTENT_TYPES[fileType] ?? 'application/octet-stream',
     );
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     // 브라우저 내장 뷰어로 열 수 있도록 inline 으로 준다.
     res.setHeader(
       'Content-Disposition',

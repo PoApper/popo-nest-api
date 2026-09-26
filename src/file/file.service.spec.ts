@@ -1,8 +1,9 @@
 import { FileService } from './file.service';
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { randomUUID } from 'crypto';
-import { S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
+import { reportPdf } from '../popo/extracurricular/report/report-file.fixtures';
 
 describe('FileService environment configuration', () => {
   const previous = { ...process.env };
@@ -71,6 +72,32 @@ describe('FileService environment configuration', () => {
       await service.deleteFile(key);
     }
     await expect(service.getFile(key)).resolves.toEqual(Buffer.from(''));
+  });
+
+  it('sends server-provided document metadata to S3 instead of multipart MIME', async () => {
+    process.env.NODE_ENV = 'prod';
+    process.env.S3_REGION = 'ap-northeast-2';
+    process.env.S3_BUCKET_NAME = 'reports';
+    const send = jest
+      .spyOn(S3Client.prototype, 'send')
+      .mockImplementation(async () => ({}));
+    try {
+      const file = Object.assign(new MemoryStoredFile(), {
+        buffer: reportPdf,
+        busBoyMimeType: 'text/html',
+      });
+      await new FileService().uploadFile('activity-report/id/file', file, {
+        contentType: 'application/pdf',
+        contentDisposition: 'attachment',
+      });
+      const command = send.mock.calls[0][0] as PutObjectCommand;
+      expect(command.input).toMatchObject({
+        ContentType: 'application/pdf',
+        ContentDisposition: 'attachment',
+      });
+    } finally {
+      send.mockRestore();
+    }
   });
 
   it('rejects traversal including a sibling with the uploads prefix', async () => {

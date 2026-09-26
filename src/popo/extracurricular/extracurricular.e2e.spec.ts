@@ -11,11 +11,13 @@ import { UserType } from '../user/user.meta';
 import { Readable } from 'stream';
 import { ReportFileDeletion } from './report/report-file-deletion.entity';
 import { ReportFileCleanupService } from './report/report-file-cleanup.service';
+import { reportPdf } from './report/report-file.fixtures';
 
 describe('Extracurricular CRUD', () => {
   let app: INestApplication;
   let dataSource: DataSource;
   const objects = new Map<string, Buffer>();
+  const document = reportPdf;
   const files = {
     uploadFile: jest.fn(async (key, file) => {
       objects.set(key, file.buffer);
@@ -86,7 +88,7 @@ describe('Extracurricular CRUD', () => {
       .field('grade', '3')
       .field('major', 'CSE')
       .field('author', 'Student')
-      .attach('file', Buffer.from('document'), 'report.pdf');
+      .attach('file', document, 'report.pdf');
 
   it('creates, filters, reads, updates and deletes activities', async () => {
     const created = await createActivity().expect(201);
@@ -134,7 +136,8 @@ describe('Extracurricular CRUD', () => {
       .get(`/activity-report/${report.uuid}/file`)
       .expect('Content-Type', /application\/pdf/)
       .expect(200)
-      .expect(({ body }) => expect(body).toEqual(Buffer.from('document')));
+      .expect('X-Content-Type-Options', 'nosniff')
+      .expect(({ body }) => expect(body).toEqual(document));
     await request(app.getHttpServer())
       .patch(`/activity-report/${report.uuid}`)
       .set('x-test-role', UserType.staff)
@@ -144,7 +147,7 @@ describe('Extracurricular CRUD', () => {
     const replacement = await request(app.getHttpServer())
       .patch(`/activity-report/${report.uuid}`)
       .set('x-test-role', UserType.staff)
-      .attach('file', Buffer.from('replacement'), 'report.pdf')
+      .attach('file', document, 'report.pdf')
       .expect(200);
     expect(replacement.body.fileKey).not.toBe(report.fileKey);
     expect(objects.has(report.fileKey)).toBe(false);
@@ -171,6 +174,81 @@ describe('Extracurricular CRUD', () => {
     expect(objects.size).toBe(0);
     expect(await dataSource.getRepository(ActivityReport).count()).toBe(0);
   });
+
+  it('accepts a 20 MiB document and rejects files above the documented limit', async () => {
+    const { body: parent } = await createActivity();
+    const { body: report } = await createReport(parent.uuid).expect(201);
+    const maximum = Buffer.alloc(20 * 1024 * 1024, ' ');
+    document.copy(maximum);
+    await request(app.getHttpServer())
+      .patch(`/activity-report/${report.uuid}`)
+      .set('x-test-role', UserType.staff)
+      .attach('file', maximum, 'report.pdf')
+      .expect(200);
+    const uploads = files.uploadFile.mock.calls.length;
+    await request(app.getHttpServer())
+      .patch(`/activity-report/${report.uuid}`)
+      .set('x-test-role', UserType.staff)
+      .attach('file', Buffer.concat([maximum, Buffer.from(' ')]), 'report.pdf')
+      .expect(400);
+    expect(files.uploadFile).toHaveBeenCalledTimes(uploads);
+  });
+
+  it.each([
+    ['report.html', '<html><script>alert(1)</script></html>'],
+    ['report.svg', '<svg onload="alert(1)"></svg>'],
+    ['report.pdf', '<html><script>alert(1)</script></html>'],
+  ])('rejects active content uploaded as %s', async (filename, content) => {
+    const { body: parent } = await createActivity();
+    const { body: report } = await createReport(parent.uuid).expect(201);
+    files.uploadFile.mockClear();
+    await request(app.getHttpServer())
+      .patch(`/activity-report/${report.uuid}`)
+      .set('x-test-role', UserType.staff)
+      .attach('file', Buffer.from(content), {
+        filename,
+        contentType: 'text/html',
+      })
+      .expect(400);
+    expect(files.uploadFile).not.toHaveBeenCalled();
+    expect(objects.has(report.fileKey)).toBe(true);
+  });
+
+  it.each(['INSERT', 'UPDATE'])(
+    'retries orphan cleanup after a report %s failure and storage outage',
+    async (operation) => {
+      const { body: parent } = await createActivity();
+      const { body: report } = await createReport(parent.uuid).expect(201);
+      await dataSource.query(
+        `CREATE TRIGGER reject_report_write BEFORE ${operation} ON activity_report BEGIN SELECT RAISE(ABORT, 'write rejected'); END`,
+      );
+      files.deleteFile.mockRejectedValueOnce(new Error('storage unavailable'));
+      try {
+        const action =
+          operation === 'INSERT'
+            ? createReport(parent.uuid)
+            : request(app.getHttpServer())
+                .patch(`/activity-report/${report.uuid}`)
+                .set('x-test-role', UserType.staff)
+                .attach('file', document, 'report.pdf');
+        await action.expect(500);
+        const pending = await dataSource
+          .getRepository(ReportFileDeletion)
+          .find();
+        expect(pending).toHaveLength(1);
+        expect(pending[0].fileKey).not.toBe(report.fileKey);
+        expect(objects.size).toBe(2);
+        await app.get(ReportFileCleanupService).retry();
+        expect(objects.size).toBe(1);
+        expect(objects.has(report.fileKey)).toBe(true);
+        expect(await dataSource.getRepository(ReportFileDeletion).count()).toBe(
+          0,
+        );
+      } finally {
+        await dataSource.query('DROP TRIGGER reject_report_write');
+      }
+    },
+  );
 
   it('keeps a durable cleanup key when storage deletion fails and retries it', async () => {
     const { body: parent } = await createActivity();

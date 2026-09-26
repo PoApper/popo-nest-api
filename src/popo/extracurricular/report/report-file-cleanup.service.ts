@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FileService } from '../../../file/file.service';
 import { ReportFileDeletion } from './report-file-deletion.entity';
+import { lockReportFileDeletion } from './lock-report-file-deletion';
 
 @Injectable()
 export class ReportFileCleanupService {
@@ -31,8 +32,19 @@ export class ReportFileCleanupService {
             { fileKey: deletion.fileKey },
             { lastAttemptAt: Date.now() },
           );
-          await this.files.deleteFile(deletion.fileKey);
-          await this.deletions.delete({ fileKey: deletion.fileKey });
+          await this.deletions.manager.transaction(async (manager) => {
+            const pending = await lockReportFileDeletion(
+              manager,
+              deletion.fileKey,
+            );
+            // Uploaders remove the intent in the same transaction that attaches
+            // the file. Waiting for their lock must never delete a live object.
+            if (!pending) return;
+            await this.files.deleteFile(pending.fileKey);
+            await manager.delete(ReportFileDeletion, {
+              fileKey: pending.fileKey,
+            });
+          });
         } catch (error) {
           this.logger.error(
             `File cleanup will retry: ${deletion.fileKey}`,

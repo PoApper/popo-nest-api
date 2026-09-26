@@ -1,11 +1,10 @@
 import {
   ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { randomUUID } from 'crypto';
 
@@ -19,6 +18,8 @@ import { Activity } from '../activity/activity.entity';
 import { lockActivity } from '../activity/lock-activity';
 import { ReportFileDeletion } from './report-file-deletion.entity';
 import { ReportFileCleanupService } from './report-file-cleanup.service';
+import { reportContentType } from './report-file-format';
+import { lockReportFileDeletion } from './lock-report-file-deletion';
 
 /**
  * multipart 파일명 인코딩 보정.
@@ -53,8 +54,6 @@ export const baseNameOf = (fileName: string) => {
 
 @Injectable()
 export class ActivityReportService {
-  private readonly logger = new Logger(ActivityReportService.name);
-
   constructor(
     @InjectRepository(ActivityReport)
     private readonly reportRepository: Repository<ActivityReport>,
@@ -90,19 +89,21 @@ export class ActivityReportService {
   async create(dto: CreateActivityReportDto): Promise<ActivityReport> {
     const report = this.reportRepository.create(this.metadataOf(dto));
 
-    if (dto.file) {
-      Object.assign(report, await this.storeFile(dto.activityId, dto.file));
-    }
+    const upload = await this.prepareUpload(dto.activityId, dto.file);
 
     try {
       return await this.reportRepository.manager.transaction(
         async (manager) => {
           await lockActivity(manager, dto.activityId);
+          if (upload)
+            Object.assign(report, await this.storeFile(manager, upload));
           return manager.getRepository(ActivityReport).save(report);
         },
       );
     } catch (error) {
-      if (report.fileKey) await this.cleanupFile(report.fileKey);
+      // The intent was committed before uploading, and survives this rollback.
+      // Only the worker may delete the object after locking that intent.
+      await this.fileCleanup.retry();
       throw error;
     }
   }
@@ -115,12 +116,10 @@ export class ActivityReportService {
     const { file } = dto;
     const patch = this.metadataOf(dto);
 
-    if (file) {
-      Object.assign(
-        patch,
-        await this.storeFile(dto.activityId ?? existing.activityId, file),
-      );
-    }
+    const upload = await this.prepareUpload(
+      dto.activityId ?? existing.activityId,
+      file,
+    );
 
     try {
       await this.reportRepository.manager.transaction(async (manager) => {
@@ -141,6 +140,7 @@ export class ActivityReportService {
             '수기가 변경되었습니다. 다시 시도해주세요.',
           );
         }
+        if (upload) Object.assign(patch, await this.storeFile(manager, upload));
         if (Object.keys(patch).length) await repository.update({ uuid }, patch);
         if (patch.fileKey && current.fileKey) {
           await manager.insert(ReportFileDeletion, {
@@ -149,8 +149,7 @@ export class ActivityReportService {
         }
       });
     } catch (error) {
-      // DB가 새 파일을 참조하기 전에는 기존 파일을 삭제하지 않는다.
-      if (patch.fileKey) await this.cleanupFile(patch.fileKey);
+      await this.fileCleanup.retry();
       throw error;
     }
     await this.fileCleanup.retry();
@@ -172,18 +171,6 @@ export class ActivityReportService {
       if (dto[field] !== undefined) patch[field] = dto[field];
     }
     return patch;
-  }
-
-  private async cleanupFile(key: string): Promise<void> {
-    try {
-      await this.fileService.deleteFile(key);
-    } catch (error) {
-      // 저장소와 DB는 단일 트랜잭션에 참여하지 않으므로 정리 실패를 기록한다.
-      this.logger.error(
-        `Failed to clean up activity report file: ${key}`,
-        error,
-      );
-    }
   }
 
   async removeForActivity(activityId: string): Promise<void> {
@@ -218,11 +205,35 @@ export class ActivityReportService {
     await this.fileCleanup.retry();
   }
 
-  /** 원본 문서를 저장하고 엔티티에 채울 파일 관련 필드를 돌려준다. */
-  private async storeFile(activityId: string, file: MemoryStoredFile) {
+  private async prepareUpload(activityId: string, file?: MemoryStoredFile) {
+    if (!file) return undefined;
     const fileName = decodeFileName(file.originalName);
+    const contentType = reportContentType(fileName, file.buffer);
     const key = `activity-report/${activityId}/${randomUUID()}`;
-    const fileUrl = await this.fileService.uploadFile(key, file);
+    // Persist before storage I/O: even a DB outage or process crash after PUT
+    // cannot lose the compensating deletion. No intent means no upload.
+    await this.reportRepository.manager.insert(ReportFileDeletion, {
+      fileKey: key,
+    });
+    return { key, file, fileName, contentType };
+  }
+
+  /** Lock the committed intent until report persistence and its removal commit. */
+  private async storeFile(
+    manager: EntityManager,
+    upload: Awaited<ReturnType<ActivityReportService['prepareUpload']>>,
+  ) {
+    const { key, file, fileName, contentType } = upload;
+    const intent = await lockReportFileDeletion(manager, key);
+    if (!intent) {
+      // A worker may have claimed the intent before this transaction began.
+      throw new ConflictException('파일 업로드를 다시 시도해주세요.');
+    }
+    const fileUrl = await this.fileService.uploadFile(key, file, {
+      contentType,
+      contentDisposition: `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+    });
+    await manager.delete(ReportFileDeletion, { fileKey: key });
 
     return {
       fileName,
