@@ -22,9 +22,11 @@ export class FileService {
   private readonly bucket: string | null;
   private readonly PopoCdnUrl: string | null;
   private readonly isS3Enabled: boolean;
+  private readonly isLocalStorageEnabled: boolean;
 
   constructor() {
     const isLocal = !process.env.NODE_ENV || process.env.NODE_ENV === 'local';
+    this.isLocalStorageEnabled = isLocal;
 
     // 로컬 환경: AWS 자격 증명 필요
     // dev/prod 환경: IAM 역할 사용 (자격 증명 불필요)
@@ -35,6 +37,12 @@ export class FileService {
     // S3 설정 확인
     this.isS3Enabled =
       hasCredentials && !!process.env.S3_REGION && !!process.env.S3_BUCKET_NAME;
+
+    if (!this.isS3Enabled && !isLocal && process.env.NODE_ENV !== 'test') {
+      throw new Error(
+        'S3_REGION and S3_BUCKET_NAME are required outside local/test environments.',
+      );
+    }
 
     if (this.isS3Enabled) {
       this.s3 = new S3Client({
@@ -126,8 +134,19 @@ export class FileService {
 
   /** 로컬 폴백 저장 경로. 키에 상위 경로 탈출이 섞이지 않도록 정규화한다. */
   private localPathOf(key: string) {
+    if (!this.isLocalStorageEnabled) {
+      throw new Error(
+        'Local file storage is only available in the local environment.',
+      );
+    }
     const resolved = path.resolve(LOCAL_UPLOAD_DIR, key);
-    if (!resolved.startsWith(LOCAL_UPLOAD_DIR)) {
+    const relative = path.relative(LOCAL_UPLOAD_DIR, resolved);
+    if (
+      !relative ||
+      relative === '..' ||
+      relative.startsWith(`..${path.sep}`) ||
+      path.isAbsolute(relative)
+    ) {
       throw new Error(`Invalid file key: ${key}`);
     }
     return resolved;

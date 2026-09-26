@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Activity } from './activity.entity';
 import { CreateActivityDto, UpdateActivityDto } from './activity.dto';
+import { ActivityReportService } from '../report/activity-report.service';
 
 @Injectable()
 export class ActivityService {
   constructor(
     @InjectRepository(Activity)
     private readonly activityRepository: Repository<Activity>,
+    private readonly reportService: ActivityReportService,
   ) {}
 
   async findAll(category?: string): Promise<Activity[]> {
@@ -36,6 +38,7 @@ export class ActivityService {
   }
 
   async remove(uuid: string): Promise<void> {
+    await this.reportService.removeForActivity(uuid);
     await this.activityRepository.delete({ uuid });
   }
 }

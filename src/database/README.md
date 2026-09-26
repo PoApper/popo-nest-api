@@ -31,6 +31,22 @@ $ npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration
 ...
 ```
 
+## 비교과활동 / 활동 수기 테이블 (2026-09-26)
+
+- dev: `migrations/dev/1790380800000-popo-add-extracurricular-09-26.ts`
+- prod: `migrations/prod/1790380800001-popo-add-extracurricular-09-26.ts`
+
+각 환경의 DataSource로 위 `migration:run` 명령을 실행합니다. `activity`와
+`activity_report`만 생성하며 기존 테이블은 변경하지 않습니다. UUID는 기존
+마이그레이션과 같이 `varchar(36)`을 사용합니다. 롤백은 수기 테이블을 먼저 삭제한
+후 활동 테이블을 삭제하므로, 이미 등록된 활동과 수기가 있다면 롤백 전 백업이 필요합니다.
+두 환경의 생성/삭제 SQL은 격리된 MariaDB 10.11에서 검증했습니다.
+
+배포 환경에서는 `S3_REGION`과 `S3_BUCKET_NAME`이 필수이며 누락되면 시작에
+실패합니다. 로컬 디스크 파일 저장은 `NODE_ENV=local` 또는 `NODE_ENV`가 없는
+로컬 실행에서만 허용됩니다. `NODE_ENV=test`에서는 S3 없이 시작할 수 있지만
+로컬 파일 저장은 허용하지 않으므로 테스트에서 `FileService`를 대체합니다.
+
 ## 주의사항
 
 0. [Paxi](https://github.com/PoApper/paxi-popo-nest-api) 프로젝트에서도 같은 DB에 마이그레이션을 생성할 수 있으므로 마이그레이션 적용 시 주의가 필요합니다.

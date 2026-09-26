@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MemoryStoredFile } from 'nestjs-form-data';
-import * as moment from 'moment';
+import { randomUUID } from 'crypto';
 
 import { ActivityReport } from './activity-report.entity';
 import {
@@ -44,6 +44,8 @@ export const baseNameOf = (fileName: string) => {
 
 @Injectable()
 export class ActivityReportService {
+  private readonly logger = new Logger(ActivityReportService.name);
+
   constructor(
     @InjectRepository(ActivityReport)
     private readonly reportRepository: Repository<ActivityReport>,
@@ -76,14 +78,18 @@ export class ActivityReportService {
   }
 
   async create(dto: CreateActivityReportDto): Promise<ActivityReport> {
-    const { file, ...rest } = dto;
-    const report = this.reportRepository.create(rest);
+    const report = this.reportRepository.create(this.metadataOf(dto));
 
-    if (file) {
-      Object.assign(report, await this.storeFile(dto.activityId, file));
+    if (dto.file) {
+      Object.assign(report, await this.storeFile(dto.activityId, dto.file));
     }
 
-    return this.reportRepository.save(report);
+    try {
+      return await this.reportRepository.save(report);
+    } catch (error) {
+      if (report.fileKey) await this.cleanupFile(report.fileKey);
+      throw error;
+    }
   }
 
   async update(
@@ -91,32 +97,69 @@ export class ActivityReportService {
     dto: UpdateActivityReportDto,
   ): Promise<ActivityReport | null> {
     const existing = await this.findOneOrFail(uuid);
-    const { file, ...rest } = dto;
-
-    // undefined 인 필드는 건드리지 않는다. multipart 는 보낸 필드만 채워온다.
-    const patch: Partial<ActivityReport> = {};
-    for (const [key, value] of Object.entries(rest)) {
-      if (value !== undefined) patch[key] = value;
-    }
+    const { file } = dto;
+    const patch = this.metadataOf(dto);
 
     if (file) {
       Object.assign(
         patch,
         await this.storeFile(dto.activityId ?? existing.activityId, file),
       );
-      if (existing.fileKey) {
-        await this.fileService.deleteFile(existing.fileKey).catch(() => null);
-      }
     }
 
-    await this.reportRepository.update({ uuid }, patch);
+    try {
+      if (Object.keys(patch).length) {
+        await this.reportRepository.update({ uuid }, patch);
+      }
+    } catch (error) {
+      // DB가 새 파일을 참조하기 전에는 기존 파일을 삭제하지 않는다.
+      if (patch.fileKey) await this.cleanupFile(patch.fileKey);
+      throw error;
+    }
+    if (patch.fileKey && existing.fileKey) {
+      await this.cleanupFile(existing.fileKey);
+    }
     return this.findOne(uuid);
+  }
+
+  private metadataOf(dto: UpdateActivityReportDto): Partial<ActivityReport> {
+    const patch: Partial<ActivityReport> = {};
+    const fields = [
+      'activityId',
+      'title',
+      'period',
+      'grade',
+      'major',
+      'author',
+      'memo',
+    ] as const;
+    for (const field of fields) {
+      if (dto[field] !== undefined) patch[field] = dto[field];
+    }
+    return patch;
+  }
+
+  private async cleanupFile(key: string): Promise<void> {
+    try {
+      await this.fileService.deleteFile(key);
+    } catch (error) {
+      // 저장소와 DB는 단일 트랜잭션에 참여하지 않으므로 정리 실패를 기록한다.
+      this.logger.error(
+        `Failed to clean up activity report file: ${key}`,
+        error,
+      );
+    }
+  }
+
+  async removeForActivity(activityId: string): Promise<void> {
+    const reports = await this.findAll({ activityId });
+    for (const report of reports) await this.remove(report.uuid);
   }
 
   async remove(uuid: string): Promise<void> {
     const existing = await this.findOne(uuid);
     if (existing?.fileKey) {
-      await this.fileService.deleteFile(existing.fileKey).catch(() => null);
+      await this.fileService.deleteFile(existing.fileKey);
     }
     await this.reportRepository.delete({ uuid });
   }
@@ -124,9 +167,7 @@ export class ActivityReportService {
   /** 원본 문서를 저장하고 엔티티에 채울 파일 관련 필드를 돌려준다. */
   private async storeFile(activityId: string, file: MemoryStoredFile) {
     const fileName = decodeFileName(file.originalName);
-    const key = `activity-report/${activityId}/${moment().format(
-      'YYYY-MM-DD/HHmmss',
-    )}/${fileName}`;
+    const key = `activity-report/${activityId}/${randomUUID()}`;
     const fileUrl = await this.fileService.uploadFile(key, file);
 
     return {

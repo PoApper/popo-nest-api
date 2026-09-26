@@ -9,6 +9,8 @@ import {
   Query,
   Res,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
@@ -33,6 +35,13 @@ const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
 
 @ApiTags('Extracurricular Activity Report')
 @Controller('activity-report')
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+)
 export class ActivityReportController {
   constructor(private readonly reportService: ActivityReportService) {}
 

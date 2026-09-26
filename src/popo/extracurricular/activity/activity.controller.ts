@@ -8,6 +8,8 @@ import {
   Param,
   Query,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { ActivityService } from './activity.service';
@@ -19,6 +21,13 @@ import { Public } from 'src/common/public-guard.decorator';
 
 @ApiTags('Extracurricular Activity')
 @Controller('activity')
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+)
 export class ActivityController {
   constructor(private readonly activityService: ActivityService) {}
 
