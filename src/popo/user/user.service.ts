@@ -24,6 +24,10 @@ export class UserService {
     private readonly nicknameRepo: Repository<Nickname>,
   ) {}
 
+  register(dto: CreateUserDto) {
+    return this.save({ ...dto, userType: UserType.student });
+  }
+
   async save(dto: CreateUserDto) {
     const existUser = await this.userRepo.findOneBy({ email: dto.email });
 
@@ -134,7 +138,10 @@ export class UserService {
   async update(uuid: string, updateUserDto: UpdateUserDto) {
     const existUser = await this.findOneByUuidOrFail(uuid);
 
-    if (existUser.email != updateUserDto.email) {
+    if (
+      updateUserDto.email !== undefined &&
+      existUser.email !== updateUserDto.email
+    ) {
       const existEmailUser = await this.findOneByEmail(updateUserDto.email);
       if (existEmailUser) {
         throw new BadRequestException(Message.EXISTING_EMAIL);
@@ -149,6 +156,12 @@ export class UserService {
         name: updateUserDto.name,
         userType: updateUserDto.userType,
         userStatus: updateUserDto.userStatus,
+        ...((updateUserDto.userType !== undefined &&
+          updateUserDto.userType !== existUser.userType) ||
+        (updateUserDto.userStatus !== undefined &&
+          updateUserDto.userStatus !== existUser.userStatus)
+          ? { hashedRefreshToken: null, refreshTokenExpiresAt: null }
+          : {}),
       },
     );
   }

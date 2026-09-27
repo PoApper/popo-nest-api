@@ -6,8 +6,13 @@ import {
   SelectObjectContentCommand,
 } from '@aws-sdk/client-s3';
 import { Injectable, Logger } from '@nestjs/common';
-import { MemoryStoredFile } from 'nestjs-form-data';
+import { FileSystemStoredFile, MemoryStoredFile } from 'nestjs-form-data';
 import { Readable } from 'stream';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// S3가 비활성화된 로컬 환경의 업로드 디렉터리.
+const LOCAL_UPLOAD_DIR = path.resolve(process.cwd(), 'uploads');
 
 @Injectable()
 export class FileService {
@@ -16,9 +21,11 @@ export class FileService {
   private readonly bucket: string | null;
   private readonly PopoCdnUrl: string | null;
   private readonly isS3Enabled: boolean;
+  private readonly isLocalStorageEnabled: boolean;
 
   constructor() {
     const isLocal = !process.env.NODE_ENV || process.env.NODE_ENV === 'local';
+    this.isLocalStorageEnabled = isLocal;
 
     // 로컬 환경: AWS 자격 증명 필요
     // dev/prod 환경: IAM 역할 사용 (자격 증명 불필요)
@@ -29,6 +36,12 @@ export class FileService {
     // S3 설정 확인
     this.isS3Enabled =
       hasCredentials && !!process.env.S3_REGION && !!process.env.S3_BUCKET_NAME;
+
+    if (!this.isS3Enabled && !isLocal && process.env.NODE_ENV !== 'test') {
+      throw new Error(
+        'S3_REGION and S3_BUCKET_NAME are required outside local/test environments.',
+      );
+    }
 
     if (this.isS3Enabled) {
       this.s3 = new S3Client({
@@ -118,9 +131,32 @@ export class FileService {
     return res.Body.transformToString();
   }
 
+  /** 로컬 폴백 저장 경로. 키에 상위 경로 탈출이 섞이지 않도록 정규화한다. */
+  private localPathOf(key: string) {
+    if (!this.isLocalStorageEnabled) {
+      throw new Error(
+        'Local file storage is only available in the local environment.',
+      );
+    }
+    const resolved = path.resolve(LOCAL_UPLOAD_DIR, key);
+    const relative = path.relative(LOCAL_UPLOAD_DIR, resolved);
+    if (
+      !relative ||
+      relative === '..' ||
+      relative.startsWith(`..${path.sep}`) ||
+      path.isAbsolute(relative)
+    ) {
+      throw new Error(`Invalid file key: ${key}`);
+    }
+    return resolved;
+  }
+
   async getFile(key: string) {
     if (!this.checkS3Enabled('getFile')) {
-      return Buffer.from('');
+      const localPath = this.localPathOf(key);
+      return fs.existsSync(localPath)
+        ? fs.promises.readFile(localPath)
+        : Buffer.from('');
     }
 
     const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
@@ -132,6 +168,20 @@ export class FileService {
       stream.once('end', () => resolve(Buffer.concat(chunks)));
       stream.once('error', reject);
     });
+  }
+
+  async getFileStream(key: string): Promise<Readable> {
+    if (!this.checkS3Enabled('getFileStream')) {
+      const file = await fs.promises.open(this.localPathOf(key), 'r');
+      return file.createReadStream();
+    }
+    const response = await this.s3.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
+    if (!(response.Body instanceof Readable)) {
+      throw new Error('S3 returned no readable file body');
+    }
+    return response.Body;
   }
 
   async uploadText(key: string, text: string) {
@@ -149,25 +199,46 @@ export class FileService {
     return `${this.PopoCdnUrl}/${key}`;
   }
 
-  async uploadFile(key: string, file: MemoryStoredFile) {
+  async uploadFile(
+    key: string,
+    file: MemoryStoredFile | FileSystemStoredFile,
+    headers?: { contentType: string; contentDisposition: string },
+  ) {
     if (!this.checkS3Enabled('uploadFile')) {
+      const localPath = this.localPathOf(key);
+      await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
+      if (file instanceof FileSystemStoredFile) {
+        await fs.promises.copyFile(file.path, localPath);
+      } else {
+        await fs.promises.writeFile(localPath, file.buffer);
+      }
       return `local://${key}`;
     }
 
-    await this.s3.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: key,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      }),
-    );
+    const body =
+      file instanceof FileSystemStoredFile
+        ? fs.createReadStream(file.path)
+        : file.buffer;
+    try {
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+          Body: body,
+          ContentLength: file.size,
+          ContentType: headers?.contentType ?? file.mimetype,
+          ContentDisposition: headers?.contentDisposition,
+        }),
+      );
+    } finally {
+      if (body instanceof Readable) body.destroy();
+    }
     return `${this.PopoCdnUrl}/${key}`;
   }
 
   deleteFile(key: string) {
     if (!this.checkS3Enabled('deleteFile')) {
-      return Promise.resolve();
+      return fs.promises.rm(this.localPathOf(key), { force: true });
     }
 
     return this.s3.send(

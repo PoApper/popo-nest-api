@@ -12,6 +12,7 @@ import { UserModule } from './user/user.module';
 import { WhitebookModule } from './whitebook/whitebook.module';
 import { NoticeLikeModule } from './noticeLike/noticeLike.module';
 import { FavoritePlaceModule } from './favorite/place/place.favorite.module';
+import { ExtracurricularModule } from './extracurricular/extracurricular.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { FavoritePlaceModule } from './favorite/place/place.favorite.module';
     WhitebookModule,
     NoticeLikeModule,
     FavoritePlaceModule,
+    ExtracurricularModule,
   ],
   controllers: [],
   providers: [],

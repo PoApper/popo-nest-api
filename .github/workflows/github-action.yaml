@@ -153,7 +153,7 @@ jobs:
       - name: Check the deployed service URL
         uses: jtalk/url-health-check-action@v4
         with:
-          url: https://api.popo.poapper.club|https://api.popo-dev.poapper.club
+          url: https://api.popo.poapper.club|https://api.popo-dev.poapper.club|https://api.popo-dev.poapper.club/activity|https://api.popo-dev.poapper.club/activity-report
           follow-redirect: true
           max-attempts: 3
           retry-delay: 10s
