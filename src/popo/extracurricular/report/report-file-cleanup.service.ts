@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { LessThanOrEqual, Repository } from 'typeorm';
 import { FileService } from '../../../file/file.service';
 import { ReportFileDeletion } from './report-file-deletion.entity';
 import { lockReportFileDeletion } from './lock-report-file-deletion';
@@ -23,6 +23,7 @@ export class ReportFileCleanupService {
     this.running = true;
     try {
       for (const deletion of await this.reportFileDeletionRepo.find({
+        where: { cleanupAfter: LessThanOrEqual(Date.now()) },
         take: 100,
         order: { lastAttemptAt: 'ASC', fileKey: 'ASC' },
       })) {
@@ -40,7 +41,7 @@ export class ReportFileCleanupService {
               );
               // Uploaders remove the intent in the same transaction that attaches
               // the file. Waiting for their lock must never delete a live object.
-              if (!pending) return;
+              if (!pending || Number(pending.cleanupAfter) > Date.now()) return;
               await this.fileService.deleteFile(pending.fileKey);
               await manager.delete(ReportFileDeletion, {
                 fileKey: pending.fileKey,

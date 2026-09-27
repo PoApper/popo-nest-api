@@ -17,7 +17,6 @@ import { FileService } from '../../../file/file.service';
 import { Activity } from '../activity/activity.entity';
 import { lockActivity } from '../activity/lock-activity';
 import { ReportFileDeletion } from './report-file-deletion.entity';
-import { ReportFileCleanupService } from './report-file-cleanup.service';
 import {
   decodeFileName,
   extensionOf,
@@ -31,7 +30,6 @@ export class ActivityReportService {
     @InjectRepository(ActivityReport)
     private readonly activityReportRepo: Repository<ActivityReport>,
     private readonly fileService: FileService,
-    private readonly reportFileCleanupService: ReportFileCleanupService,
   ) {}
 
   async findAll(query?: {
@@ -67,21 +65,11 @@ export class ActivityReportService {
 
     const upload = await this.prepareUpload(dto.activityId, dto.file);
 
-    try {
-      return await this.activityReportRepo.manager.transaction(
-        async (manager) => {
-          await lockActivity(manager, dto.activityId);
-          if (upload)
-            Object.assign(report, await this.storeFile(manager, upload));
-          return manager.getRepository(ActivityReport).save(report);
-        },
-      );
-    } catch (error) {
-      // The intent was committed before uploading, and survives this rollback.
-      // Only the worker may delete the object after locking that intent.
-      await this.reportFileCleanupService.retry();
-      throw error;
-    }
+    return this.activityReportRepo.manager.transaction(async (manager) => {
+      await lockActivity(manager, dto.activityId);
+      if (upload) Object.assign(report, await this.storeFile(manager, upload));
+      return manager.getRepository(ActivityReport).save(report);
+    });
   }
 
   async update(
@@ -89,46 +77,36 @@ export class ActivityReportService {
     dto: UpdateActivityReportDto,
   ): Promise<ActivityReport | null> {
     const existing = await this.findOneOrFail(uuid);
-    const { file } = dto;
     const patch = this.metadataOf(dto);
-
     const upload = await this.prepareUpload(
       dto.activityId ?? existing.activityId,
-      file,
+      dto.file,
     );
 
-    try {
-      await this.activityReportRepo.manager.transaction(async (manager) => {
-        for (const activityId of [
-          ...new Set([
-            existing.activityId,
-            dto.activityId ?? existing.activityId,
-          ]),
-        ].sort()) {
-          await lockActivity(manager, activityId);
-        }
-        const repository = manager.getRepository(ActivityReport);
-        const current = await repository.findOneBy({ uuid });
-        if (!current)
-          throw new NotFoundException('존재하지 않는 활동 수기입니다.');
-        if (current.activityId !== existing.activityId) {
-          throw new ConflictException(
-            '수기가 변경되었습니다. 다시 시도해주세요.',
-          );
-        }
-        if (upload) Object.assign(patch, await this.storeFile(manager, upload));
-        if (Object.keys(patch).length) await repository.update({ uuid }, patch);
-        if (patch.fileKey && current.fileKey) {
-          await manager.insert(ReportFileDeletion, {
-            fileKey: current.fileKey,
-          });
-        }
-      });
-    } catch (error) {
-      await this.reportFileCleanupService.retry();
-      throw error;
-    }
-    await this.reportFileCleanupService.retry();
+    await this.activityReportRepo.manager.transaction(async (manager) => {
+      for (const activityId of [
+        ...new Set([
+          existing.activityId,
+          dto.activityId ?? existing.activityId,
+        ]),
+      ].sort()) {
+        await lockActivity(manager, activityId);
+      }
+      const repository = manager.getRepository(ActivityReport);
+      const current = await repository.findOneBy({ uuid });
+      if (!current)
+        throw new NotFoundException('존재하지 않는 활동 수기입니다.');
+      if (current.activityId !== existing.activityId) {
+        throw new ConflictException(
+          '수기가 변경되었습니다. 다시 시도해주세요.',
+        );
+      }
+      if (upload) Object.assign(patch, await this.storeFile(manager, upload));
+      if (Object.keys(patch).length) await repository.update({ uuid }, patch);
+      if (patch.fileKey && current.fileKey) {
+        await manager.insert(ReportFileDeletion, { fileKey: current.fileKey });
+      }
+    });
     return this.findOne(uuid);
   }
 
@@ -159,7 +137,6 @@ export class ActivityReportService {
       }
       await manager.delete(Activity, { uuid: activityId });
     });
-    await this.reportFileCleanupService.retry();
   }
 
   async remove(uuid: string): Promise<void> {
@@ -178,7 +155,6 @@ export class ActivityReportService {
         await manager.insert(ReportFileDeletion, { fileKey: report.fileKey });
       await manager.delete(ActivityReport, { uuid });
     });
-    await this.reportFileCleanupService.retry();
   }
 
   private async prepareUpload(activityId: string, file?: MemoryStoredFile) {
@@ -186,10 +162,12 @@ export class ActivityReportService {
     const fileName = decodeFileName(file.originalName);
     const contentType = reportContentType(fileName, file.buffer);
     const key = `activity-report/${activityId}/${randomUUID()}`;
-    // Persist before storage I/O: even a DB outage or process crash after PUT
-    // cannot lose the compensating deletion. No intent means no upload.
+    // Persist before storage I/O so crashes cannot lose orphan cleanup. Reserve
+    // time to acquire the intent lock before making it visible to the worker.
+    // Once locked, even an upload past this deadline is protected until commit.
     await this.activityReportRepo.manager.insert(ReportFileDeletion, {
       fileKey: key,
+      cleanupAfter: Date.now() + 15 * 60_000,
     });
     return { key, file, fileName, contentType };
   }
@@ -202,7 +180,8 @@ export class ActivityReportService {
     const { key, file, fileName, contentType } = upload;
     const intent = await lockReportFileDeletion(manager, key);
     if (!intent) {
-      // A worker may have claimed the intent before this transaction began.
+      // The reservation expired and a worker already claimed it. Never PUT
+      // without a durable intent; orphaned uploads are collected by the scheduler.
       throw new ConflictException('파일 업로드를 다시 시도해주세요.');
     }
     const fileUrl = await this.fileService.uploadFile(key, file, {

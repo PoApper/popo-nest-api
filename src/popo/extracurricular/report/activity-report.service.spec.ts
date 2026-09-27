@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { EntityManager, FindOperator, Repository } from 'typeorm';
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { ActivityReportService } from './activity-report.service';
 import { ActivityReport } from './activity-report.entity';
@@ -33,9 +33,17 @@ describe('ActivityReportService storage consistency', () => {
   };
   let files: { uploadFile: jest.Mock; deleteFile: jest.Mock };
   let service: ActivityReportService;
-  let pending: Set<string>;
+  let pending: Map<string, ReportFileDeletion>;
+  let cleanup: ReportFileCleanupService;
+  let now: jest.SpyInstance;
+  const retryExpired = async () => {
+    now.mockReturnValue(Date.now() + 16 * 60_000);
+    await cleanup.retry();
+  };
+  afterEach(() => now.mockRestore());
   beforeEach(() => {
-    pending = new Set();
+    now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
+    pending = new Map();
     repository = {
       create: jest.fn((dto) => ({ ...dto })),
       save: jest.fn(async (dto) => dto),
@@ -58,11 +66,18 @@ describe('ActivityReportService storage consistency', () => {
       connection: { options: { type: 'mariadb' } },
       createQueryBuilder: jest.fn(() => builder),
       findOneBy: jest.fn().mockResolvedValue(existing),
-      findOne: jest.fn(async (_entity, options) =>
-        pending.has(options.where.fileKey) ? options.where : null,
+      findBy: jest.fn().mockResolvedValue([existing]),
+      findOne: jest.fn(
+        async (_entity, options) => pending.get(options.where.fileKey) ?? null,
       ),
       getRepository: jest.fn(() => repository),
-      insert: jest.fn(async (_entity, value) => pending.add(value.fileKey)),
+      insert: jest.fn(async (_entity, value) =>
+        pending.set(value.fileKey, {
+          cleanupAfter: 0,
+          lastAttemptAt: 0,
+          ...value,
+        }),
+      ),
       delete: jest.fn(async (entity, criteria) =>
         entity === ReportFileDeletion
           ? pending.delete(criteria.fileKey)
@@ -71,7 +86,7 @@ describe('ActivityReportService storage consistency', () => {
       transaction: undefined,
     };
     manager.transaction = jest.fn(async (callback) => {
-      const before = new Set(pending);
+      const before = new Map(pending);
       try {
         return await callback(manager);
       } catch (error) {
@@ -80,22 +95,25 @@ describe('ActivityReportService storage consistency', () => {
       }
     });
     repository.manager = manager as unknown as Record<string, jest.Mock>;
-    const cleanup = {
-      retry: jest.fn(async () => {
-        for (const key of pending) {
-          try {
-            await files.deleteFile(key);
-            pending.delete(key);
-          } catch {
-            // The real worker retains failed intents for the next retry.
-          }
-        }
-      }),
-    };
+    cleanup = new ReportFileCleanupService(
+      {
+        find: jest.fn(
+          async (options: { where: { cleanupAfter: FindOperator<number> } }) =>
+            [...pending.values()].filter(
+              (value) => value.cleanupAfter <= options.where.cleanupAfter.value,
+            ),
+        ),
+        update: jest.fn(async ({ fileKey }, patch) => {
+          const intent = pending.get(fileKey);
+          if (intent) Object.assign(intent, patch);
+        }),
+        manager: manager as unknown as EntityManager,
+      } as unknown as Repository<ReportFileDeletion>,
+      files as unknown as FileService,
+    );
     service = new ActivityReportService(
       repository as unknown as Repository<ActivityReport>,
       files as unknown as FileService,
-      cleanup as unknown as ReportFileCleanupService,
     );
   });
 
@@ -127,11 +145,13 @@ describe('ActivityReportService storage consistency', () => {
     );
   });
 
-  it('removes a newly uploaded file and preserves the old one if DB update fails', async () => {
+  it('queues a newly uploaded file and preserves the old one if DB update fails', async () => {
     const error = new Error('database unavailable');
     repository.update.mockRejectedValue(error);
     await expect(service.update('report', { file })).rejects.toBe(error);
     const newKey = files.uploadFile.mock.calls[0][0];
+    expect(files.deleteFile).not.toHaveBeenCalled();
+    await retryExpired();
     expect(files.deleteFile).toHaveBeenCalledTimes(1);
     expect(files.deleteFile).toHaveBeenCalledWith(newKey);
     expect(files.deleteFile).not.toHaveBeenCalledWith('old-key');
@@ -150,6 +170,8 @@ describe('ActivityReportService storage consistency', () => {
         file,
       }),
     ).rejects.toThrow('insert failed');
+    expect(files.deleteFile).not.toHaveBeenCalled();
+    await retryExpired();
     expect(files.deleteFile).toHaveBeenCalledWith(
       files.uploadFile.mock.calls[0][0],
     );
@@ -160,6 +182,8 @@ describe('ActivityReportService storage consistency', () => {
       expect(files.deleteFile).not.toHaveBeenCalled();
     });
     await service.update('report', { file });
+    expect(files.deleteFile).not.toHaveBeenCalled();
+    await cleanup.retry();
     expect(files.deleteFile).toHaveBeenCalledWith('old-key');
   });
 
@@ -169,6 +193,8 @@ describe('ActivityReportService storage consistency', () => {
       'upload failed',
     );
     expect(repository.update).not.toHaveBeenCalled();
+    expect(pending.size).toBe(1);
+    await retryExpired();
     expect(pending.size).toBe(0);
   });
 
@@ -184,7 +210,8 @@ describe('ActivityReportService storage consistency', () => {
           ? service.create(dto)
           : service.update('report', dto),
       ).rejects.toThrow('database unavailable');
-      expect(pending).toEqual(new Set([files.uploadFile.mock.calls[0][0]]));
+      await retryExpired();
+      expect([...pending.keys()]).toEqual([files.uploadFile.mock.calls[0][0]]);
       expect(pending.has('old-key')).toBe(false);
     },
   );
@@ -204,6 +231,71 @@ describe('ActivityReportService storage consistency', () => {
     );
     expect(files.uploadFile).not.toHaveBeenCalled();
   });
+
+  it.each(['create', 'update'] as const)(
+    'does not let the real worker collect a fresh %s reservation before its lock',
+    async (operation) => {
+      const insert = repository.manager.insert.getMockImplementation();
+      repository.manager.insert.mockImplementation(async (...args) => {
+        await insert(...args);
+        await cleanup.retry();
+      });
+      const dto = { activityId: 'activity', file } as CreateActivityReportDto;
+      await expect(
+        operation === 'create'
+          ? service.create(dto)
+          : service.update('report', dto),
+      ).resolves.toBeDefined();
+      expect(files.uploadFile).toHaveBeenCalledTimes(1);
+      expect(files.deleteFile).not.toHaveBeenCalledWith(
+        files.uploadFile.mock.calls[0][0],
+      );
+    },
+  );
+
+  it('reclaims a reservation after an uploader crashes before acquiring its lock', async () => {
+    pending.set('abandoned', {
+      fileKey: 'abandoned',
+      cleanupAfter: Date.now() + 15 * 60_000,
+      lastAttemptAt: 0,
+    });
+    await cleanup.retry();
+    expect(files.deleteFile).not.toHaveBeenCalled();
+    await retryExpired();
+    expect(files.deleteFile).toHaveBeenCalledWith('abandoned');
+    expect(pending.size).toBe(0);
+  });
+
+  it.each(['update', 'remove', 'removeForActivity'] as const)(
+    '%s completes while the worker is blocked on unrelated storage deletion',
+    async (operation) => {
+      pending.set('unrelated', {
+        fileKey: 'unrelated',
+        cleanupAfter: 0,
+        lastAttemptAt: 0,
+      });
+      let release: () => void;
+      files.deleteFile.mockImplementationOnce(
+        () => new Promise<void>((resolve) => (release = resolve)),
+      );
+      const worker = cleanup.retry();
+      await new Promise(setImmediate);
+      expect(files.deleteFile).toHaveBeenCalledWith('unrelated');
+      try {
+        await (operation === 'update'
+          ? service.update('report', { title: 'saved' })
+          : service[operation]('report'));
+        if (operation === 'update')
+          expect(repository.update).toHaveBeenCalledWith(
+            { uuid: 'report' },
+            { title: 'saved' },
+          );
+      } finally {
+        release();
+        await worker;
+      }
+    },
+  );
 
   it('rejects disguised active content before creating an intent or uploading', async () => {
     const dangerous = Object.assign(new MemoryStoredFile(), {

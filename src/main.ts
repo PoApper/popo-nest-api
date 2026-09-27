@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -20,8 +21,19 @@ async function bootstrap() {
     };
   }
 
-  const app = await NestFactory.create(AppModule, { httpsOptions });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    httpsOptions,
+  });
   const configService = app.get(ConfigService);
+
+  // Trust only the actual nginx peer, never arbitrary forwarded headers.
+  app.set(
+    'trust proxy',
+    (process.env.TRUSTED_PROXY_CIDRS ?? 'loopback')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean),
+  );
 
   app.use(cookieParser());
 

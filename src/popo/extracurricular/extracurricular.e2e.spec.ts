@@ -2,7 +2,7 @@ import { INestApplication, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as request from 'supertest';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { FileService } from '../../file/file.service';
 import { Activity } from './activity/activity.entity';
 import { ActivityReport } from './report/activity-report.entity';
@@ -150,11 +150,15 @@ describe('Extracurricular CRUD', () => {
       .attach('file', document, 'report.pdf')
       .expect(200);
     expect(replacement.body.fileKey).not.toBe(report.fileKey);
+    expect(objects.has(report.fileKey)).toBe(true);
+    await app.get(ReportFileCleanupService).retry();
     expect(objects.has(report.fileKey)).toBe(false);
     await request(app.getHttpServer())
       .delete(`/activity-report/${report.uuid}`)
       .set('x-test-role', UserType.admin)
       .expect(200);
+    expect(objects.size).toBe(1);
+    await app.get(ReportFileCleanupService).retry();
     expect(objects.size).toBe(0);
     await request(app.getHttpServer()).get('/activity-report').expect(200, []);
     await request(app.getHttpServer())
@@ -171,8 +175,33 @@ describe('Extracurricular CRUD', () => {
       .delete(`/activity/${parent.uuid}`)
       .set('x-test-role', UserType.admin)
       .expect(200);
+    await app.get(ReportFileCleanupService).retry();
     expect(objects.size).toBe(0);
     expect(await dataSource.getRepository(ActivityReport).count()).toBe(0);
+  });
+
+  it('protects a committed upload reservation from cleanup before its transaction starts', async () => {
+    const { body: parent } = await createActivity();
+    const insert = dataSource.manager.insert.bind(dataSource.manager);
+    const spy = jest
+      .spyOn(dataSource.manager, 'insert')
+      .mockImplementationOnce(
+        async (...args: Parameters<EntityManager['insert']>) => {
+          const result = await insert(...args);
+          await app.get(ReportFileCleanupService).retry();
+          expect(files.deleteFile).not.toHaveBeenCalled();
+          return result;
+        },
+      );
+    try {
+      const { body: report } = await createReport(parent.uuid).expect(201);
+      expect(objects.has(report.fileKey)).toBe(true);
+      expect(await dataSource.getRepository(ReportFileDeletion).count()).toBe(
+        0,
+      );
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('accepts a 20 MiB document and rejects files above the documented limit', async () => {
@@ -238,6 +267,22 @@ describe('Extracurricular CRUD', () => {
         expect(pending).toHaveLength(1);
         expect(pending[0].fileKey).not.toBe(report.fileKey);
         expect(objects.size).toBe(2);
+        // The request must not attempt storage cleanup, even on rollback.
+        expect(files.deleteFile).not.toHaveBeenCalled();
+        await app.get(ReportFileCleanupService).retry();
+        expect(files.deleteFile).not.toHaveBeenCalled();
+        // Simulate expiry after a failed upload or process crash.
+        await dataSource
+          .getRepository(ReportFileDeletion)
+          .update(
+            { fileKey: pending[0].fileKey },
+            { cleanupAfter: Date.now() - 1 },
+          );
+        await app.get(ReportFileCleanupService).retry();
+        expect(objects.size).toBe(2);
+        expect(await dataSource.getRepository(ReportFileDeletion).count()).toBe(
+          1,
+        );
         await app.get(ReportFileCleanupService).retry();
         expect(objects.size).toBe(1);
         expect(objects.has(report.fileKey)).toBe(true);
@@ -263,6 +308,9 @@ describe('Extracurricular CRUD', () => {
     expect(await dataSource.getRepository(ReportFileDeletion).find()).toEqual([
       expect.objectContaining({ fileKey: report.fileKey }),
     ]);
+    expect(files.deleteFile).not.toHaveBeenCalled();
+    await app.get(ReportFileCleanupService).retry();
+    expect(objects.has(report.fileKey)).toBe(true);
     await app.get(ReportFileCleanupService).retry();
     expect(objects.has(report.fileKey)).toBe(false);
     expect(await dataSource.getRepository(ReportFileDeletion).count()).toBe(0);
