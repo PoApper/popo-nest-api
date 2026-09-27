@@ -13,8 +13,8 @@ export class ReportFileCleanupService {
 
   constructor(
     @InjectRepository(ReportFileDeletion)
-    private readonly deletions: Repository<ReportFileDeletion>,
-    private readonly files: FileService,
+    private readonly reportFileDeletionRepo: Repository<ReportFileDeletion>,
+    private readonly fileService: FileService,
   ) {}
 
   @Interval(60_000)
@@ -22,29 +22,31 @@ export class ReportFileCleanupService {
     if (this.running) return;
     this.running = true;
     try {
-      for (const deletion of await this.deletions.find({
+      for (const deletion of await this.reportFileDeletionRepo.find({
         take: 100,
         order: { lastAttemptAt: 'ASC', fileKey: 'ASC' },
       })) {
         try {
           // Move failed keys behind other pending work, avoiding starvation.
-          await this.deletions.update(
+          await this.reportFileDeletionRepo.update(
             { fileKey: deletion.fileKey },
             { lastAttemptAt: Date.now() },
           );
-          await this.deletions.manager.transaction(async (manager) => {
-            const pending = await lockReportFileDeletion(
-              manager,
-              deletion.fileKey,
-            );
-            // Uploaders remove the intent in the same transaction that attaches
-            // the file. Waiting for their lock must never delete a live object.
-            if (!pending) return;
-            await this.files.deleteFile(pending.fileKey);
-            await manager.delete(ReportFileDeletion, {
-              fileKey: pending.fileKey,
-            });
-          });
+          await this.reportFileDeletionRepo.manager.transaction(
+            async (manager) => {
+              const pending = await lockReportFileDeletion(
+                manager,
+                deletion.fileKey,
+              );
+              // Uploaders remove the intent in the same transaction that attaches
+              // the file. Waiting for their lock must never delete a live object.
+              if (!pending) return;
+              await this.fileService.deleteFile(pending.fileKey);
+              await manager.delete(ReportFileDeletion, {
+                fileKey: pending.fileKey,
+              });
+            },
+          );
         } catch (error) {
           this.logger.error(
             `File cleanup will retry: ${deletion.fileKey}`,

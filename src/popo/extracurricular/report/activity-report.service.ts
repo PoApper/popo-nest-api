@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, FindOptionsWhere, Repository } from 'typeorm';
 import { MemoryStoredFile } from 'nestjs-form-data';
 import { randomUUID } from 'crypto';
 
@@ -18,47 +18,20 @@ import { Activity } from '../activity/activity.entity';
 import { lockActivity } from '../activity/lock-activity';
 import { ReportFileDeletion } from './report-file-deletion.entity';
 import { ReportFileCleanupService } from './report-file-cleanup.service';
-import { reportContentType } from './report-file-format';
+import {
+  decodeFileName,
+  extensionOf,
+  reportContentType,
+} from './report-file-format';
 import { lockReportFileDeletion } from './lock-report-file-deletion';
-
-/**
- * multipart 파일명 인코딩 보정.
- *
- * RFC 7578 은 파일명 인코딩을 정하지 않아서, 브라우저가 보낸 UTF-8 바이트를
- * 파서가 latin1 문자열로 해석해 넘겨준다. 그대로 두면 "통합 문서 1.pdf" 가
- * "íµí© ë¬¸ì 1.pdf" 로 저장된다.
- * latin1 로 되돌린 바이트가 올바른 UTF-8 이면 그걸 쓰고, 아니면 원본을 유지한다.
- */
-export const decodeFileName = (rawName: string) => {
-  if (!rawName) return rawName;
-
-  const bytes = Buffer.from(rawName, 'latin1');
-  const decoded = bytes.toString('utf8');
-
-  // 되돌린 값이 깨졌거나(U+FFFD) 왕복이 맞지 않으면 원본이 이미 정상이다.
-  if (decoded.includes('�')) return rawName;
-  return Buffer.from(decoded, 'utf8').equals(bytes) ? decoded : rawName;
-};
-
-/** "2025_보고서.docx" -> "docx" */
-export const extensionOf = (fileName: string) => {
-  const idx = fileName.lastIndexOf('.');
-  return idx === -1 ? '' : fileName.slice(idx + 1).toLowerCase();
-};
-
-/** "2025_보고서.docx" -> "2025_보고서" */
-export const baseNameOf = (fileName: string) => {
-  const idx = fileName.lastIndexOf('.');
-  return idx === -1 ? fileName : fileName.slice(0, idx);
-};
 
 @Injectable()
 export class ActivityReportService {
   constructor(
     @InjectRepository(ActivityReport)
-    private readonly reportRepository: Repository<ActivityReport>,
+    private readonly activityReportRepo: Repository<ActivityReport>,
     private readonly fileService: FileService,
-    private readonly fileCleanup: ReportFileCleanupService,
+    private readonly reportFileCleanupService: ReportFileCleanupService,
   ) {}
 
   async findAll(query?: {
@@ -66,16 +39,19 @@ export class ActivityReportService {
     period?: string;
     major?: string;
   }): Promise<ActivityReport[]> {
-    const where: Record<string, string> = {};
+    const where: FindOptionsWhere<ActivityReport> = {};
     if (query?.activityId) where.activityId = query.activityId;
     if (query?.period) where.period = query.period;
     if (query?.major) where.major = query.major;
 
-    return this.reportRepository.find({ where, order: { createdAt: 'DESC' } });
+    return this.activityReportRepo.find({
+      where,
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findOne(uuid: string): Promise<ActivityReport | null> {
-    return this.reportRepository.findOne({ where: { uuid } });
+    return this.activityReportRepo.findOne({ where: { uuid } });
   }
 
   async findOneOrFail(uuid: string): Promise<ActivityReport> {
@@ -87,12 +63,12 @@ export class ActivityReportService {
   }
 
   async create(dto: CreateActivityReportDto): Promise<ActivityReport> {
-    const report = this.reportRepository.create(this.metadataOf(dto));
+    const report = this.activityReportRepo.create(this.metadataOf(dto));
 
     const upload = await this.prepareUpload(dto.activityId, dto.file);
 
     try {
-      return await this.reportRepository.manager.transaction(
+      return await this.activityReportRepo.manager.transaction(
         async (manager) => {
           await lockActivity(manager, dto.activityId);
           if (upload)
@@ -103,7 +79,7 @@ export class ActivityReportService {
     } catch (error) {
       // The intent was committed before uploading, and survives this rollback.
       // Only the worker may delete the object after locking that intent.
-      await this.fileCleanup.retry();
+      await this.reportFileCleanupService.retry();
       throw error;
     }
   }
@@ -122,7 +98,7 @@ export class ActivityReportService {
     );
 
     try {
-      await this.reportRepository.manager.transaction(async (manager) => {
+      await this.activityReportRepo.manager.transaction(async (manager) => {
         for (const activityId of [
           ...new Set([
             existing.activityId,
@@ -149,10 +125,10 @@ export class ActivityReportService {
         }
       });
     } catch (error) {
-      await this.fileCleanup.retry();
+      await this.reportFileCleanupService.retry();
       throw error;
     }
-    await this.fileCleanup.retry();
+    await this.reportFileCleanupService.retry();
     return this.findOne(uuid);
   }
 
@@ -174,7 +150,7 @@ export class ActivityReportService {
   }
 
   async removeForActivity(activityId: string): Promise<void> {
-    await this.reportRepository.manager.transaction(async (manager) => {
+    await this.activityReportRepo.manager.transaction(async (manager) => {
       await lockActivity(manager, activityId);
       const reports = await manager.findBy(ActivityReport, { activityId });
       for (const report of reports) {
@@ -183,13 +159,13 @@ export class ActivityReportService {
       }
       await manager.delete(Activity, { uuid: activityId });
     });
-    await this.fileCleanup.retry();
+    await this.reportFileCleanupService.retry();
   }
 
   async remove(uuid: string): Promise<void> {
     const existing = await this.findOne(uuid);
     if (!existing) return;
-    await this.reportRepository.manager.transaction(async (manager) => {
+    await this.activityReportRepo.manager.transaction(async (manager) => {
       await lockActivity(manager, existing.activityId);
       const report = await manager.findOneBy(ActivityReport, { uuid });
       if (!report) return;
@@ -202,7 +178,7 @@ export class ActivityReportService {
         await manager.insert(ReportFileDeletion, { fileKey: report.fileKey });
       await manager.delete(ActivityReport, { uuid });
     });
-    await this.fileCleanup.retry();
+    await this.reportFileCleanupService.retry();
   }
 
   private async prepareUpload(activityId: string, file?: MemoryStoredFile) {
@@ -212,7 +188,7 @@ export class ActivityReportService {
     const key = `activity-report/${activityId}/${randomUUID()}`;
     // Persist before storage I/O: even a DB outage or process crash after PUT
     // cannot lose the compensating deletion. No intent means no upload.
-    await this.reportRepository.manager.insert(ReportFileDeletion, {
+    await this.activityReportRepo.manager.insert(ReportFileDeletion, {
       fileKey: key,
     });
     return { key, file, fileName, contentType };

@@ -10,30 +10,36 @@ import { PartialType } from '@nestjs/swagger';
 
 export class CreateActivityReportDto {
   @IsUUID()
-  activityId: string;
+  readonly activityId: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  title: string;
+  readonly title: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  period: string;
+  readonly period: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  grade: string;
+  readonly grade: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  major: string;
+  readonly major: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  author: string;
+  readonly author: string;
+
   @IsOptional()
   @IsString()
-  memo?: string;
+  readonly memo?: string;
 
   // multipart/form-data 로 올라오는 원본 문서 (pdf / docx / hwpx 등)
   @IsFile()

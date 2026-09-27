@@ -9,35 +9,35 @@ import { ActivityReportService } from '../report/activity-report.service';
 export class ActivityService {
   constructor(
     @InjectRepository(Activity)
-    private readonly activityRepository: Repository<Activity>,
-    private readonly reportService: ActivityReportService,
+    private readonly activityRepo: Repository<Activity>,
+    private readonly activityReportService: ActivityReportService,
   ) {}
 
   async findAll(category?: string): Promise<Activity[]> {
     if (category) {
-      return this.activityRepository.find({
+      return this.activityRepo.find({
         where: { category },
         order: { createdAt: 'DESC' },
       });
     }
-    return this.activityRepository.find({ order: { createdAt: 'DESC' } });
+    return this.activityRepo.find({ order: { createdAt: 'DESC' } });
   }
 
   async findOne(uuid: string): Promise<Activity | null> {
-    return this.activityRepository.findOne({ where: { uuid } });
+    return this.activityRepo.findOne({ where: { uuid } });
   }
 
   async create(dto: CreateActivityDto): Promise<Activity> {
-    const activity = this.activityRepository.create(dto);
-    return this.activityRepository.save(activity);
+    const activity = this.activityRepo.create(dto);
+    return this.activityRepo.save(activity);
   }
 
   async update(uuid: string, dto: UpdateActivityDto): Promise<Activity | null> {
-    await this.activityRepository.update({ uuid }, dto);
+    await this.activityRepo.update({ uuid }, dto);
     return this.findOne(uuid);
   }
 
   async remove(uuid: string): Promise<void> {
-    await this.reportService.removeForActivity(uuid);
+    await this.activityReportService.removeForActivity(uuid);
   }
 }

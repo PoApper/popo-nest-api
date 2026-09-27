@@ -3,7 +3,6 @@ import { MemoryStoredFile } from 'nestjs-form-data';
 import { randomUUID } from 'crypto';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
-import { reportPdf } from '../popo/extracurricular/report/report-file.fixtures';
 
 describe('FileService environment configuration', () => {
   const previous = { ...process.env };
@@ -83,7 +82,7 @@ describe('FileService environment configuration', () => {
       .mockImplementation(async () => ({}));
     try {
       const file = Object.assign(new MemoryStoredFile(), {
-        buffer: reportPdf,
+        buffer: Buffer.from('report'),
         busBoyMimeType: 'text/html',
       });
       await new FileService().uploadFile('activity-report/id/file', file, {

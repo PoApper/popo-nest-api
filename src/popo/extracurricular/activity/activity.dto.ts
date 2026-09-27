@@ -5,29 +5,35 @@ export class CreateActivityDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  title: string;
+  readonly title: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  period: string;
+  readonly period: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  target: string;
+  readonly target: string;
+
   @IsString()
   @IsNotEmpty()
-  applicationMethod: string;
+  readonly applicationMethod: string;
+
   @IsString()
   @IsNotEmpty()
-  description: string;
+  readonly description: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  category: string;
+  readonly category: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  iconName?: string;
+  readonly iconName?: string;
 }
 
 export class UpdateActivityDto extends PartialType(CreateActivityDto) {}

@@ -11,8 +11,7 @@ import { Readable } from 'stream';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// S3 가 꺼진 로컬 환경에서 업로드 파일을 담아두는 디렉터리.
-// 예전에는 업로드가 조용히 버려져서 로컬에서 첨부 파일을 다시 읽을 수 없었다.
+// S3가 비활성화된 로컬 환경의 업로드 디렉터리.
 const LOCAL_UPLOAD_DIR = path.resolve(process.cwd(), 'uploads');
 
 @Injectable()

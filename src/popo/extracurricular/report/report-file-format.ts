@@ -11,9 +11,31 @@ export const REPORT_CONTENT_TYPES: Record<string, string> = {
 const OLE_SIGNATURE = Buffer.from('d0cf11e0a1b11ae1', 'hex');
 const ZIP_SIGNATURE = Buffer.from('504b0304', 'hex');
 
+// multipart 파서가 latin1로 해석한 UTF-8 파일명만 복원한다.
+export function decodeFileName(rawName: string): string {
+  if (!rawName) {
+    return rawName;
+  }
+
+  const bytes = Buffer.from(rawName, 'latin1');
+  if (bytes.toString('latin1') !== rawName) {
+    return rawName;
+  }
+  const decoded = bytes.toString('utf8');
+  if (decoded.includes('�')) {
+    return rawName;
+  }
+  return Buffer.from(decoded, 'utf8').equals(bytes) ? decoded : rawName;
+}
+
+export function extensionOf(fileName: string): string {
+  const index = fileName.lastIndexOf('.');
+  return index === -1 ? '' : fileName.slice(index + 1).toLowerCase();
+}
+
 /** Never trust a multipart MIME type when publishing a document to the CDN. */
 export function reportContentType(fileName: string, bytes: Buffer): string {
-  const extension = fileName.split('.').pop()?.toLowerCase();
+  const extension = extensionOf(fileName);
   const contentType = REPORT_CONTENT_TYPES[extension];
   const matches =
     extension === 'pdf'

@@ -1,4 +1,34 @@
-import { reportContentType, REPORT_CONTENT_TYPES } from './report-file-format';
+import {
+  decodeFileName,
+  extensionOf,
+  reportContentType,
+  REPORT_CONTENT_TYPES,
+} from './report-file-format';
+
+describe('Report file names', () => {
+  it('decodes UTF-8 file names interpreted as latin1', () => {
+    const fileName = '비교과 활동 수기.pdf';
+    const encoded = Buffer.from(fileName, 'utf8').toString('latin1');
+    expect(decodeFileName(encoded)).toBe(fileName);
+  });
+
+  it.each(['', 'report.pdf', '보고서.pdf', 'Łódź.pdf', 'Ł.pdf', 'café.pdf'])(
+    'preserves the original file name %s',
+    (fileName) => {
+      expect(decodeFileName(fileName)).toBe(fileName);
+    },
+  );
+
+  it.each([
+    ['report.PDF', 'pdf'],
+    ['report.final.docx', 'docx'],
+    ['report', ''],
+    ['pdf', ''],
+    ['report.', ''],
+  ])('extracts the extension of %s', (fileName, extension) => {
+    expect(extensionOf(fileName)).toBe(extension);
+  });
+});
 
 describe('Report document format validation', () => {
   it.each([
@@ -21,6 +51,12 @@ describe('Report document format validation', () => {
       ).toThrow('문서만 업로드');
     },
   );
+
+  it('rejects a file name without an extension', () => {
+    expect(() => reportContentType('pdf', Buffer.from('%PDF-1.7'))).toThrow(
+      '문서만 업로드',
+    );
+  });
 
   it.each(['pdf', 'doc', 'docx', 'hwp', 'hwpx'])(
     'rejects HTML renamed to %s',

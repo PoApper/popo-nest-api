@@ -38,7 +38,7 @@ import { REPORT_CONTENT_TYPES } from './report-file-format';
   }),
 )
 export class ActivityReportController {
-  constructor(private readonly reportService: ActivityReportService) {}
+  constructor(private readonly activityReportService: ActivityReportService) {}
 
   // 활동 수기는 로그인 없이 열람할 수 있어야 한다.
   @Public()
@@ -48,13 +48,13 @@ export class ActivityReportController {
     @Query('period') period?: string,
     @Query('major') major?: string,
   ) {
-    return this.reportService.findAll({ activityId, period, major });
+    return this.activityReportService.findAll({ activityId, period, major });
   }
 
   @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.reportService.findOne(id);
+    return this.activityReportService.findOne(id);
   }
 
   /**
@@ -66,7 +66,7 @@ export class ActivityReportController {
   @UseGuards(ReportDownloadGuard)
   async downloadFile(@Param('id') id: string, @Res() res: Response) {
     const { stream, fileName, fileType } =
-      await this.reportService.getFileStream(id);
+      await this.activityReportService.getFileStream(id);
 
     if (res.destroyed) {
       stream.destroy();
@@ -97,7 +97,7 @@ export class ActivityReportController {
   @UseGuards(RolesGuard)
   @FileBody('file')
   create(@Body() dto: CreateActivityReportDto) {
-    return this.reportService.create(dto);
+    return this.activityReportService.create(dto);
   }
 
   @ApiCookieAuth()
@@ -106,7 +106,7 @@ export class ActivityReportController {
   @UseGuards(RolesGuard)
   @FileBody('file')
   update(@Param('id') id: string, @Body() dto: UpdateActivityReportDto) {
-    return this.reportService.update(id, dto);
+    return this.activityReportService.update(id, dto);
   }
 
   @ApiCookieAuth()
@@ -114,6 +114,6 @@ export class ActivityReportController {
   @Roles(UserType.admin, UserType.staff)
   @UseGuards(RolesGuard)
   remove(@Param('id') id: string) {
-    return this.reportService.remove(id);
+    return this.activityReportService.remove(id);
   }
 }
