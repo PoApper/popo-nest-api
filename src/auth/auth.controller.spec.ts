@@ -113,9 +113,11 @@ describe('AuthController', () => {
       },
     };
     const user = req.body;
-    userService.save.mockResolvedValue(user as any);
+    userService.register.mockResolvedValue(user as any);
     mailService.sendVerificationMail.mockResolvedValue(undefined);
-    await expect(controller.register(req as any)).resolves.toEqual(user);
+    await expect(controller.register(req.body as any)).resolves.toEqual(user);
+    expect(userService.register).toHaveBeenCalledWith(req.body);
+    expect(userService.save).not.toHaveBeenCalled();
   });
 
   it('should throw error if verification mail has not been sent successfully', async () => {
@@ -127,11 +129,12 @@ describe('AuthController', () => {
       },
     };
     const user = req.body;
-    userService.save.mockResolvedValue(user as any);
+    userService.register.mockResolvedValue(user as any);
     mailService.sendVerificationMail.mockRejectedValue(
       new BadRequestException(),
     );
-    await expect(controller.register(req as any)).rejects.toThrow();
+    await expect(controller.register(req.body as any)).rejects.toThrow();
+    expect(userService.save).not.toHaveBeenCalled();
   });
 
   it('should throw error if user does not exist', async () => {

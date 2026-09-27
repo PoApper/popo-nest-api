@@ -5,8 +5,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, FindOptionsWhere, Repository } from 'typeorm';
-import { MemoryStoredFile } from 'nestjs-form-data';
+import { FileSystemStoredFile } from 'nestjs-form-data';
 import { randomUUID } from 'crypto';
+import { open } from 'fs/promises';
 
 import { ActivityReport } from './activity-report.entity';
 import {
@@ -157,10 +158,21 @@ export class ActivityReportService {
     });
   }
 
-  private async prepareUpload(activityId: string, file?: MemoryStoredFile) {
+  private async prepareUpload(activityId: string, file?: FileSystemStoredFile) {
     if (!file) return undefined;
     const fileName = decodeFileName(file.originalName);
-    const contentType = reportContentType(fileName, file.buffer);
+    const handle = await open(file.path, 'r');
+    const signature = Buffer.alloc(8);
+    let bytesRead: number;
+    try {
+      ({ bytesRead } = await handle.read(signature, 0, signature.length, 0));
+    } finally {
+      await handle.close();
+    }
+    const contentType = reportContentType(
+      fileName,
+      signature.subarray(0, bytesRead),
+    );
     const key = `activity-report/${activityId}/${randomUUID()}`;
     // Persist before storage I/O so crashes cannot lose orphan cleanup. Reserve
     // time to acquire the intent lock before making it visible to the worker.

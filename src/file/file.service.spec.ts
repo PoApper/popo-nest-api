@@ -1,5 +1,8 @@
+import { mkdtemp, writeFile, rm } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import { FileService } from './file.service';
-import { MemoryStoredFile } from 'nestjs-form-data';
+import { FileSystemStoredFile, MemoryStoredFile } from 'nestjs-form-data';
 import { randomUUID } from 'crypto';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
@@ -96,6 +99,66 @@ describe('FileService environment configuration', () => {
       });
     } finally {
       send.mockRestore();
+    }
+  });
+
+  it.each([false, true])(
+    'streams disk uploads to S3 and closes them on failure=%s',
+    async (fail) => {
+      process.env.NODE_ENV = 'prod';
+      process.env.S3_REGION = 'ap-northeast-2';
+      process.env.S3_BUCKET_NAME = 'reports';
+      const directory = await mkdtemp(join(tmpdir(), 'file-service-test-'));
+      const content = Buffer.from('report');
+      const file = Object.assign(new FileSystemStoredFile(), {
+        path: join(directory, 'report.pdf'),
+        size: content.length,
+      });
+      await writeFile(file.path, content);
+      let stream: Readable;
+      const send = jest
+        .spyOn(S3Client.prototype, 'send')
+        .mockImplementation(async (command: PutObjectCommand) => {
+          stream = command.input.Body as Readable;
+          expect(stream).toBeInstanceOf(Readable);
+          expect(command.input.ContentLength).toBe(content.length);
+          if (fail) throw new Error('S3 unavailable');
+          const chunks = [];
+          for await (const chunk of stream) chunks.push(chunk);
+          expect(Buffer.concat(chunks)).toEqual(content);
+          return {};
+        });
+      try {
+        const upload = new FileService().uploadFile('report', file);
+        if (fail) await expect(upload).rejects.toThrow('S3 unavailable');
+        else await upload;
+        expect(stream.destroyed).toBe(true);
+        // Wait for the underlying descriptor to close before deleting the fixture.
+        if (!stream.closed)
+          await new Promise((resolve) => stream.once('close', resolve));
+      } finally {
+        send.mockRestore();
+        await rm(directory, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it('copies spooled files to local storage without collecting their bytes', async () => {
+    process.env.NODE_ENV = 'local';
+    const directory = await mkdtemp(join(tmpdir(), 'file-service-test-'));
+    const file = Object.assign(new FileSystemStoredFile(), {
+      path: join(directory, 'report.pdf'),
+      size: 6,
+    });
+    await writeFile(file.path, 'report');
+    const key = `file-service-test-${randomUUID()}.pdf`;
+    const service = new FileService();
+    try {
+      await service.uploadFile(key, file);
+      expect(await service.getFile(key)).toEqual(Buffer.from('report'));
+    } finally {
+      await service.deleteFile(key);
+      await rm(directory, { recursive: true, force: true });
     }
   });
 

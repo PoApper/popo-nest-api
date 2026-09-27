@@ -1,5 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
+export const REPORT_MAX_FILE_SIZE = 20 * 1024 * 1024;
+
 export const REPORT_CONTENT_TYPES: Record<string, string> = {
   pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

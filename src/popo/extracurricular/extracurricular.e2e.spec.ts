@@ -1,3 +1,5 @@
+import { readFile, access } from 'fs/promises';
+import { FileSystemStoredFile } from 'nestjs-form-data';
 import { INestApplication, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -20,7 +22,9 @@ describe('Extracurricular CRUD', () => {
   const document = reportPdf;
   const files = {
     uploadFile: jest.fn(async (key, file) => {
-      objects.set(key, file.buffer);
+      expect(file).toBeInstanceOf(FileSystemStoredFile);
+      expect(file.buffer).toBeUndefined();
+      objects.set(key, await readFile(file.path));
       return `https://files.example/${key}`;
     }),
     getFile: jest.fn(async (key) => objects.get(key)),
@@ -55,7 +59,10 @@ describe('Extracurricular CRUD', () => {
       .compile();
     app = module.createNestApplication();
     app.use((req, _res, next) => {
-      req.user = { userType: req.headers['x-test-role'] || '' };
+      req.user = {
+        uuid: 'test-user',
+        userType: req.headers['x-test-role'] || '',
+      };
       next();
     });
     await app.init();
@@ -89,6 +96,74 @@ describe('Extracurricular CRUD', () => {
       .field('major', 'CSE')
       .field('author', 'Student')
       .attach('file', document, 'report.pdf');
+
+  it.each([
+    'title',
+    'period',
+    'target',
+    'applicationMethod',
+    'description',
+    'category',
+    'iconName',
+  ])(
+    'rejects null activity %s without changing persisted data',
+    async (field) => {
+      const { body: parent } = await createActivity().expect(201);
+      await request(app.getHttpServer())
+        .patch(`/activity/${parent.uuid}`)
+        .set('x-test-role', UserType.staff)
+        .send({ [field]: null })
+        .expect(400);
+      await request(app.getHttpServer())
+        .patch(`/activity/${parent.uuid}`)
+        .set('x-test-role', UserType.staff)
+        .send({})
+        .expect(200);
+      const stored = await dataSource
+        .getRepository(Activity)
+        .findOneBy({ uuid: parent.uuid });
+      expect(stored[field]).toBe(parent[field]);
+    },
+  );
+
+  it.each([
+    'activityId',
+    'title',
+    'period',
+    'grade',
+    'major',
+    'author',
+    'file',
+  ])(
+    'rejects null report %s while allowing memo to be cleared',
+    async (field) => {
+      const { body: parent } = await createActivity();
+      const { body: report } = await createReport(parent.uuid).expect(201);
+      const upload = files.uploadFile.mock.calls[0][1];
+      await expect(access(upload.path)).rejects.toThrow();
+      await request(app.getHttpServer())
+        .patch(`/activity-report/${report.uuid}`)
+        .set('x-test-role', UserType.staff)
+        .send({ [field]: null })
+        .expect(400);
+      await request(app.getHttpServer())
+        .patch(`/activity-report/${report.uuid}`)
+        .set('x-test-role', UserType.staff)
+        .send({})
+        .expect(200);
+      await request(app.getHttpServer())
+        .patch(`/activity-report/${report.uuid}`)
+        .set('x-test-role', UserType.staff)
+        .send({ memo: 'memo' })
+        .expect(200);
+      await request(app.getHttpServer())
+        .patch(`/activity-report/${report.uuid}`)
+        .set('x-test-role', UserType.staff)
+        .send({ memo: null })
+        .expect(200)
+        .expect(({ body }) => expect(body.memo).toBeNull());
+    },
+  );
 
   it('creates, filters, reads, updates and deletes activities', async () => {
     const created = await createActivity().expect(201);

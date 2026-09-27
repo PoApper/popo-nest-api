@@ -6,7 +6,7 @@ import {
   SelectObjectContentCommand,
 } from '@aws-sdk/client-s3';
 import { Injectable, Logger } from '@nestjs/common';
-import { MemoryStoredFile } from 'nestjs-form-data';
+import { FileSystemStoredFile, MemoryStoredFile } from 'nestjs-form-data';
 import { Readable } from 'stream';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -201,25 +201,38 @@ export class FileService {
 
   async uploadFile(
     key: string,
-    file: MemoryStoredFile,
+    file: MemoryStoredFile | FileSystemStoredFile,
     headers?: { contentType: string; contentDisposition: string },
   ) {
     if (!this.checkS3Enabled('uploadFile')) {
       const localPath = this.localPathOf(key);
       await fs.promises.mkdir(path.dirname(localPath), { recursive: true });
-      await fs.promises.writeFile(localPath, file.buffer);
+      if (file instanceof FileSystemStoredFile) {
+        await fs.promises.copyFile(file.path, localPath);
+      } else {
+        await fs.promises.writeFile(localPath, file.buffer);
+      }
       return `local://${key}`;
     }
 
-    await this.s3.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: key,
-        Body: file.buffer,
-        ContentType: headers?.contentType ?? file.mimetype,
-        ContentDisposition: headers?.contentDisposition,
-      }),
-    );
+    const body =
+      file instanceof FileSystemStoredFile
+        ? fs.createReadStream(file.path)
+        : file.buffer;
+    try {
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+          Body: body,
+          ContentLength: file.size,
+          ContentType: headers?.contentType ?? file.mimetype,
+          ContentDisposition: headers?.contentDisposition,
+        }),
+      );
+    } finally {
+      if (body instanceof Readable) body.destroy();
+    }
     return `${this.PopoCdnUrl}/${key}`;
   }
 

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, ValidateIf, IsString, MaxLength } from 'class-validator';
 import { PartialType } from '@nestjs/swagger';
 
 export class CreateActivityDto {
@@ -30,10 +30,12 @@ export class CreateActivityDto {
   @MaxLength(255)
   readonly category: string;
 
-  @IsOptional()
+  @ValidateIf((_object, value) => value !== undefined)
   @IsString()
   @MaxLength(255)
   readonly iconName?: string;
 }
 
-export class UpdateActivityDto extends PartialType(CreateActivityDto) {}
+export class UpdateActivityDto extends PartialType(CreateActivityDto, {
+  skipNullProperties: false,
+}) {}

@@ -9,17 +9,18 @@ import {
   Query,
   Res,
   UseGuards,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { ActivityReportService } from './activity-report.service';
 import {
   CreateActivityReportDto,
   UpdateActivityReportDto,
 } from './activity-report.dto';
-import { FileBody } from 'src/file/file-body.decorator';
+import { ReportUploadInterceptor } from './report-upload.interceptor';
 import { Roles } from 'src/auth/authroization/roles.decorator';
 import { RolesGuard } from 'src/auth/authroization/roles.guard';
 import { UserType } from 'src/popo/user/user.meta';
@@ -95,7 +96,14 @@ export class ActivityReportController {
   @Post()
   @Roles(UserType.admin, UserType.staff)
   @UseGuards(RolesGuard)
-  @FileBody('file')
+  @UseInterceptors(ReportUploadInterceptor)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
   create(@Body() dto: CreateActivityReportDto) {
     return this.activityReportService.create(dto);
   }
@@ -104,7 +112,14 @@ export class ActivityReportController {
   @Patch(':id')
   @Roles(UserType.admin, UserType.staff)
   @UseGuards(RolesGuard)
-  @FileBody('file')
+  @UseInterceptors(ReportUploadInterceptor)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
   update(@Param('id') id: string, @Body() dto: UpdateActivityReportDto) {
     return this.activityReportService.update(id, dto);
   }

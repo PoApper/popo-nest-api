@@ -1,4 +1,4 @@
-import { IsFile, MaxFileSize, MemoryStoredFile } from 'nestjs-form-data';
+import { IsFile, MaxFileSize, FileSystemStoredFile } from 'nestjs-form-data';
 import {
   IsNotEmpty,
   IsOptional,
@@ -7,6 +7,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { PartialType } from '@nestjs/swagger';
+import { REPORT_MAX_FILE_SIZE } from './report-file-format';
 
 export class CreateActivityReportDto {
   @IsUUID()
@@ -43,10 +44,11 @@ export class CreateActivityReportDto {
 
   // multipart/form-data 로 올라오는 원본 문서 (pdf / docx / hwpx 등)
   @IsFile()
-  @MaxFileSize(20 * 1024 * 1024) // 20 MB
-  readonly file: MemoryStoredFile;
+  @MaxFileSize(REPORT_MAX_FILE_SIZE) // 20 MB
+  readonly file: FileSystemStoredFile;
 }
 
 export class UpdateActivityReportDto extends PartialType(
   CreateActivityReportDto,
+  { skipNullProperties: false },
 ) {}

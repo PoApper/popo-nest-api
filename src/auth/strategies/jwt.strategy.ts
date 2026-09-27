@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { jwtConstants } from '../constants';
 import { Request } from 'express';
 import { JwtPayload } from './jwt.payload';
+import { UserService } from '../../popo/user/user.service';
+import { UserStatus } from '../../popo/user/user.meta';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly usersService: UserService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
@@ -20,13 +22,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   // only can access properties described in `generateJwtToken()` function
-  validate(payload: any): JwtPayload {
+  async validate(payload: JwtPayload): Promise<JwtPayload> {
+    if (!payload.uuid) throw new UnauthorizedException();
+    const user = await this.usersService.findOneByUuid(payload.uuid);
+    if (!user || user.userStatus !== UserStatus.activated) {
+      throw new UnauthorizedException();
+    }
     return {
-      uuid: payload.uuid,
-      name: payload.name,
+      uuid: user.uuid,
+      name: user.name,
       nickname: payload.nickname,
-      userType: payload.userType,
-      email: payload.email,
+      userType: user.userType,
+      email: user.email,
     };
     // this is what you can access by `@Req() req` with `@JwtAuthGuard` decorator
   }

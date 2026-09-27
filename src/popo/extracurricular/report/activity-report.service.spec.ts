@@ -1,5 +1,8 @@
+import { mkdtemp, writeFile, rm } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { EntityManager, FindOperator, Repository } from 'typeorm';
-import { MemoryStoredFile } from 'nestjs-form-data';
+import { FileSystemStoredFile } from 'nestjs-form-data';
 import { ActivityReportService } from './activity-report.service';
 import { ActivityReport } from './activity-report.entity';
 import {
@@ -17,10 +20,21 @@ describe('ActivityReportService storage consistency', () => {
     activityId: 'activity',
     fileKey: 'old-key',
   };
-  const file = Object.assign(new MemoryStoredFile(), {
+  const file = Object.assign(new FileSystemStoredFile(), {
     originalName: 'report.pdf',
-    buffer: reportPdf,
+    size: reportPdf.length,
   });
+  let directory: string;
+  beforeAll(async () => {
+    directory = await mkdtemp(join(tmpdir(), 'report-service-test-'));
+    file.path = join(directory, 'report.pdf');
+    await writeFile(file.path, reportPdf);
+    await writeFile(
+      join(directory, 'dangerous'),
+      '<html><script>alert(1)</script></html>',
+    );
+  });
+  afterAll(async () => rm(directory, { recursive: true, force: true }));
   let repository: {
     create: jest.Mock;
     save: jest.Mock;
@@ -298,9 +312,9 @@ describe('ActivityReportService storage consistency', () => {
   );
 
   it('rejects disguised active content before creating an intent or uploading', async () => {
-    const dangerous = Object.assign(new MemoryStoredFile(), {
+    const dangerous = Object.assign(new FileSystemStoredFile(), {
       originalName: 'report.pdf',
-      buffer: Buffer.from('<html><script>alert(1)</script></html>'),
+      path: join(directory, 'dangerous'),
     });
     await expect(service.update('report', { file: dangerous })).rejects.toThrow(
       '문서만 업로드',
