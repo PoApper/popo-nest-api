@@ -11,6 +11,9 @@ export class Place extends Base {
   @Column({ nullable: false })
   name: string;
 
+  @Column({ name: 'name_en', type: 'varchar', length: 255, nullable: true })
+  nameEn: string | null;
+
   @Column('text', { nullable: true })
   description: string;
 
