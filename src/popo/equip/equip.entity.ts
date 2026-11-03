@@ -16,6 +16,9 @@ export class Equip extends Base {
   @Column('text', { nullable: true })
   description: string;
 
+  @Column({ name: 'description_en', type: 'text', nullable: true })
+  descriptionEn?: string | null;
+
   @Column({ nullable: false })
   fee: number;
 

@@ -1,3 +1,4 @@
+import { normalizeTranslations } from '../../utils/translated-fields';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,6 +26,11 @@ export class PlaceService {
     const saveDto = {
       name: dto.name,
       nameEn: normalizeEnglishName(dto.nameEn) ?? null,
+      ...normalizeTranslations(
+        dto,
+        ['locationEn', 'descriptionEn'],
+        ['descriptionEn'],
+      ),
       location: dto.location,
       description: dto.description,
       region: dto.region,
@@ -77,7 +83,15 @@ export class PlaceService {
 
     return this.placeRepo.update(
       { uuid: uuid },
-      { ...dto, nameEn: normalizeEnglishName(dto.nameEn) },
+      {
+        ...dto,
+        nameEn: normalizeEnglishName(dto.nameEn),
+        ...normalizeTranslations(
+          dto,
+          ['locationEn', 'descriptionEn'],
+          ['descriptionEn'],
+        ),
+      },
     );
   }
 

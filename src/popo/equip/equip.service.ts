@@ -1,3 +1,4 @@
+import { normalizeTranslations } from '../../utils/translated-fields';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -26,6 +27,7 @@ export class EquipService {
     return this.equipRepo.save({
       name: dto.name,
       nameEn: normalizeEnglishName(dto.nameEn) ?? null,
+      ...normalizeTranslations(dto, ['descriptionEn'], ['descriptionEn']),
       description: dto.description,
       fee: dto.fee,
       equipOwner: dto.equipOwner,
@@ -77,7 +79,11 @@ export class EquipService {
     await this.findOneByUuidOrFail(uuid);
     return this.equipRepo.update(
       { uuid: uuid },
-      { ...dto, nameEn: normalizeEnglishName(dto.nameEn) },
+      {
+        ...dto,
+        nameEn: normalizeEnglishName(dto.nameEn),
+        ...normalizeTranslations(dto, ['descriptionEn'], ['descriptionEn']),
+      },
     );
   }
 

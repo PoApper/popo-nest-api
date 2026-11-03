@@ -7,6 +7,8 @@ export class EquipmentDto {
   @ApiPropertyOptional({ type: String, maxLength: 255, nullable: true })
   readonly nameEn?: string | null;
   readonly description: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  readonly descriptionEn?: string | null;
   readonly fee: number;
   readonly equipOwner: EquipOwner;
   readonly staffEmail: string;

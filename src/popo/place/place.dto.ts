@@ -7,7 +7,11 @@ export class PlaceDto {
   @ApiPropertyOptional({ type: String, maxLength: 255, nullable: true })
   readonly nameEn?: string | null;
   readonly description: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  readonly descriptionEn?: string | null;
   readonly location: string;
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 255 })
+  readonly locationEn?: string | null;
   readonly region: PlaceRegion;
   readonly staffEmail: string;
   readonly maxMinutes: number;
