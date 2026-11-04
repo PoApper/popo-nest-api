@@ -1,10 +1,8 @@
 import { DataSource, MigrationInterface, QueryRunner, Table } from 'typeorm';
 import { PopoResourceEnglishNames1793627362225 } from './dev/1793627362225-popo-resource-english-names';
-import { PopoResourceEnglishNames1793627362226 } from './prod/1793627362226-popo-resource-english-names';
 
 describe.each<[string, MigrationInterface]>([
   ['development', new PopoResourceEnglishNames1793627362225()],
-  ['production', new PopoResourceEnglishNames1793627362226()],
 ])('%s English name migration', (_, migration) => {
   let dataSource: DataSource;
   let runner: QueryRunner;

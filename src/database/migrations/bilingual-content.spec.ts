@@ -1,6 +1,6 @@
 import { DataSource, MigrationInterface, QueryRunner, Table } from 'typeorm';
 import { PopoBilingualContent1793715004897 } from './dev/1793715004897-popo-bilingual-content';
-import { PopoBilingualContent1793715004898 } from './prod/1793715004898-popo-bilingual-content';
+import { PopoBilingualContent11041793803471793 } from './prod/1793803471793-popo-bilingual-content-11-04';
 
 const fixtures = {
   place: {
@@ -45,57 +45,69 @@ const fixtures = {
   },
 };
 
-describe.each<[string, MigrationInterface]>([
-  ['development', new PopoBilingualContent1793715004897()],
-  ['production', new PopoBilingualContent1793715004898()],
-])('%s bilingual-content migration', (_, migration) => {
-  let source: DataSource;
-  let runner: QueryRunner;
-
-  beforeEach(async () => {
-    source = new DataSource({ type: 'sqlite', database: ':memory:' });
-    await source.initialize();
-    runner = source.createQueryRunner();
-    for (const [table, row] of Object.entries(fixtures)) {
-      await runner.createTable(
-        new Table({
-          name: table,
-          columns: Object.keys(row).map((name) => ({
-            name,
-            type: 'varchar',
-            isPrimary: name === 'uuid',
-          })),
-        }),
-      );
-      await runner.manager.insert(table, row);
+describe.each<[string, MigrationInterface, number, boolean]>([
+  ['development', new PopoBilingualContent1793715004897(), 21, true],
+  ['production', new PopoBilingualContent11041793803471793(), 23, false],
+])(
+  '%s bilingual-content migration',
+  (_, migration, addedColumns, keepEarlierNames) => {
+    const originalRows: Record<string, Record<string, string>> = JSON.parse(
+      JSON.stringify(fixtures),
+    );
+    if (!keepEarlierNames) {
+      delete originalRows.place.name_en;
+      delete originalRows.equip.name_en;
     }
-  });
-  afterEach(async () => {
-    await runner?.release();
-    await source?.destroy();
-  });
+    let source: DataSource;
+    let runner: QueryRunner;
 
-  it('adds all optional translations and rolls back without changing original content or earlier English names', async () => {
-    await migration.up(runner);
-    let added = 0;
-    for (const [table, original] of Object.entries(fixtures)) {
-      const [row] = await runner.query(`SELECT * FROM "${table}"`);
-      expect(row).toMatchObject(original);
-      const translations = Object.keys(row).filter((key) => !(key in original));
-      for (const key of translations) {
-        expect(row[key]).toBeNull();
-        await runner.query(`UPDATE "${table}" SET "${key}" = ?`, [
-          'English translation',
-        ]);
-        added++;
+    beforeEach(async () => {
+      source = new DataSource({ type: 'sqlite', database: ':memory:' });
+      await source.initialize();
+      runner = source.createQueryRunner();
+      for (const [table, row] of Object.entries(originalRows)) {
+        await runner.createTable(
+          new Table({
+            name: table,
+            columns: Object.keys(row).map((name) => ({
+              name,
+              type: 'varchar',
+              isPrimary: name === 'uuid',
+            })),
+          }),
+        );
+        await runner.manager.insert(table, row);
       }
-    }
-    expect(added).toBe(21);
-    await migration.down(runner);
-    for (const [table, original] of Object.entries(fixtures)) {
-      expect(await runner.query(`SELECT * FROM "${table}"`)).toEqual([
-        original,
-      ]);
-    }
-  });
-});
+    });
+    afterEach(async () => {
+      await runner?.release();
+      await source?.destroy();
+    });
+
+    it('adds all optional translations and rolls back without changing original content or earlier English names', async () => {
+      await migration.up(runner);
+      let added = 0;
+      for (const [table, original] of Object.entries(originalRows)) {
+        const [row] = await runner.query(`SELECT * FROM "${table}"`);
+        expect(row).toMatchObject(original);
+        const translations = Object.keys(row).filter(
+          (key) => !(key in original),
+        );
+        for (const key of translations) {
+          expect(row[key]).toBeNull();
+          await runner.query(`UPDATE "${table}" SET "${key}" = ?`, [
+            'English translation',
+          ]);
+          added++;
+        }
+      }
+      expect(added).toBe(addedColumns);
+      await migration.down(runner);
+      for (const [table, original] of Object.entries(originalRows)) {
+        expect(await runner.query(`SELECT * FROM "${table}"`)).toEqual([
+          original,
+        ]);
+      }
+    });
+  },
+);
