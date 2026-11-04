@@ -1,9 +1,11 @@
+import { normalizeTranslations } from '../../utils/translated-fields';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Place } from './place.entity';
 import { PlaceDto } from './place.dto';
 import { PlaceRegion } from './place.meta';
+import { normalizeEnglishName } from '../../utils/english-name';
 
 const Message = {
   NOT_EXISTING_REGION: "There's no such region.",
@@ -23,6 +25,12 @@ export class PlaceService {
   save(dto: PlaceDto) {
     const saveDto = {
       name: dto.name,
+      nameEn: normalizeEnglishName(dto.nameEn) ?? null,
+      ...normalizeTranslations(
+        dto,
+        ['locationEn', 'descriptionEn'],
+        ['descriptionEn'],
+      ),
       location: dto.location,
       description: dto.description,
       region: dto.region,
@@ -73,7 +81,18 @@ export class PlaceService {
       throw new BadRequestException(Message.NOT_EXISTING_PLACE);
     }
 
-    return this.placeRepo.update({ uuid: uuid }, dto);
+    return this.placeRepo.update(
+      { uuid: uuid },
+      {
+        ...dto,
+        nameEn: normalizeEnglishName(dto.nameEn),
+        ...normalizeTranslations(
+          dto,
+          ['locationEn', 'descriptionEn'],
+          ['descriptionEn'],
+        ),
+      },
+    );
   }
 
   // delta: +1 or -1

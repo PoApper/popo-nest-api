@@ -1,3 +1,4 @@
+import { normalizeTranslations } from '../../../utils/translated-fields';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,7 +14,14 @@ export class IntroAssociationService {
   ) {}
 
   save(dto: CreateIntroAssociationDto) {
-    return this.introAssociationRepo.save(dto);
+    return this.introAssociationRepo.save({
+      ...dto,
+      ...normalizeTranslations(
+        dto,
+        ['nameEn', 'contentEn', 'locationEn', 'representativeEn', 'contactEn'],
+        ['contentEn'],
+      ),
+    });
   }
 
   find(findOptions?: object) {
@@ -41,7 +49,23 @@ export class IntroAssociationService {
 
   async update(uuid: string, dto: CreateIntroAssociationDto) {
     await this.findOneByUuidOrFail(uuid);
-    return this.introAssociationRepo.update({ uuid: uuid }, dto);
+    return this.introAssociationRepo.update(
+      { uuid: uuid },
+      {
+        ...dto,
+        ...normalizeTranslations(
+          dto,
+          [
+            'nameEn',
+            'contentEn',
+            'locationEn',
+            'representativeEn',
+            'contactEn',
+          ],
+          ['contentEn'],
+        ),
+      },
+    );
   }
 
   async remove(uuid: string) {
