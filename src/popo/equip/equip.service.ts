@@ -1,3 +1,4 @@
+import { normalizeTranslations } from '../../utils/translated-fields';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -5,6 +6,7 @@ import { In, Repository } from 'typeorm';
 import { Equip } from './equip.entity';
 import { EquipmentDto } from './equip.dto';
 import { EquipOwner } from './equip.meta';
+import { normalizeEnglishName } from '../../utils/english-name';
 
 const Message = {
   NOT_EXISTING_REGION: "There's no such region.",
@@ -24,6 +26,8 @@ export class EquipService {
   async save(dto: EquipmentDto) {
     return this.equipRepo.save({
       name: dto.name,
+      nameEn: normalizeEnglishName(dto.nameEn) ?? null,
+      ...normalizeTranslations(dto, ['descriptionEn'], ['descriptionEn']),
       description: dto.description,
       fee: dto.fee,
       equipOwner: dto.equipOwner,
@@ -73,7 +77,14 @@ export class EquipService {
 
   async update(uuid: string, dto: EquipmentDto) {
     await this.findOneByUuidOrFail(uuid);
-    return this.equipRepo.update({ uuid: uuid }, dto);
+    return this.equipRepo.update(
+      { uuid: uuid },
+      {
+        ...dto,
+        nameEn: normalizeEnglishName(dto.nameEn),
+        ...normalizeTranslations(dto, ['descriptionEn'], ['descriptionEn']),
+      },
+    );
   }
 
   async updateReservationCountByDelta(uuid: string, delta: number) {

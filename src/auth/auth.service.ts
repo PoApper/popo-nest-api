@@ -146,6 +146,13 @@ export class AuthService {
         return false;
       }
 
+      if (
+        user.userStatus !== UserStatus.activated ||
+        user.userType !== userInAccessToken.userType ||
+        user.userType !== userInRefreshToken.userType
+      ) {
+        return false;
+      }
       const hashedToken = this.hashToken(refreshToken);
 
       if (!user.hashedRefreshToken || user.hashedRefreshToken !== hashedToken) {

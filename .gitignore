@@ -50,3 +50,4 @@ lerna-debug.log*
 # local certs
 *.csr
 *.pem
+uploads/
