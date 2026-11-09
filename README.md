@@ -37,6 +37,15 @@ Dev-Prod의 two-stage 배포 정책을 가지고 있으며, 각 stage에 배포�
   - 이때, Web 어플리케이션의 경우는 도커 이미지 빌드 때 `NEXT_PUBLIC_ENV=prod`로 설정해줘야 한다.
   - Portainer 웹에서 "직접" Prod stage의 버전을 바꿔준다.
 
+### 환경변수(.env) 설정
+
+Portainer Secrets로 `.env`를 등록할 때, 서비스의 Secrets 설정에서 `Override`를 눌러 File name을 **`/usr/src/app/.env`로 반드시 지정**해야 한다. 앱이 `WORKDIR` 기준으로 `.env`를 찾기 때문에, 경로를 지정하지 않으면 기본 경로에 마운트되어 무시된다.
+
+<img src="assets/portainer-secret-env-path.png" alt="Portainer Secrets 설정에서 File name을 /usr/src/app/.env로 지정한 화면" width="700">
+
+- `NODE_ENV`는 stage에 맞게 `prod` / `dev`로 넣는다. 키 목록은 `.env.example` 참고.
+- 정상 로드 여부는 기동 로그의 `Running in prod mode`로 확인한다. `undefined mode`면 경로가 잘못된 것이다.
+
 ## Contributors & Maintainer
 
 - Seokyun Ha ([@bluehorn07](https://github.com/BlueHorn07))
