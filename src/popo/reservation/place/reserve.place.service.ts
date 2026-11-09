@@ -3,7 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ReservePlace } from './reserve.place.entity';
 import {
   Between,
+  DataSource,
   DeepPartial,
+  EntityManager,
   FindOptionsOrder,
   FindOptionsWhere,
   In,
@@ -28,6 +30,8 @@ import {
   timeStringToMinutes,
 } from '../../../utils/reservation-utils';
 import { UserType } from 'src/popo/user/user.meta';
+import { User } from '../../user/user.entity';
+import { Place } from '../../place/place.entity';
 
 const Message = {
   NOT_EXISTING_USER: "There's no such user.",
@@ -50,6 +54,7 @@ export class ReservePlaceService {
     private readonly reservePlaceRepo: Repository<ReservePlace>,
     private readonly userService: UserService,
     private readonly placeService: PlaceService,
+    public readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -64,10 +69,13 @@ export class ReservePlaceService {
     startTime: string,
     endTime: string,
     countedStatuses: ReservationStatus[] = [ReservationStatus.accept],
+    manager?: EntityManager,
   ): Promise<boolean> {
     // 라인스위핑으로 동시 예약 개수 체크
 
-    const accepted = await this.reservePlaceRepo.find({
+    const reservePlaceRepo =
+      manager?.getRepository(ReservePlace) ?? this.reservePlaceRepo;
+    const accepted = await reservePlaceRepo.find({
       where: { placeId: placeId, date: date, status: In(countedStatuses) },
       order: { startTime: 'ASC' },
     });
@@ -116,6 +124,7 @@ export class ReservePlaceService {
     dto: DeepPartial<CreateReservePlaceDto>,
     bookerId: string,
     isPatch: boolean = true,
+    manager?: EntityManager,
   ) {
     const { placeId, date, startTime, endTime } = dto;
 
@@ -123,7 +132,11 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
     }
 
-    const targetPlace = await this.placeService.findOneByUuidOrFail(placeId);
+    const reservePlaceRepo =
+      manager?.getRepository(ReservePlace) ?? this.reservePlaceRepo;
+    const targetPlace = manager
+      ? await manager.getRepository(Place).findOneByOrFail({ uuid: placeId })
+      : await this.placeService.findOneByUuidOrFail(placeId);
 
     if (
       !isReservationLeadTimeSatisfied(date, targetPlace.reservationRequiredDays)
@@ -159,6 +172,7 @@ export class ReservePlaceService {
       startTime,
       endTime,
       countedStatuses,
+      manager,
     );
     if (!isConcurrentPossible) {
       const conflictDescription = isPatch
@@ -183,7 +197,9 @@ export class ReservePlaceService {
       );
     }
 
-    const booker = await this.userService.findOneByUuidOrFail(bookerId);
+    const booker = manager
+      ? await manager.getRepository(User).findOneByOrFail({ uuid: bookerId })
+      : await this.userService.findOneByUuidOrFail(bookerId);
 
     if (
       targetPlace.region === PlaceRegion.residential_college &&
@@ -197,7 +213,7 @@ export class ReservePlaceService {
       );
     }
 
-    const reservationsOfDay = await this.reservePlaceRepo.find({
+    const reservationsOfDay = await reservePlaceRepo.find({
       where: {
         bookerId: bookerId,
         placeId: placeId,

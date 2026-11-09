@@ -144,7 +144,7 @@ export class AuthController {
   @Public()
   @Post(['signIn', 'register'])
   async register(@Body() createUserDto: CreateUserDto) {
-    const saveUser = await this.userService.save(createUserDto);
+    const saveUser = await this.userService.register(createUserDto);
     this.logger.log('회원가입 성공', {
       이메일: saveUser.email,
       '유저 UUID': saveUser.uuid,

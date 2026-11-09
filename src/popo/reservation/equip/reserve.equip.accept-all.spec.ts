@@ -83,6 +83,7 @@ describe('ReserveEquip - Bulk accept & filters', () => {
   });
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const dataSource = app.get(DataSource);
     await dataSource.synchronize(true);
     await testUtils.initializeTestUsers();
@@ -253,6 +254,88 @@ describe('ReserveEquip - Bulk accept & filters', () => {
       ).toBe(ReservationStatus.accept);
     });
 
+    it('should see earlier approvals in the same batch and skip later overlaps', async () => {
+      const first = await saveOverlappingReservationDirectly({
+        title: 'First pending',
+        startTime: '1000',
+        endTime: '1200',
+        createdAt: new Date('2024-12-01T00:00:00Z'),
+      });
+      const overlapping = await saveOverlappingReservationDirectly({
+        title: 'Later overlapping',
+        startTime: '1100',
+        endTime: '1300',
+        createdAt: new Date('2024-12-02T00:00:00Z'),
+      });
+      const independent = await saveReservation({
+        equipments: [otherEquipment.uuid],
+        startTime: '1100',
+        endTime: '1300',
+      });
+
+      const result = await controller.acceptAllStatus(
+        { uuidList: [overlapping.uuid, first.uuid, independent.uuid] },
+        'false',
+      );
+
+      expect(result.acceptedCount).toBe(2);
+      expect(result.acceptedUuidList).toEqual([first.uuid, independent.uuid]);
+      expect(result.skippedList.map(({ uuid }) => uuid)).toEqual([
+        overlapping.uuid,
+      ]);
+      expect(
+        (await reserveEquipService.findOneByUuidOrFail(overlapping.uuid))
+          .status,
+      ).toBe(ReservationStatus.in_process);
+    });
+
+    it('should validate and load notification users on the transaction connection', async () => {
+      const reservation = await saveReservation({
+        title: 'Transaction connection',
+      });
+      const externalReads = [
+        jest.spyOn(equipService, 'findByIds'),
+        jest.spyOn(userService, 'findOneByUuid'),
+        jest.spyOn(reserveEquipRepo, 'find'),
+      ];
+      for (const spy of externalReads) {
+        spy.mockRejectedValue(
+          new Error('External connection must not be used'),
+        );
+      }
+      try {
+        const result = await controller.acceptAllStatus(
+          { uuidList: [reservation.uuid] },
+          'true',
+        );
+        expect(result.acceptedUuidList).toEqual([reservation.uuid]);
+        externalReads.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+        expect(mailService.sendReservationPatchMail).toHaveBeenCalledWith(
+          testUserJwt.email,
+          reservation.title,
+          ReservationStatus.accept,
+        );
+      } finally {
+        externalReads.forEach((spy) => spy.mockRestore());
+      }
+    });
+
+    it('should skip non-existent reservation uuid without throwing error', async () => {
+      const reservation = await saveReservation({ title: 'Valid' });
+      const fakeUuid = '00000000-0000-0000-0000-000000000000';
+
+      const result = await controller.acceptAllStatus(
+        { uuidList: [fakeUuid, reservation.uuid] },
+        'false',
+      );
+
+      expect(result.totalCount).toBe(2);
+      expect(result.acceptedCount).toBe(1);
+      expect(result.skippedCount).toBe(1);
+      expect(result.skippedList[0].uuid).toBe(fakeUuid);
+      expect(result.acceptedUuidList).toEqual([reservation.uuid]);
+    });
+
     it('should not send emails when sendEmail is not requested', async () => {
       const sendEmailSpy = jest.spyOn(mailService, 'sendReservationPatchMail');
       const reservation = await saveReservation({ title: 'No Mail' });
@@ -260,6 +343,76 @@ describe('ReserveEquip - Bulk accept & filters', () => {
       await controller.acceptAllStatus({ uuidList: [reservation.uuid] });
 
       expect(sendEmailSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('rejectAllStatus', () => {
+    let first: ReserveEquip;
+    let second: ReserveEquip;
+
+    beforeEach(async () => {
+      first = await saveReservation({
+        title: 'Reject Target 1',
+        startTime: '1000',
+        endTime: '1200',
+      });
+      second = await saveReservation({
+        title: 'Reject Target 2',
+        startTime: '1400',
+        endTime: '1600',
+      });
+    });
+
+    it('should reject all valid reservations successfully', async () => {
+      const result = await controller.rejectAllStatus(
+        { uuidList: [first.uuid, second.uuid] },
+        'false',
+      );
+
+      expect(result.totalCount).toBe(2);
+      expect(result.acceptedCount).toBe(2);
+      expect(result.skippedCount).toBe(0);
+      expect(result.acceptedUuidList).toEqual([first.uuid, second.uuid]);
+
+      const updatedFirst = await reserveEquipService.findOneByUuidOrFail(
+        first.uuid,
+      );
+      const updatedSecond = await reserveEquipService.findOneByUuidOrFail(
+        second.uuid,
+      );
+      expect(updatedFirst.status).toBe(ReservationStatus.reject);
+      expect(updatedSecond.status).toBe(ReservationStatus.reject);
+    });
+
+    it('should skip non-existent uuid and reject remaining reservations', async () => {
+      const fakeUuid = '00000000-0000-0000-0000-000000000000';
+      const result = await controller.rejectAllStatus(
+        { uuidList: [first.uuid, fakeUuid] },
+        'false',
+      );
+
+      expect(result.totalCount).toBe(2);
+      expect(result.acceptedCount).toBe(1);
+      expect(result.skippedCount).toBe(1);
+      expect(result.acceptedUuidList).toEqual([first.uuid]);
+      expect(result.skippedList[0].uuid).toBe(fakeUuid);
+
+      const updatedFirst = await reserveEquipService.findOneByUuidOrFail(
+        first.uuid,
+      );
+      expect(updatedFirst.status).toBe(ReservationStatus.reject);
+    });
+
+    it('should send notification email when sendEmail is true', async () => {
+      const sendEmailSpy = jest.spyOn(mailService, 'sendReservationPatchMail');
+
+      await controller.rejectAllStatus({ uuidList: [first.uuid] }, 'true');
+
+      expect(sendEmailSpy).toHaveBeenCalledWith(
+        testUserJwt.email,
+        first.title,
+        ReservationStatus.reject,
+      );
     });
   });
 

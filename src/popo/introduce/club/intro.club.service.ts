@@ -1,3 +1,4 @@
+import { normalizeTranslations } from '../../../utils/translated-fields';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,7 +14,21 @@ export class IntroClubService {
   ) {}
 
   save(dto: CreateIntroClubDto) {
-    return this.introClubRepo.save(dto);
+    return this.introClubRepo.save({
+      ...dto,
+      ...normalizeTranslations(
+        dto,
+        [
+          'nameEn',
+          'shortDescEn',
+          'contentEn',
+          'locationEn',
+          'representativeEn',
+          'contactEn',
+        ],
+        ['contentEn'],
+      ),
+    });
   }
 
   updateImageUrl(uuid: string, imageUrl: string) {
@@ -39,7 +54,24 @@ export class IntroClubService {
   async update(uuid: string, dto: CreateIntroClubDto) {
     await this.findOneByUuidOrFail(uuid);
 
-    return this.introClubRepo.update({ uuid: uuid }, dto);
+    return this.introClubRepo.update(
+      { uuid: uuid },
+      {
+        ...dto,
+        ...normalizeTranslations(
+          dto,
+          [
+            'nameEn',
+            'shortDescEn',
+            'contentEn',
+            'locationEn',
+            'representativeEn',
+            'contactEn',
+          ],
+          ['contentEn'],
+        ),
+      },
+    );
   }
 
   async remove(uuid: string) {

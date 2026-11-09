@@ -101,6 +101,8 @@ export class UserController {
   }
 
   @Put(':uuid')
+  @UseGuards(RolesGuard)
+  @Roles(UserType.admin)
   async put(@Param('uuid') uuid: string, @Body() dto: UpdateUserDto) {
     return await this.userService.update(uuid, dto);
   }

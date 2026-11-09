@@ -30,6 +30,7 @@ import { ReservePlace } from './reserve.place.entity';
 import * as moment from 'moment-timezone';
 import { Public } from 'src/common/public-guard.decorator';
 import { User } from 'src/popo/common/user.decorator';
+import { User as UserEntity } from '../../user/user.entity';
 
 @ApiTags('Reservation - Place')
 @Controller('reservation-place')
@@ -278,59 +279,115 @@ export class ReservePlaceController {
     @User() user?: JwtPayload,
   ): Promise<AcceptPlaceReservationResultDto> {
     const reservations: ReservePlace[] = [];
+    const acceptedUuidList: string[] = [];
+    const skippedList: SkippedPlaceReservationDto[] = [];
+
     for (const reservationUuid of body.uuidList) {
       const reservation =
-        await this.reservePlaceService.findOneByUuidOrFail(reservationUuid);
+        await this.reservePlaceService.findOneByUuid(reservationUuid);
+      if (!reservation) {
+        skippedList.push({
+          uuid: reservationUuid,
+          title: '(알 수 없음)',
+          date: '',
+          startTime: '',
+          endTime: '',
+          reason: '존재하지 않는 예약입니다.',
+        });
+        continue;
+      }
       reservations.push(reservation);
     }
 
     // early created reservation should be processed first
     reservations.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
 
-    const acceptedUuidList: string[] = [];
-    const skippedList: SkippedPlaceReservationDto[] = [];
+    const updatedUserList: {
+      email: string;
+      title: string;
+      userType: UserType;
+    }[] = [];
 
-    for (const reservation of reservations) {
-      // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
-      // 앞선 예약이 승인되면 그와 겹치는 뒤쪽 예약은 이 검사에서 자동으로 걸러진다.
-      try {
-        await this.reservePlaceService.checkReservationPossible(
-          {
-            placeId: reservation.placeId,
-            date: reservation.date,
-            startTime: reservation.startTime,
-            endTime: reservation.endTime,
-          },
-          reservation.bookerId,
-          true,
-        );
-      } catch (error) {
-        skippedList.push({
-          uuid: reservation.uuid,
-          title: reservation.title,
-          date: reservation.date,
-          startTime: reservation.startTime,
-          endTime: reservation.endTime,
-          reason: error?.response?.message ?? error?.message ?? '승인 불가',
-        });
-        continue;
-      }
+    await this.reservePlaceService.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const transactionalReservePlaceRepo =
+          transactionalEntityManager.getRepository(ReservePlace);
 
-      const response = await this.reservePlaceService.updateStatus(
-        reservation.uuid,
-        ReservationStatus.accept,
-        user,
-        '일괄 승인',
-      );
-      acceptedUuidList.push(reservation.uuid);
+        for (const reservation of reservations) {
+          // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
+          // 앞선 예약이 승인되면 그와 겹치는 뒤쪽 예약은 이 검사에서 자동으로 걸러진다.
+          try {
+            await this.reservePlaceService.checkReservationPossible(
+              {
+                placeId: reservation.placeId,
+                date: reservation.date,
+                startTime: reservation.startTime,
+                endTime: reservation.endTime,
+              },
+              reservation.bookerId,
+              true,
+              transactionalEntityManager,
+            );
+          } catch (error) {
+            skippedList.push({
+              uuid: reservation.uuid,
+              title: reservation.title,
+              date: reservation.date,
+              startTime: reservation.startTime,
+              endTime: reservation.endTime,
+              reason: error?.response?.message ?? error?.message ?? '승인 불가',
+            });
+            continue;
+          }
 
-      if (sendEmail === 'true') {
-        // Send e-mail to client.
-        const skipList = [UserType.admin, UserType.association, UserType.club];
-        if (!skipList.includes(response.userType)) {
+          await transactionalReservePlaceRepo.update(
+            { uuid: reservation.uuid },
+            { status: ReservationStatus.accept },
+          );
+          acceptedUuidList.push(reservation.uuid);
+
+          const existUser = await transactionalEntityManager
+            .getRepository(UserEntity)
+            .findOneBy({ uuid: reservation.bookerId });
+
+          if (this.reservePlaceService['isAdminActor'](user)) {
+            const actorName = user.name ?? user.nickname ?? '(이름 없음)';
+            this.reservePlaceService['logger'].log(
+              [
+                '[관리자 장소 예약 상태 변경]',
+                `- 행동: 일괄 승인`,
+                `- 관리자 UUID: ${user.uuid}`,
+                `- 관리자 이름: ${actorName}`,
+                `- 관리자 권한: ${user.userType}`,
+                `- 예약 UUID: ${reservation.uuid}`,
+                `- 예약 제목: ${reservation.title}`,
+                `- 예약자 UUID: ${reservation.bookerId}`,
+                `- 장소 UUID: ${reservation.placeId}`,
+                `- 예약 일시: ${reservation.date} ${reservation.startTime}~${reservation.endTime}`,
+                `- 상태 변경: "${reservation.status}" -> "${ReservationStatus.accept}"`,
+              ].join('\n'),
+            );
+          }
+
+          if (existUser) {
+            updatedUserList.push({
+              email: existUser.email,
+              title: reservation.title,
+              userType: existUser.userType,
+            });
+          }
+        }
+      },
+    );
+
+    if (sendEmail === 'true') {
+      // Send e-mail to client after transaction successfully commits.
+      const skipList = [UserType.admin, UserType.association, UserType.club];
+      for (const userInfo of updatedUserList) {
+        if (!skipList.includes(userInfo.userType)) {
           await this.mailService.sendReservationPatchMail(
-            response.email,
-            response.title,
+            userInfo.email,
+            userInfo.title,
             ReservationStatus.accept,
           );
         }
@@ -338,7 +395,7 @@ export class ReservePlaceController {
     }
 
     return {
-      totalCount: reservations.length,
+      totalCount: body.uuidList.length,
       acceptedCount: acceptedUuidList.length,
       skippedCount: skippedList.length,
       acceptedUuidList: acceptedUuidList,

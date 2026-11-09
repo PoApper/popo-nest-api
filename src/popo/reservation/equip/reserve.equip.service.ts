@@ -2,6 +2,8 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Between,
+  DataSource,
+  EntityManager,
   FindOptionsOrder,
   FindOptionsWhere,
   In,
@@ -51,6 +53,7 @@ export class ReserveEquipService {
     private readonly reserveEquipRepo: Repository<ReserveEquip>,
     private readonly userService: UserService,
     private readonly equipService: EquipService,
+    public readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -64,8 +67,11 @@ export class ReserveEquipService {
     startTime: string,
     endTime: string,
     countedStatuses: ReservationStatus[] = [ReservationStatus.accept],
+    manager?: EntityManager,
   ): Promise<boolean> {
-    const booked_reservations = await this.find({
+    const reserveEquipRepo =
+      manager?.getRepository(ReserveEquip) ?? this.reserveEquipRepo;
+    const booked_reservations = await reserveEquipRepo.find({
       where: {
         date: date,
         status: In(countedStatuses),
@@ -185,8 +191,11 @@ export class ReserveEquipService {
     date: string,
     startTime: string,
     endTime: string,
+    manager?: EntityManager,
   ) {
-    const targetEquipments = await this.equipService.findByIds(equipmentIds);
+    const targetEquipments = manager
+      ? await manager.getRepository(Equip).findBy({ uuid: In(equipmentIds) })
+      : await this.equipService.findByIds(equipmentIds);
     this.assertEquipmentsOnOpeningHours(
       targetEquipments,
       date,
@@ -195,8 +204,14 @@ export class ReserveEquipService {
     );
   }
 
-  async assertReservationRequiredDays(equipmentIds: string[], date: string) {
-    const targetEquipments = await this.equipService.findByIds(equipmentIds);
+  async assertReservationRequiredDays(
+    equipmentIds: string[],
+    date: string,
+    manager?: EntityManager,
+  ) {
+    const targetEquipments = manager
+      ? await manager.getRepository(Equip).findBy({ uuid: In(equipmentIds) })
+      : await this.equipService.findByIds(equipmentIds);
     this.assertEquipmentsReservationRequiredDays(targetEquipments, date);
   }
 
