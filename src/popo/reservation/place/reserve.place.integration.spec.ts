@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -886,6 +886,31 @@ describe('ReservePlaceModule - Integration Test', () => {
             )
           ).status,
         ).toBe(ReservationStatus.in_process);
+      });
+
+      it('should run the availability check inside the bulk-accept transaction', async () => {
+        // sqlite 테스트 DB는 연결이 하나라 트랜잭션 밖 조회도 미커밋 변경을 본다. MySQL 버그를 재현할 수 없어 manager 전달을 직접 확인한다.
+        const original =
+          reservePlaceService.isReservationConcurrent.bind(reservePlaceService);
+        const seenInTransaction: boolean[] = [];
+        const spy = jest
+          .spyOn(reservePlaceService, 'isReservationConcurrent')
+          .mockImplementation(async (...args) => {
+            const manager = (args as unknown[])[5] as EntityManager | undefined;
+            seenInTransaction.push(!!manager?.queryRunner?.isTransactionActive);
+            return original(...args);
+          });
+
+        try {
+          await reservePlaceController.acceptAllStatus(
+            { uuidList: [earlierReservation.uuid] },
+            'false',
+          );
+        } finally {
+          spy.mockRestore();
+        }
+
+        expect(seenInTransaction).toEqual([true]);
       });
 
       it('should skip non-existent reservation uuid without throwing error', async () => {

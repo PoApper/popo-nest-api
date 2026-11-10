@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   Between,
   DataSource,
+  EntityManager,
   FindOptionsOrder,
   FindOptionsWhere,
   In,
@@ -55,13 +56,18 @@ export class ReserveEquipService {
     public readonly dataSource: DataSource,
   ) {}
 
+  // manager 를 넘기면 그 트랜잭션 안에서 조회한다(같은 배치에서 앞서 승인한 미커밋 예약 포함).
   async isReservationOverlap(
     uuidList: string[],
     date: string,
     startTime: string,
     endTime: string,
+    manager?: EntityManager,
   ): Promise<boolean> {
-    const booked_reservations = await this.find({
+    const repo = manager
+      ? manager.getRepository(ReserveEquip)
+      : this.reserveEquipRepo;
+    const booked_reservations = await repo.find({
       where: {
         date: date,
         status: ReservationStatus.accept,

@@ -5,6 +5,7 @@ import {
   Between,
   DataSource,
   DeepPartial,
+  EntityManager,
   FindOptionsOrder,
   FindOptionsWhere,
   In,
@@ -54,16 +55,24 @@ export class ReservePlaceService {
     public readonly dataSource: DataSource,
   ) {}
 
+  // 트랜잭션 안에서 호출되면 그 트랜잭션의 repository 를, 아니면 기본 repository 를 쓴다.
+  private getReservePlaceRepo(manager?: EntityManager) {
+    return manager
+      ? manager.getRepository(ReservePlace)
+      : this.reservePlaceRepo;
+  }
+
   async isReservationConcurrent(
     placeId: string,
     maxConcurrentReservation: number,
     date: string,
     startTime: string,
     endTime: string,
+    manager?: EntityManager,
   ): Promise<boolean> {
     // 라인스위핑으로 동시 예약 개수 체크
 
-    const accepted = await this.reservePlaceRepo.find({
+    const accepted = await this.getReservePlaceRepo(manager).find({
       where: { placeId: placeId, date: date, status: ReservationStatus.accept },
       order: { startTime: 'ASC' },
     });
@@ -112,6 +121,7 @@ export class ReservePlaceService {
     dto: DeepPartial<CreateReservePlaceDto>,
     bookerId: string,
     isPatch: boolean = true,
+    manager?: EntityManager,
   ) {
     const { placeId, date, startTime, endTime } = dto;
 
@@ -142,6 +152,7 @@ export class ReservePlaceService {
       date,
       startTime,
       endTime,
+      manager,
     );
     if (!isConcurrentPossible) {
       throw new BadRequestException(
@@ -177,7 +188,7 @@ export class ReservePlaceService {
       );
     }
 
-    const reservationsOfDay = await this.reservePlaceRepo.find({
+    const reservationsOfDay = await this.getReservePlaceRepo(manager).find({
       where: {
         bookerId: bookerId,
         placeId: placeId,
