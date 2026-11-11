@@ -3,6 +3,7 @@ FROM node:24.22.2-alpine
 WORKDIR /usr/src/app
 
 COPY package*.json ./
+COPY vendor ./vendor
 
 RUN npm ci
 
