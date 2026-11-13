@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 
 import configurations from 'src/config/configurations';
@@ -83,6 +83,7 @@ describe('ReserveEquip - Bulk accept & filters', () => {
   });
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const dataSource = app.get(DataSource);
     await dataSource.synchronize(true);
     await testUtils.initializeTestUsers();
@@ -134,6 +135,10 @@ describe('ReserveEquip - Bulk accept & filters', () => {
 
   /**
    * 겹치는 "심사중" 예약을 DB에 직접 넣는다.
+   *
+   * 지금은 신청 단계에서 심사중 예약과의 겹침을 막기 때문에 API 로는 이 상태를
+   * 만들 수 없다. 하지만 정책 변경 전에 쌓인 예약이 그대로 남아 있으므로,
+   * 일괄 승인은 여전히 이 상황을 처리할 수 있어야 한다.
    */
   function saveOverlappingReservationDirectly(
     overrides: Partial<ReserveEquip>,
@@ -249,19 +254,89 @@ describe('ReserveEquip - Bulk accept & filters', () => {
       ).toBe(ReservationStatus.accept);
     });
 
+    it('should see earlier approvals in the same batch and skip later overlaps', async () => {
+      const first = await saveOverlappingReservationDirectly({
+        title: 'First pending',
+        startTime: '1000',
+        endTime: '1200',
+        createdAt: new Date('2024-12-01T00:00:00Z'),
+      });
+      const overlapping = await saveOverlappingReservationDirectly({
+        title: 'Later overlapping',
+        startTime: '1100',
+        endTime: '1300',
+        createdAt: new Date('2024-12-02T00:00:00Z'),
+      });
+      const independent = await saveReservation({
+        equipments: [otherEquipment.uuid],
+        startTime: '1100',
+        endTime: '1300',
+      });
+
+      const result = await controller.acceptAllStatus(
+        { uuidList: [overlapping.uuid, first.uuid, independent.uuid] },
+        'false',
+      );
+
+      expect(result.acceptedCount).toBe(2);
+      expect(result.acceptedUuidList).toEqual([first.uuid, independent.uuid]);
+      expect(result.skippedList.map(({ uuid }) => uuid)).toEqual([
+        overlapping.uuid,
+      ]);
+      expect(
+        (await reserveEquipService.findOneByUuidOrFail(overlapping.uuid))
+          .status,
+      ).toBe(ReservationStatus.in_process);
+    });
+
+    it('should validate and load notification users on the transaction connection', async () => {
+      const reservation = await saveReservation({
+        title: 'Transaction connection',
+      });
+      const externalReads = [
+        jest.spyOn(equipService, 'findByIds'),
+        jest.spyOn(userService, 'findOneByUuid'),
+        jest.spyOn(reserveEquipRepo, 'find'),
+      ];
+      for (const spy of externalReads) {
+        spy.mockRejectedValue(
+          new Error('External connection must not be used'),
+        );
+      }
+      try {
+        const result = await controller.acceptAllStatus(
+          { uuidList: [reservation.uuid] },
+          'true',
+        );
+        expect(result.acceptedUuidList).toEqual([reservation.uuid]);
+        externalReads.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+        expect(mailService.sendReservationPatchMail).toHaveBeenCalledWith(
+          testUserJwt.email,
+          reservation.title,
+          ReservationStatus.accept,
+        );
+      } finally {
+        externalReads.forEach((spy) => spy.mockRestore());
+      }
+    });
+
     it('should run the overlap check inside the bulk-accept transaction', async () => {
-      // sqlite 테스트 DB는 연결이 하나라 트랜잭션 밖 조회도 미커밋 변경을 본다. MySQL 버그를 재현할 수 없어 manager 전달을 직접 확인한다.
+      // SQLite는 외부 조회도 같은 연결을 공유하므로 활성 manager 전달을 별도로 확인한다.
       const reservation = await saveReservation({ title: 'Tx Check' });
       const original =
         reserveEquipService.isReservationOverlap.bind(reserveEquipService);
       const seenInTransaction: boolean[] = [];
       const spy = jest
         .spyOn(reserveEquipService, 'isReservationOverlap')
-        .mockImplementation(async (...args) => {
-          const manager = (args as unknown[])[4] as EntityManager | undefined;
-          seenInTransaction.push(!!manager?.queryRunner?.isTransactionActive);
-          return original(...args);
-        });
+        .mockImplementation(
+          async (
+            ...args: Parameters<ReserveEquipService['isReservationOverlap']>
+          ) => {
+            const manager = args[4];
+            seenInTransaction.push(!!manager?.queryRunner?.isTransactionActive);
+            return original(...args);
+          },
+        );
 
       try {
         await controller.acceptAllStatus(

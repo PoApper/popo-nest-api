@@ -32,6 +32,7 @@ import * as moment from 'moment-timezone';
 import { EntityManager } from 'typeorm';
 import { Public } from 'src/common/public-guard.decorator';
 import { User } from 'src/popo/common/user.decorator';
+import { User as UserEntity } from '../../user/user.entity';
 
 @ApiTags('Reservation - Equipment')
 @Controller('reservation-equip')
@@ -265,12 +266,14 @@ export class ReserveEquipController {
     await this.reserveEquipService.assertReservationRequiredDays(
       reservation.equipments,
       reservation.date,
+      manager,
     );
     await this.reserveEquipService.assertReservationOpeningHours(
       reservation.equipments,
       reservation.date,
       reservation.startTime,
       reservation.endTime,
+      manager,
     );
 
     const isOverlap = await this.reserveEquipService.isReservationOverlap(
@@ -355,9 +358,9 @@ export class ReserveEquipController {
           );
           acceptedUuidList.push(reservation.uuid);
 
-          const existUser = await this.reserveEquipService[
-            'userService'
-          ].findOneByUuid(reservation.bookerId);
+          const existUser = await transactionalEntityManager
+            .getRepository(UserEntity)
+            .findOneBy({ uuid: reservation.bookerId });
 
           if (this.reserveEquipService['isAdminActor'](user)) {
             const actorName = user.name ?? user.nickname ?? '(이름 없음)';

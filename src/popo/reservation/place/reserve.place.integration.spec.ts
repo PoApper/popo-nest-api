@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -252,6 +252,14 @@ describe('ReservePlaceModule - Integration Test', () => {
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThanOrEqual(2);
+      result.forEach((reservation) => {
+        expect(reservation.booker).toBeDefined();
+        expect(reservation.place).toBeDefined();
+        expect(reservation.booker.password).toBeUndefined();
+        expect(reservation.booker.cryptoSalt).toBeUndefined();
+        expect(reservation.booker.hashedRefreshToken).toBeUndefined();
+        expect(reservation.booker.refreshTokenExpiresAt).toBeUndefined();
+      });
     });
 
     it('should get reservations by status', async () => {
@@ -888,18 +896,77 @@ describe('ReservePlaceModule - Integration Test', () => {
         ).toBe(ReservationStatus.in_process);
       });
 
+      it('should not abort the whole batch when the first reservation is not acceptable', async () => {
+        // 겹치는 예약을 먼저 승인해두면, 그 뒤 일괄 승인에서는 해당 건만 건너뛰어야 한다.
+        await reservePlaceService.updateStatus(
+          earlierReservation.uuid,
+          ReservationStatus.accept,
+        );
+
+        const dto: AcceptPlaceReservationListDto = {
+          uuidList: [overlappingReservation.uuid, independentReservation.uuid],
+        };
+
+        const result = await reservePlaceController.acceptAllStatus(
+          dto,
+          'false',
+        );
+
+        expect(result.skippedCount).toBe(1);
+        expect(result.acceptedUuidList).toEqual([independentReservation.uuid]);
+      });
+
+      it('should validate and load notification users on the transaction connection', async () => {
+        const externalReads = [
+          jest.spyOn(placeService, 'findOneByUuidOrFail'),
+          jest.spyOn(userService, 'findOneByUuidOrFail'),
+          jest.spyOn(userService, 'findOneByUuid'),
+          jest.spyOn(app.get(DataSource).getRepository(ReservePlace), 'find'),
+        ];
+        for (const spy of externalReads) {
+          spy.mockRejectedValue(
+            new Error('External connection must not be used'),
+          );
+        }
+        try {
+          const result = await reservePlaceController.acceptAllStatus(
+            { uuidList: [independentReservation.uuid] },
+            'true',
+          );
+          expect(result.acceptedUuidList).toEqual([
+            independentReservation.uuid,
+          ]);
+          externalReads.forEach((spy) => expect(spy).not.toHaveBeenCalled());
+          expect(mailService.sendReservationPatchMail).toHaveBeenCalledWith(
+            testUserJwt.email,
+            independentReservation.title,
+            ReservationStatus.accept,
+          );
+        } finally {
+          externalReads.forEach((spy) => spy.mockRestore());
+        }
+      });
+
       it('should run the availability check inside the bulk-accept transaction', async () => {
-        // sqlite 테스트 DB는 연결이 하나라 트랜잭션 밖 조회도 미커밋 변경을 본다. MySQL 버그를 재현할 수 없어 manager 전달을 직접 확인한다.
+        // SQLite는 외부 조회도 같은 연결을 공유하므로 활성 manager 전달을 별도로 확인한다.
         const original =
           reservePlaceService.isReservationConcurrent.bind(reservePlaceService);
         const seenInTransaction: boolean[] = [];
         const spy = jest
           .spyOn(reservePlaceService, 'isReservationConcurrent')
-          .mockImplementation(async (...args) => {
-            const manager = (args as unknown[])[5] as EntityManager | undefined;
-            seenInTransaction.push(!!manager?.queryRunner?.isTransactionActive);
-            return original(...args);
-          });
+          .mockImplementation(
+            async (
+              ...args: Parameters<
+                ReservePlaceService['isReservationConcurrent']
+              >
+            ) => {
+              const manager = args[5];
+              seenInTransaction.push(
+                !!manager?.queryRunner?.isTransactionActive,
+              );
+              return original(...args);
+            },
+          );
 
         try {
           await reservePlaceController.acceptAllStatus(

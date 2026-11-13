@@ -30,6 +30,7 @@ import { ReservePlace } from './reserve.place.entity';
 import * as moment from 'moment-timezone';
 import { Public } from 'src/common/public-guard.decorator';
 import { User } from 'src/popo/common/user.decorator';
+import { User as UserEntity } from '../../user/user.entity';
 
 @ApiTags('Reservation - Place')
 @Controller('reservation-place')
@@ -119,7 +120,7 @@ export class ReservePlaceController {
     @Query('orderBy') orderBy?: 'createdAt' | 'date',
     @Query('orderDirection') orderDirection?: 'ASC' | 'DESC',
   ) {
-    const reservations = await this.reservePlaceService.findByFilter(
+    return this.reservePlaceService.findAllWithRelations(
       {
         status: status as ReservationStatus,
         date,
@@ -133,9 +134,6 @@ export class ReservePlaceController {
       },
       { skip, take },
     );
-
-    const withBooker = await this.reservePlaceService.joinBooker(reservations);
-    return this.reservePlaceService.joinPlace(withBooker);
   }
 
   @ApiCookieAuth()
@@ -349,9 +347,9 @@ export class ReservePlaceController {
           );
           acceptedUuidList.push(reservation.uuid);
 
-          const existUser = await this.reservePlaceService[
-            'userService'
-          ].findOneByUuid(reservation.bookerId);
+          const existUser = await transactionalEntityManager
+            .getRepository(UserEntity)
+            .findOneBy({ uuid: reservation.bookerId });
 
           if (this.reservePlaceService['isAdminActor'](user)) {
             const actorName = user.name ?? user.nickname ?? '(이름 없음)';

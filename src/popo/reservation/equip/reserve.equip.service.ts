@@ -178,8 +178,11 @@ export class ReserveEquipService {
     date: string,
     startTime: string,
     endTime: string,
+    manager?: EntityManager,
   ) {
-    const targetEquipments = await this.equipService.findByIds(equipmentIds);
+    const targetEquipments = manager
+      ? await manager.getRepository(Equip).findBy({ uuid: In(equipmentIds) })
+      : await this.equipService.findByIds(equipmentIds);
     this.assertEquipmentsOnOpeningHours(
       targetEquipments,
       date,
@@ -188,8 +191,14 @@ export class ReserveEquipService {
     );
   }
 
-  async assertReservationRequiredDays(equipmentIds: string[], date: string) {
-    const targetEquipments = await this.equipService.findByIds(equipmentIds);
+  async assertReservationRequiredDays(
+    equipmentIds: string[],
+    date: string,
+    manager?: EntityManager,
+  ) {
+    const targetEquipments = manager
+      ? await manager.getRepository(Equip).findBy({ uuid: In(equipmentIds) })
+      : await this.equipService.findByIds(equipmentIds);
     this.assertEquipmentsReservationRequiredDays(targetEquipments, date);
   }
 

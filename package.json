@@ -23,6 +23,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --ext .ts --ignore-pattern dist/",
     "test": "NODE_ENV=test jest",
+    "test:mysql:bulk-accept": "NODE_ENV=test jest --runInBand --testTimeout=15000 --setupFilesAfterEnv ./test/mysql-transaction.setup.ts --runTestsByPath src/popo/reservation/equip/reserve.equip.accept-all.spec.ts src/popo/reservation/place/reserve.place.integration.spec.ts --testNamePattern='transaction connection|bulk-accept transaction|earlier approvals in the same batch|patchStatus sendEmail query'",
     "test:watch": "NODE_ENV=test jest --watch",
     "test:cov": "NODE_ENV=test jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",

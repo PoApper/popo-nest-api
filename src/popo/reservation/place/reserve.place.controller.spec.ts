@@ -67,4 +67,29 @@ describe('ReservePlaceController (mail integration)', () => {
       saved,
     );
   });
+
+  it('should load booker and place relations in the reservation list query', async () => {
+    const reservations = [{ uuid: 'r1' }] as any;
+    reservePlaceService.findAllWithRelations.mockResolvedValue(reservations);
+
+    const result = await controller.getAll(undefined, undefined, 0, 10);
+
+    expect(result).toBe(reservations);
+    expect(reservePlaceService.findAllWithRelations).toHaveBeenCalledWith(
+      {
+        status: undefined,
+        date: undefined,
+        placeId: undefined,
+        bookerId: undefined,
+        title: undefined,
+        startDate: undefined,
+        endDate: undefined,
+        orderBy: undefined,
+        orderDirection: undefined,
+      },
+      { skip: 0, take: 10 },
+    );
+    expect(reservePlaceService.joinBooker).not.toHaveBeenCalled();
+    expect(reservePlaceService.joinPlace).not.toHaveBeenCalled();
+  });
 });

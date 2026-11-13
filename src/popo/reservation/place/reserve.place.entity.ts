@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -11,6 +12,12 @@ import { Place } from '../../place/place.entity';
 import { Base } from '../../../common/base.entity';
 
 @Entity()
+@Index('IDX_reserve_place_place_id_date', ['placeId', 'date'])
+@Index('IDX_reserve_place_date_start_time_status', [
+  'date',
+  'startTime',
+  'status',
+])
 export class ReservePlace extends Base {
   @PrimaryGeneratedColumn('uuid')
   uuid: string;
