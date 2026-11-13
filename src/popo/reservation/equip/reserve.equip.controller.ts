@@ -29,6 +29,7 @@ import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
 import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import * as moment from 'moment-timezone';
+import { EntityManager } from 'typeorm';
 import { Public } from 'src/common/public-guard.decorator';
 import { User } from 'src/popo/common/user.decorator';
 
@@ -257,7 +258,10 @@ export class ReserveEquipController {
    * 장비 예약을 승인할 수 있는지 검사한다. 승인 불가 시 BadRequestException 을 던진다.
    * 단건 승인과 일괄 승인이 동일한 기준을 쓰도록 분리했다.
    */
-  private async assertReservationAcceptable(reservation: ReserveEquip) {
+  private async assertReservationAcceptable(
+    reservation: ReserveEquip,
+    manager?: EntityManager,
+  ) {
     await this.reserveEquipService.assertReservationRequiredDays(
       reservation.equipments,
       reservation.date,
@@ -274,6 +278,7 @@ export class ReserveEquipController {
       reservation.date,
       reservation.startTime,
       reservation.endTime,
+      manager,
     );
     if (isOverlap) {
       throw new BadRequestException('Reservation time overlapped.');
@@ -326,8 +331,12 @@ export class ReserveEquipController {
 
         for (const reservation of reservations) {
           // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
+          // 트랜잭션 EntityManager 로 조회해야 앞서 승인한(미커밋) 예약과의 겹침도 걸러진다.
           try {
-            await this.assertReservationAcceptable(reservation);
+            await this.assertReservationAcceptable(
+              reservation,
+              transactionalEntityManager,
+            );
           } catch (error) {
             skippedList.push({
               uuid: reservation.uuid,
@@ -471,7 +480,7 @@ export class ReserveEquipController {
   async patchStatus(
     @Param('uuid') uuid: string,
     @Param('status') status: ReservationStatus,
-    @Query('sendEmail') sendEmail?: boolean,
+    @Query('sendEmail') sendEmail?: string,
     @User() user?: JwtPayload,
   ) {
     const reservation =
@@ -489,7 +498,8 @@ export class ReserveEquipController {
       '단건 상태 변경',
     );
 
-    if (sendEmail) {
+    // 쿼리 값은 문자열이라 "false" 도 truthy 다. 장소 예약과 동일하게 비교한다.
+    if (sendEmail === 'true') {
       // Send e-mail to client.
       const skipList = [UserType.admin, UserType.association, UserType.club];
       if (!skipList.includes(response.userType)) {

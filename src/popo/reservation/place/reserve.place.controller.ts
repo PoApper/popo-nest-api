@@ -318,6 +318,7 @@ export class ReservePlaceController {
         for (const reservation of reservations) {
           // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
           // 앞선 예약이 승인되면 그와 겹치는 뒤쪽 예약은 이 검사에서 자동으로 걸러진다.
+          // 단, 앞서 승인한 건은 아직 커밋 전이므로 반드시 트랜잭션 EntityManager 로 조회해야 한다.
           try {
             await this.reservePlaceService.checkReservationPossible(
               {
@@ -328,6 +329,7 @@ export class ReservePlaceController {
               },
               reservation.bookerId,
               true,
+              transactionalEntityManager,
             );
           } catch (error) {
             skippedList.push({

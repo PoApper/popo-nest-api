@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 
 import configurations from 'src/config/configurations';
@@ -249,6 +249,32 @@ describe('ReserveEquip - Bulk accept & filters', () => {
       ).toBe(ReservationStatus.accept);
     });
 
+    it('should run the overlap check inside the bulk-accept transaction', async () => {
+      // sqlite 테스트 DB는 연결이 하나라 트랜잭션 밖 조회도 미커밋 변경을 본다. MySQL 버그를 재현할 수 없어 manager 전달을 직접 확인한다.
+      const reservation = await saveReservation({ title: 'Tx Check' });
+      const original =
+        reserveEquipService.isReservationOverlap.bind(reserveEquipService);
+      const seenInTransaction: boolean[] = [];
+      const spy = jest
+        .spyOn(reserveEquipService, 'isReservationOverlap')
+        .mockImplementation(async (...args) => {
+          const manager = (args as unknown[])[4] as EntityManager | undefined;
+          seenInTransaction.push(!!manager?.queryRunner?.isTransactionActive);
+          return original(...args);
+        });
+
+      try {
+        await controller.acceptAllStatus(
+          { uuidList: [reservation.uuid] },
+          'false',
+        );
+      } finally {
+        spy.mockRestore();
+      }
+
+      expect(seenInTransaction).toEqual([true]);
+    });
+
     it('should skip non-existent reservation uuid without throwing error', async () => {
       const reservation = await saveReservation({ title: 'Valid' });
       const fakeUuid = '00000000-0000-0000-0000-000000000000';
@@ -272,6 +298,40 @@ describe('ReserveEquip - Bulk accept & filters', () => {
       await controller.acceptAllStatus({ uuidList: [reservation.uuid] });
 
       expect(sendEmailSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('patchStatus sendEmail query', () => {
+    it('should not send email when sendEmail is "false"', async () => {
+      const sendEmailSpy = jest.spyOn(mailService, 'sendReservationPatchMail');
+      sendEmailSpy.mockClear();
+      const reservation = await saveReservation({ title: 'No Mail Single' });
+
+      await controller.patchStatus(
+        reservation.uuid,
+        ReservationStatus.reject,
+        'false',
+      );
+
+      expect(sendEmailSpy).not.toHaveBeenCalled();
+    });
+
+    it('should send email when sendEmail is "true"', async () => {
+      const sendEmailSpy = jest.spyOn(mailService, 'sendReservationPatchMail');
+      sendEmailSpy.mockClear();
+      const reservation = await saveReservation({ title: 'Mail Single' });
+
+      await controller.patchStatus(
+        reservation.uuid,
+        ReservationStatus.reject,
+        'true',
+      );
+
+      expect(sendEmailSpy).toHaveBeenCalledWith(
+        testUserJwt.email,
+        reservation.title,
+        ReservationStatus.reject,
+      );
     });
   });
 
