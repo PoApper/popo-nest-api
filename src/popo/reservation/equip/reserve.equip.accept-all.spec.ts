@@ -320,6 +320,36 @@ describe('ReserveEquip - Bulk accept & filters', () => {
       }
     });
 
+    it('should run the overlap check inside the bulk-accept transaction', async () => {
+      // SQLite는 외부 조회도 같은 연결을 공유하므로 활성 manager 전달을 별도로 확인한다.
+      const reservation = await saveReservation({ title: 'Tx Check' });
+      const original =
+        reserveEquipService.isReservationOverlap.bind(reserveEquipService);
+      const seenInTransaction: boolean[] = [];
+      const spy = jest
+        .spyOn(reserveEquipService, 'isReservationOverlap')
+        .mockImplementation(
+          async (
+            ...args: Parameters<ReserveEquipService['isReservationOverlap']>
+          ) => {
+            const manager = args[5];
+            seenInTransaction.push(!!manager?.queryRunner?.isTransactionActive);
+            return original(...args);
+          },
+        );
+
+      try {
+        await controller.acceptAllStatus(
+          { uuidList: [reservation.uuid] },
+          'false',
+        );
+      } finally {
+        spy.mockRestore();
+      }
+
+      expect(seenInTransaction).toEqual([true]);
+    });
+
     it('should skip non-existent reservation uuid without throwing error', async () => {
       const reservation = await saveReservation({ title: 'Valid' });
       const fakeUuid = '00000000-0000-0000-0000-000000000000';
@@ -343,6 +373,40 @@ describe('ReserveEquip - Bulk accept & filters', () => {
       await controller.acceptAllStatus({ uuidList: [reservation.uuid] });
 
       expect(sendEmailSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('patchStatus sendEmail query', () => {
+    it('should not send email when sendEmail is "false"', async () => {
+      const sendEmailSpy = jest.spyOn(mailService, 'sendReservationPatchMail');
+      sendEmailSpy.mockClear();
+      const reservation = await saveReservation({ title: 'No Mail Single' });
+
+      await controller.patchStatus(
+        reservation.uuid,
+        ReservationStatus.reject,
+        'false',
+      );
+
+      expect(sendEmailSpy).not.toHaveBeenCalled();
+    });
+
+    it('should send email when sendEmail is "true"', async () => {
+      const sendEmailSpy = jest.spyOn(mailService, 'sendReservationPatchMail');
+      sendEmailSpy.mockClear();
+      const reservation = await saveReservation({ title: 'Mail Single' });
+
+      await controller.patchStatus(
+        reservation.uuid,
+        ReservationStatus.reject,
+        'true',
+      );
+
+      expect(sendEmailSpy).toHaveBeenCalledWith(
+        testUserJwt.email,
+        reservation.title,
+        ReservationStatus.reject,
+      );
     });
   });
 

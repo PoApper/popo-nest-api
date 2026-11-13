@@ -57,6 +57,13 @@ export class ReservePlaceService {
     public readonly dataSource: DataSource,
   ) {}
 
+  // 트랜잭션 안에서 호출되면 그 트랜잭션의 repository 를, 아니면 기본 repository 를 쓴다.
+  private getReservePlaceRepo(manager?: EntityManager) {
+    return manager
+      ? manager.getRepository(ReservePlace)
+      : this.reservePlaceRepo;
+  }
+
   /**
    * @param countedStatuses 동시 예약 개수에 포함할 예약 상태.
    *   신규 신청은 심사중 예약과도 겹치면 안 되고(중복 신청 차단),
@@ -73,9 +80,7 @@ export class ReservePlaceService {
   ): Promise<boolean> {
     // 라인스위핑으로 동시 예약 개수 체크
 
-    const reservePlaceRepo =
-      manager?.getRepository(ReservePlace) ?? this.reservePlaceRepo;
-    const accepted = await reservePlaceRepo.find({
+    const accepted = await this.getReservePlaceRepo(manager).find({
       where: { placeId: placeId, date: date, status: In(countedStatuses) },
       order: { startTime: 'ASC' },
     });
@@ -132,8 +137,6 @@ export class ReservePlaceService {
       throw new BadRequestException(Message.NOT_ENOUGH_INFORMATION);
     }
 
-    const reservePlaceRepo =
-      manager?.getRepository(ReservePlace) ?? this.reservePlaceRepo;
     const targetPlace = manager
       ? await manager.getRepository(Place).findOneByOrFail({ uuid: placeId })
       : await this.placeService.findOneByUuidOrFail(placeId);
@@ -213,7 +216,7 @@ export class ReservePlaceService {
       );
     }
 
-    const reservationsOfDay = await reservePlaceRepo.find({
+    const reservationsOfDay = await this.getReservePlaceRepo(manager).find({
       where: {
         bookerId: bookerId,
         placeId: placeId,

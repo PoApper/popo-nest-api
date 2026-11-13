@@ -29,10 +29,10 @@ import { RolesGuard } from '../../../auth/authroization/roles.guard';
 import { EquipService } from '../../equip/equip.service';
 import { JwtPayload } from '../../../auth/strategies/jwt.payload';
 import * as moment from 'moment-timezone';
+import { EntityManager } from 'typeorm';
 import { Public } from 'src/common/public-guard.decorator';
 import { User } from 'src/popo/common/user.decorator';
 import { User as UserEntity } from '../../user/user.entity';
-import { EntityManager } from 'typeorm';
 
 @ApiTags('Reservation - Equipment')
 @Controller('reservation-equip')
@@ -335,6 +335,7 @@ export class ReserveEquipController {
 
         for (const reservation of reservations) {
           // 중복 예약 등으로 승인할 수 없는 건은 건너뛰고 나머지 예약을 계속 처리한다.
+          // 트랜잭션 EntityManager 로 조회해야 앞서 승인한(미커밋) 예약과의 겹침도 걸러진다.
           try {
             await this.assertReservationAcceptable(
               reservation,
@@ -483,7 +484,7 @@ export class ReserveEquipController {
   async patchStatus(
     @Param('uuid') uuid: string,
     @Param('status') status: ReservationStatus,
-    @Query('sendEmail') sendEmail?: boolean,
+    @Query('sendEmail') sendEmail?: string,
     @User() user?: JwtPayload,
   ) {
     const reservation =
@@ -501,7 +502,8 @@ export class ReserveEquipController {
       '단건 상태 변경',
     );
 
-    if (sendEmail) {
+    // 쿼리 값은 문자열이라 "false" 도 truthy 다. 장소 예약과 동일하게 비교한다.
+    if (sendEmail === 'true') {
       // Send e-mail to client.
       const skipList = [UserType.admin, UserType.association, UserType.club];
       if (!skipList.includes(response.userType)) {

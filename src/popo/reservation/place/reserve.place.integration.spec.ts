@@ -947,6 +947,39 @@ describe('ReservePlaceModule - Integration Test', () => {
         }
       });
 
+      it('should run the availability check inside the bulk-accept transaction', async () => {
+        // SQLite는 외부 조회도 같은 연결을 공유하므로 활성 manager 전달을 별도로 확인한다.
+        const original =
+          reservePlaceService.isReservationConcurrent.bind(reservePlaceService);
+        const seenInTransaction: boolean[] = [];
+        const spy = jest
+          .spyOn(reservePlaceService, 'isReservationConcurrent')
+          .mockImplementation(
+            async (
+              ...args: Parameters<
+                ReservePlaceService['isReservationConcurrent']
+              >
+            ) => {
+              const manager = args[6];
+              seenInTransaction.push(
+                !!manager?.queryRunner?.isTransactionActive,
+              );
+              return original(...args);
+            },
+          );
+
+        try {
+          await reservePlaceController.acceptAllStatus(
+            { uuidList: [earlierReservation.uuid] },
+            'false',
+          );
+        } finally {
+          spy.mockRestore();
+        }
+
+        expect(seenInTransaction).toEqual([true]);
+      });
+
       it('should skip non-existent reservation uuid without throwing error', async () => {
         const fakeUuid = '00000000-0000-0000-0000-000000000000';
         const dto: AcceptPlaceReservationListDto = {

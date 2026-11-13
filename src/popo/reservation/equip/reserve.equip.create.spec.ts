@@ -340,7 +340,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         controller.patchStatus(
           reservation.uuid,
           ReservationStatus.accept,
-          false,
+          'false',
         ),
       ).rejects.toThrow();
     });
@@ -470,7 +470,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         controller.patchStatus(
           reservation.uuid,
           ReservationStatus.accept,
-          false,
+          'false',
         ),
       ).rejects.toThrow();
     });
@@ -526,8 +526,8 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1100',
         endTime: '1200',
       });
-      await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
-      await controller.patchStatus(b.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(a.uuid, ReservationStatus.accept, 'false');
+      await controller.patchStatus(b.uuid, ReservationStatus.accept, 'false');
       const afterA = await reserveEquipService.findOneByUuidOrFail(a.uuid);
       const afterB = await reserveEquipService.findOneByUuidOrFail(b.uuid);
       expect(afterA.status).toBe(ReservationStatus.accept);
@@ -572,7 +572,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1000',
         endTime: '1100',
       });
-      await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(a.uuid, ReservationStatus.accept, 'false');
       await expect(
         create({
           equipments: [equipment.uuid],
@@ -598,7 +598,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1000',
         endTime: '1100',
       });
-      await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(a.uuid, ReservationStatus.accept, 'false');
       await expect(
         create({
           equipments: [equipment.uuid],
@@ -624,7 +624,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1000',
         endTime: '1200',
       });
-      await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(a.uuid, ReservationStatus.accept, 'false');
       await expect(
         create({
           equipments: [equipment.uuid],
@@ -650,7 +650,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1000',
         endTime: '1100',
       });
-      await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(a.uuid, ReservationStatus.accept, 'false');
       await expect(
         create({
           equipments: [equipment.uuid],
@@ -676,7 +676,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1000',
         endTime: '1100',
       });
-      await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(a.uuid, ReservationStatus.accept, 'false');
       const b = await create({
         equipments: [equipment.uuid],
         owner: EquipOwner.dongyeon,
@@ -688,7 +688,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         endTime: '1200',
       });
 
-      await controller.patchStatus(b.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(b.uuid, ReservationStatus.accept, 'false');
 
       const afterA = await reserveEquipService.findOneByUuidOrFail(a.uuid);
       const afterB = await reserveEquipService.findOneByUuidOrFail(b.uuid);
@@ -794,8 +794,8 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
       });
       expect(a.status).toBe(ReservationStatus.in_process);
       expect(b.status).toBe(ReservationStatus.in_process);
-      await controller.patchStatus(b.uuid, ReservationStatus.accept, false);
-      await controller.patchStatus(a.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(b.uuid, ReservationStatus.accept, 'false');
+      await controller.patchStatus(a.uuid, ReservationStatus.accept, 'false');
       const afterA = await reserveEquipService.findOneByUuidOrFail(a.uuid);
       const afterB = await reserveEquipService.findOneByUuidOrFail(b.uuid);
       expect(afterA.status).toBe(ReservationStatus.accept);
@@ -815,7 +815,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1000',
         endTime: '1100',
       });
-      await controller.patchStatus(ab.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(ab.uuid, ReservationStatus.accept, 'false');
 
       const cd = await create({
         equipments: [equipmentC.uuid, equipmentD.uuid],
@@ -827,7 +827,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1030',
         endTime: '1130',
       });
-      await controller.patchStatus(cd.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(cd.uuid, ReservationStatus.accept, 'false');
       const afterCD = await reserveEquipService.findOneByUuidOrFail(cd.uuid);
       expect(afterCD.status).toBe(ReservationStatus.accept);
     });
@@ -843,7 +843,7 @@ describe('ReserveEquip - Create (single equipment, overlap & midnight)', () => {
         startTime: '1000',
         endTime: '1100',
       });
-      await controller.patchStatus(ab.uuid, ReservationStatus.accept, false);
+      await controller.patchStatus(ab.uuid, ReservationStatus.accept, 'false');
 
       // A+C overlaps with A 10:30-11:30 → creation should be rejected
       await expect(

@@ -69,9 +69,10 @@ export class ReserveEquipService {
     countedStatuses: ReservationStatus[] = [ReservationStatus.accept],
     manager?: EntityManager,
   ): Promise<boolean> {
-    const reserveEquipRepo =
-      manager?.getRepository(ReserveEquip) ?? this.reserveEquipRepo;
-    const booked_reservations = await reserveEquipRepo.find({
+    const repo = manager
+      ? manager.getRepository(ReserveEquip)
+      : this.reserveEquipRepo;
+    const booked_reservations = await repo.find({
       where: {
         date: date,
         status: In(countedStatuses),
