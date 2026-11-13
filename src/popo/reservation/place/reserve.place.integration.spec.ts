@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -895,11 +895,19 @@ describe('ReservePlaceModule - Integration Test', () => {
         const seenInTransaction: boolean[] = [];
         const spy = jest
           .spyOn(reservePlaceService, 'isReservationConcurrent')
-          .mockImplementation(async (...args) => {
-            const manager = (args as unknown[])[5] as EntityManager | undefined;
-            seenInTransaction.push(!!manager?.queryRunner?.isTransactionActive);
-            return original(...args);
-          });
+          .mockImplementation(
+            async (
+              ...args: Parameters<
+                ReservePlaceService['isReservationConcurrent']
+              >
+            ) => {
+              const manager = args[6];
+              seenInTransaction.push(
+                !!manager?.queryRunner?.isTransactionActive,
+              );
+              return original(...args);
+            },
+          );
 
         try {
           await reservePlaceController.acceptAllStatus(
