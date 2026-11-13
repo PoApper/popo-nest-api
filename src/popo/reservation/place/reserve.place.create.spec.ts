@@ -819,7 +819,7 @@ describe('ReservePlace - Create (concurrency, policies, midnight)', () => {
   });
 
   describe('Manual approval workflow (autoaccept=false)', () => {
-    it('overlapping requests become in_process, admin accept of second fails', async () => {
+    it('overlapping second request is rejected at creation, even while the first is still pending', async () => {
       const place = await placeService.save({
         name: 'Manual Place',
         description: 'desc',
@@ -841,30 +841,27 @@ describe('ReservePlace - Create (concurrency, policies, midnight)', () => {
         startTime: '1000',
         endTime: '1100',
       });
-      const b = await create({
-        placeId: place.uuid,
-        phone: '010',
-        title: 'B',
-        description: 'B',
-        date: '20251224',
-        startTime: '1030',
-        endTime: '1130',
-      });
       expect(a.status).toBe(ReservationStatus.in_process);
-      expect(b.status).toBe(ReservationStatus.in_process);
 
+      // 심사중인 예약과 겹치면 신청 자체가 막힌다.
+      await expect(
+        create({
+          placeId: place.uuid,
+          phone: '010',
+          title: 'B',
+          description: 'B',
+          date: '20251224',
+          startTime: '1030',
+          endTime: '1130',
+        }),
+      ).rejects.toThrow();
+
+      // 먼저 신청한 예약은 정상적으로 승인된다.
       await reservePlaceController.patchStatus(
         a.uuid,
         ReservationStatus.accept,
         'false',
       );
-      await expect(
-        reservePlaceController.patchStatus(
-          b.uuid,
-          ReservationStatus.accept,
-          'false',
-        ),
-      ).rejects.toThrow();
     });
 
     it('non-overlapping second can be accepted by admin', async () => {

@@ -278,6 +278,7 @@ export class ReserveEquipController {
       reservation.date,
       reservation.startTime,
       reservation.endTime,
+      [ReservationStatus.accept],
       manager,
     );
     if (isOverlap) {

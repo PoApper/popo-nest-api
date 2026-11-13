@@ -56,12 +56,17 @@ export class ReserveEquipService {
     public readonly dataSource: DataSource,
   ) {}
 
-  // manager 를 넘기면 그 트랜잭션 안에서 조회한다(같은 배치에서 앞서 승인한 미커밋 예약 포함).
+  /**
+   * @param countedStatuses 겹침 판정에 포함할 예약 상태.
+   *   신규 신청은 심사중 예약과도 겹치면 안 되고(중복 신청 차단),
+   *   승인 시점에는 통과된 예약만 본다. 자세한 이유는 checkReservationPossible 참고.
+   */
   async isReservationOverlap(
     uuidList: string[],
     date: string,
     startTime: string,
     endTime: string,
+    countedStatuses: ReservationStatus[] = [ReservationStatus.accept],
     manager?: EntityManager,
   ): Promise<boolean> {
     const repo = manager
@@ -70,7 +75,7 @@ export class ReserveEquipService {
     const booked_reservations = await repo.find({
       where: {
         date: date,
-        status: ReservationStatus.accept,
+        status: In(countedStatuses),
       },
     });
 
@@ -116,14 +121,23 @@ export class ReserveEquipService {
     this.assertEquipmentsReservationRequiredDays(targetEquipments, date);
 
     // Reservation Overlap Check
+    //
+    // 신규 신청은 심사중 예약과도 겹치면 안 된다. 예전에는 통과된 예약만 봐서
+    // 같은 장비·같은 시간에 심사중 예약이 있어도 신청이 되었고, 결국 관리자가
+    // 둘 중 하나를 반려해야 했다.
+    // 승인 시점의 검사(controller 의 assertReservationAcceptable)는 통과된 예약만
+    // 보는데, 심사중까지 세면 경쟁 예약끼리 서로를 막아 일괄 승인이 막힌다.
     const isReservationOverlap = await this.isReservationOverlap(
       equipments,
       date,
       startTime,
       endTime,
+      [ReservationStatus.accept, ReservationStatus.in_process],
     );
     if (isReservationOverlap) {
-      throw new BadRequestException(Message.OVERLAP_RESERVATION);
+      throw new BadRequestException(
+        `${Message.OVERLAP_RESERVATION}: ${date} ${startTime} ~ ${endTime}에 이미 승인되었거나 심사중인 예약이 있습니다. 다른 시간대를 선택해주세요.`,
+      );
     }
 
     // Reservation Duration Check

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule, getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 
 import configurations from 'src/config/configurations';
@@ -257,11 +257,15 @@ describe('ReserveEquip - Bulk accept & filters', () => {
       const seenInTransaction: boolean[] = [];
       const spy = jest
         .spyOn(reserveEquipService, 'isReservationOverlap')
-        .mockImplementation(async (...args) => {
-          const manager = (args as unknown[])[4] as EntityManager | undefined;
-          seenInTransaction.push(!!manager?.queryRunner?.isTransactionActive);
-          return original(...args);
-        });
+        .mockImplementation(
+          async (
+            ...args: Parameters<ReserveEquipService['isReservationOverlap']>
+          ) => {
+            const manager = args[5];
+            seenInTransaction.push(!!manager?.queryRunner?.isTransactionActive);
+            return original(...args);
+          },
+        );
 
       try {
         await controller.acceptAllStatus(
