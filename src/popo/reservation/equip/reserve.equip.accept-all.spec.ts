@@ -332,7 +332,7 @@ describe('ReserveEquip - Bulk accept & filters', () => {
           async (
             ...args: Parameters<ReserveEquipService['isReservationOverlap']>
           ) => {
-            const manager = args[5];
+            const manager = args[4];
             seenInTransaction.push(!!manager?.queryRunner?.isTransactionActive);
             return original(...args);
           },

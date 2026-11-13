@@ -960,7 +960,7 @@ describe('ReservePlaceModule - Integration Test', () => {
                 ReservePlaceService['isReservationConcurrent']
               >
             ) => {
-              const manager = args[6];
+              const manager = args[5];
               seenInTransaction.push(
                 !!manager?.queryRunner?.isTransactionActive,
               );
