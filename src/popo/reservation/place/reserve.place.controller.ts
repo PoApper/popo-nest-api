@@ -20,7 +20,7 @@ import {
   SkippedPlaceReservationDto,
 } from './reserve.place.dto';
 import { MailService } from '../../../mail/mail.service';
-import { ReservationStatus } from '../reservation.meta';
+import { compareByCreatedAt, ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
@@ -301,8 +301,7 @@ export class ReservePlaceController {
       reservations.push(reservation);
     }
 
-    // early created reservation should be processed first
-    reservations.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
+    reservations.sort(compareByCreatedAt);
 
     const updatedUserList: {
       email: string;
