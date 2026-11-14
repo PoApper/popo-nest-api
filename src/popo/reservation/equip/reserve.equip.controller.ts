@@ -22,7 +22,7 @@ import {
 import { ReserveEquip } from './reserve.equip.entity';
 import { EquipOwner } from '../../equip/equip.meta';
 import { MailService } from '../../../mail/mail.service';
-import { ReservationStatus } from '../reservation.meta';
+import { compareByCreatedAt, ReservationStatus } from '../reservation.meta';
 import { UserType } from '../../user/user.meta';
 import { Roles } from '../../../auth/authroization/roles.decorator';
 import { RolesGuard } from '../../../auth/authroization/roles.guard';
@@ -315,8 +315,7 @@ export class ReserveEquipController {
       reservations.push(reservation);
     }
 
-    // 먼저 생성된 예약을 먼저 처리한다.
-    reservations.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
+    reservations.sort(compareByCreatedAt);
 
     const updatedUserList: {
       email: string;

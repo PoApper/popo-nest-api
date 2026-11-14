@@ -249,6 +249,30 @@ describe('ReserveEquip - Bulk accept & filters', () => {
       ).toBe(ReservationStatus.accept);
     });
 
+    it('should break createdAt ties by uuid regardless of request order', async () => {
+      const a = await saveOverlappingReservationDirectly({ title: 'A' });
+      const b = await saveOverlappingReservationDirectly({ title: 'B' });
+      const createdAt = new Date('2024-12-01T00:00:00Z');
+      await reserveEquipRepo.update([a.uuid, b.uuid], { createdAt });
+      const [first, second] = [a, b].sort((x, y) => (x.uuid < y.uuid ? -1 : 1));
+
+      for (const uuidList of [
+        [first.uuid, second.uuid],
+        [second.uuid, first.uuid],
+      ]) {
+        await reserveEquipRepo.update([a.uuid, b.uuid], {
+          status: ReservationStatus.in_process,
+        });
+
+        const result = await controller.acceptAllStatus({ uuidList }, 'false');
+
+        expect(result.acceptedUuidList).toEqual([first.uuid]);
+        expect(result.skippedList.map((skipped) => skipped.uuid)).toEqual([
+          second.uuid,
+        ]);
+      }
+    });
+
     it('should run the overlap check inside the bulk-accept transaction', async () => {
       // sqlite 테스트 DB는 연결이 하나라 트랜잭션 밖 조회도 미커밋 변경을 본다. MySQL 버그를 재현할 수 없어 manager 전달을 직접 확인한다.
       const reservation = await saveReservation({ title: 'Tx Check' });
